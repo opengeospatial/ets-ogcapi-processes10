@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
   <head>
-    <title>OGC API - Processes Standard 1.0 Conformance Test Suite</title>
+    <title>OGC API - Tiles Conformance Test Suite</title>
     <meta charset="UTF-8" />
     <style type="text/css">
 body {
@@ -54,14 +54,16 @@ dt {
     </style>
   </head>
   <body>
-  <h1>OGC API - Processes Standard 1.0 Conformance Test Suite</h1>
-	<p>This executable test suite (ETS) verifies the conformance of the implementation 
-	under test (IUT) with respect to all relevant specifications. Conformance testing 
-  is a kind of "black box" testing that examines externally visible characteristics 
-  or behaviors of the IUT and is independent of any implementation details.</p>
+  <h1>OGC API - Tiles Conformance Test Suite</h1>
+	<p>This executable test suite (ETS) verifies that an OGC API - Tiles instance conforms to https://htmlpreview.github.io/?https://github.com/opengeospatial/OGC-API-Map-Tiles/blob/master/standard/OAPI_MapsTiles.html[OGC API - Tiles] (OGC 17-069r3) and related standards. Conformance testing is a kind of "black box" testing that examines externally visible characteristics or behaviors of the SUT and is independent of any implementation details.</p>
 
-	<p>The test run arguments are summarized in the following table. The <em>Obligation</em> 
-	descriptor can have the following values: M (mandatory), O (optional), or C 
+    <p>The following conformance levels currently tested:</p>
+    <ul>
+      <li>Core</li>
+    </ul>
+
+	<p>The test run arguments are summarized in the following table. The <em>Obligation</em>
+	descriptor can have the following values: M (mandatory), O (optional), or C
 	(conditional).</p>
 
 	<table border="1" style="border-collapse: collapse;">
@@ -79,16 +81,14 @@ dt {
         <td>iut</td>
         <td>URI</td>
 		<td>M</td>
-		<td>A URI that refers to the implementation under test or metadata about it.
-    Ampersand ('&amp;') characters must be percent-encoded as '%26'.</td>
+		<td>A URI that refers to the landing page of the SUT. Ampersand ('&amp;') characters must be percent-encoded as '%26'.</td>
       </tr>
-	  <tr>
-      <td>ics</td>
-      <td>A comma-separated list of string values.</td>
-      <td>O</td>
-      <td>An implementation conformance statement that indicates which conformance 
-      classes or options are supported.</td>
-    </tr>
+      <tr>
+        <td>noofcollections</td>
+        <td>Integer</td>
+        <td>O</td>
+        <td>Number of collections under test. -1 means that all collections should be tested. Default: 3</td>
+      </tr>
 	  </tbody>
   </table>
 

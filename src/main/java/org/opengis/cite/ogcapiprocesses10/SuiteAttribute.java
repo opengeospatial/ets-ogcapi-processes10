@@ -1,18 +1,15 @@
 package org.opengis.cite.ogcapiprocesses10;
 
-import com.reprezen.kaizen.oasparser.model3.OpenApi3;
-import com.sun.jersey.api.client.Client;
-
 import java.io.File;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
-import org.w3c.dom.Document;
+import com.reprezen.kaizen.oasparser.model3.OpenApi3;
+import com.sun.jersey.api.client.Client;
 
 /**
- * An enumerated type defining ISuite attributes that may be set to constitute a
- * shared test fixture.
+ * An enumerated type defining ISuite attributes that may be set to constitute a shared test fixture.
  */
 @SuppressWarnings("rawtypes")
 public enum SuiteAttribute {
@@ -32,11 +29,6 @@ public enum SuiteAttribute {
      */
     TEST_SUBJ_FILE( "testSubjectFile", File.class ),
 
-    /**
-     * A File containing the test subject or a description of it.
-     */
-    TEST_SUBJECT( "testSubject", File.class ),    
-    
     /**
      * The number of collections to test.
      */

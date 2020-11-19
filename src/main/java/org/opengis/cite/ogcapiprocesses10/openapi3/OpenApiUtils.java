@@ -388,7 +388,7 @@ public class OpenApiUtils {
      * 3) Delete any Server URI which does not reference a server on the list of servers to test.
      *
      * d) References: None
-     * 
+     *
      * @param apiModel
      *            never <code>null</code>
      * @param iut

@@ -2,11 +2,11 @@ package org.opengis.cite.ogcapiprocesses10.conformance;
 
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.Method.GET;
-import static org.opengis.cite.ogcapiprocesses10.conformance.RequirementClass.CORE;
-import static org.opengis.cite.ogcapiprocesses10.openapi3.OpenApiUtils.retrieveTestPointsForConformance;
 import static org.opengis.cite.ogcapiprocesses10.SuiteAttribute.API_MODEL;
 import static org.opengis.cite.ogcapiprocesses10.SuiteAttribute.IUT;
 import static org.opengis.cite.ogcapiprocesses10.SuiteAttribute.REQUIREMENTCLASSES;
+import static org.opengis.cite.ogcapiprocesses10.conformance.RequirementClass.CORE;
+import static org.opengis.cite.ogcapiprocesses10.openapi3.OpenApiUtils.retrieveTestPointsForConformance;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
@@ -16,9 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.opengis.cite.ogcapiprocesses10.openapi3.TestPoint;
 import org.opengis.cite.ogcapiprocesses10.openapi3.UriBuilder;
-import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.testng.ITestContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
@@ -31,7 +32,8 @@ import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 
 /**
- *  
+ * Updated at the OGC API - Tiles Sprint 2020 by ghobona
+ *
  * A.?.?. Conformance Path {root}/conformance
  *
  *
@@ -45,10 +47,10 @@ public class Conformance extends CommonFixture {
     public Object[][] conformanceUris( ITestContext testContext ) {
         OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute( API_MODEL.getName() );
         URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
-        
+
         TestPoint tp = new TestPoint(rootUri.toString(),"/conformance",null);
 
-        
+
         List<TestPoint> testPoints = new ArrayList<TestPoint>();
         testPoints.add(tp);
         Object[][] testPointsData = new Object[1][];
@@ -65,7 +67,7 @@ public class Conformance extends CommonFixture {
     }
 
     /**
-     * Partly addresses Requirement TBA
+     * Partly addresses Requirement 1 : /req/tiles/core/conformance-success
      *
      * @param testPoint
      *            the test point to test, never <code>null</code>
@@ -78,8 +80,8 @@ public class Conformance extends CommonFixture {
     }
 
     /**
-     * Requirement TBA
-     * 
+     * Requirement 1 : /req/tiles/core/conformance-success
+     *
      * Abstract Test ?: /ats/core/conformance-success
      */
     private void validateConformanceOperationResponse( String testPointUri, Response response ) {
@@ -88,7 +90,7 @@ public class Conformance extends CommonFixture {
         JsonPath jsonPath = response.jsonPath();
         this.requirementClasses = parseAndValidateRequirementClasses( jsonPath );
         assertTrue( this.requirementClasses.contains( CORE ),
-                    "Conformance class \"http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core\" is not available from path "
+                    "Requirement class \"http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/core\" is not available from path "
                                                               + testPointUri );
     }
 

@@ -2,7 +2,7 @@ package org.opengis.cite.ogcapiprocesses10.landingpage;
 
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.Method.GET;
-import static org.opengis.cite.ogcapiprocesses10.ETSAssert.assertTrue;
+import static org.opengis.cite.ogcapiprocesses10.EtsAssert.assertTrue;
 
 import java.util.HashSet;
 import java.util.List;
@@ -14,10 +14,10 @@ import org.testng.annotations.Test;
 
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
 
 /**
- * 
+ * Updated at the OGC API - Tiles Sprint 2020 by ghobona
+ *
  * A.2.2. Landing Page {root}/
  *
  * @author <a href="mailto:goltz@lat-lon.de">Lyn Goltz </a>
@@ -26,7 +26,7 @@ public class LandingPage extends CommonFixture {
 
     private JsonPath response;
 
-    
+
     /**
      * <pre>
      * Abstract Test 3: /ats/core/root-op
@@ -39,45 +39,34 @@ public class LandingPage extends CommonFixture {
      *  3. Validate the contents of the returned document using test /ats/core/root-success.
      * </pre>
      */
-    @Test(description = "Implements Requirement TBA", groups = "landingpage")
+    @Test(description = "Implements Requirement 34 of OGC API - Tiles", groups = "landingpage")
     public void landingPageRetrieval() {
-  
-    	Response request = null;
-    	try {
-    		
-    		RequestSpecification s = init();
-    		
-        request = init().baseUri( rootUri.toString() ).accept( JSON ).when().request( GET, "/" );
-    	}
-    	catch(Exception er)
-    	{
-    		System.out.println("Message "+er.getMessage());
-    	}
-
+        Response request = init().baseUri( rootUri.toString() ).accept( JSON ).when().request( GET, "/" );
         request.then().statusCode( 200 );
         response = request.jsonPath();
+    }
 
-    }    
-     
     /**
      * <pre>
-     * Requirement TBA
+     * Requirement 12
+     * If the API has mechanism to expose root resources (e.g. a landing page), the API SHALL advertise a URI to retrieve tile definitions defined by this service as links
+     * to the descriptions paths with rel: tiles.
      * </pre>
      */
-    @Test(description = "Implements Requirement TBA", groups = "landingpage")
-    public void landingPageValidation() {
-   
+    @Test(description = "Implements Requirement 12 of OGC API - Tiles: Landing Page {root}/, Requirement 12 (Requirement /req/tiles/root/root-success)", groups = "landingpage")
+    public void tilesLandingPageValidation() {
+
         List<Object> links = response.getList( "links" );
-        
+
         Set<String> linkTypes = collectLinkTypes( links );
 
-        boolean expectedLinkTypesExists = linkTypes.contains( "processes" );
+        boolean expectedLinkTypesExists = linkTypes.contains( "tiles" );
         assertTrue( expectedLinkTypesExists,
-                    "The landing page must include at least links with relation type 'processes', but contains "
+                    "The landing page must include at least links with relation type 'tiles', but contains "
                                              + String.join( ", ", linkTypes ) );
-        
-      
-    }    
+
+
+    }
 
     private Set<String> collectLinkTypes( List<Object> links ) {
         Set<String> linkTypes = new HashSet<>();

@@ -23,7 +23,7 @@ public class TestPoint {
 
     /**
      * Instantiates a TestPoint with UriTemplate but without predefined replacements.
-     * 
+     *
      * @param serverUrl
      *            the serverUrl, never <code>null</code>
      * @param path

@@ -28,7 +28,7 @@ public class UriBuilder {
 
     /**
      * Adds the collectionName to the URI
-     * 
+     *
      * @param collectionName
      *            never <code>null</code>
      * @return this UrlBuilder

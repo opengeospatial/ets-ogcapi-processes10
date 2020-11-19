@@ -10,7 +10,7 @@ import java.util.ResourceBundle;
 public class ErrorMessage {
 
     private static final String BASE_NAME =
-            "org.opengis.cite.ogcapiprocesses10.MessageBundle";
+            "org.opengis.cite.ogcapifeatures10.MessageBundle";
     private static ResourceBundle msgResources =
             ResourceBundle.getBundle(BASE_NAME);
 
@@ -18,7 +18,7 @@ public class ErrorMessage {
      * Produces a formatted error message using the supplied substitution
      * arguments and the current locale. The arguments should reflect the order
      * of the placeholders in the message template.
-     * 
+     *
      * @param msgKey
      *            The key identifying the message template; it should be a
      *            member of {@code ErrorMessageKeys}.
@@ -28,14 +28,14 @@ public class ErrorMessage {
      * @return A String containing the message content. If no message is found
      *         for the given key, a {@link java.util.MissingResourceException}
      *         is thrown.
-     */		
+     */
     public static String format(String msgKey, Object... args) {
         return MessageFormat.format(msgResources.getString(msgKey), args);
     }
 
     /**
      * Retrieves a simple message according to the current locale.
-     * 
+     *
      * @param msgKey
      *            The key identifying the message; it should be a member of
      *            {@code ErrorMessageKeys}.

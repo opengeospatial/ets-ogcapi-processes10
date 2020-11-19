@@ -1,7 +1,6 @@
-= Release Notes
+= Release Notes OGC API - Tiles
 
-== ${project.version} (YYYY-MM-DD)
 
-The initial release implements the following test requirements:
 
-- all mandatory conformance classes (Class A, Class B)
+== 0.1 (2020-04-23)
+- OGC API - Tiles Sprint

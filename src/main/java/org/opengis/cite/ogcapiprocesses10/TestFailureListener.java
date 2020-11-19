@@ -4,6 +4,7 @@ import com.sun.jersey.api.client.ClientRequest;
 import com.sun.jersey.api.client.ClientResponse;
 import java.nio.charset.StandardCharsets;
 import javax.ws.rs.core.MediaType;
+
 import org.opengis.cite.ogcapiprocesses10.util.ClientUtils;
 import org.opengis.cite.ogcapiprocesses10.util.XMLUtils;
 import org.testng.ITestResult;
@@ -32,8 +33,8 @@ public class TestFailureListener extends TestListenerAdapter {
         Object instance = result.getInstance();
         if (CommonFixture.class.isInstance(instance)) {
             CommonFixture fixture = CommonFixture.class.cast(instance);
-            result.setAttribute("request", getRequestMessageInfo(fixture.request));
-            result.setAttribute("response", getResponseMessageInfo(fixture.response));
+            result.setAttribute("request", fixture.getRequest());
+            result.setAttribute("response", fixture.getResponse());
         }
     }
 

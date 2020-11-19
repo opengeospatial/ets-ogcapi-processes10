@@ -8,24 +8,22 @@
     <version>
       <name>${spec-version}</name>
       <suite>
-        <namespace-uri>http://www.opengis.net/cite/ogcapi-processes10</namespace-uri>
+        <namespace-uri>http://www.opengis.net/cite/ogcapi-processes-1.0</namespace-uri>
         <prefix>tns</prefix>
-        <local-name>ets-ogcapi-processes10-${version}</local-name>
-        <title>ets-ogcapi-processes10 Conformance Test Suite</title>
-        <description>Describe scope of testing.</description>
-        <!-- Add baisc conformance test suites
+        <local-name>ets-${ets-code}-${version}</local-name>
+        <title>OGC API - Processes Conformance Test Suite</title>
+        <description>Checks OGC API - Processes implementations for conformance.</description>
         <BasicConformanceClasses>
           <conformanceClass>Core</conformanceClass>
         </BasicConformanceClasses>
-        -->
       </suite>
       <revision>
         <name>${project.version}</name>
         <status>Beta</status>
         <sources>
-          <source>ogcapi-processes10/${spec-version}/ctl</source>
+          <source>ogcapi-processes-1.0/${spec-version}/ctl</source>
         </sources>
-        <webdir>ogcapi-processes10/${spec-version}/site</webdir>
+        <webdir>ogcapi-processes-1.0/${spec-version}/site</webdir>
       </revision>
     </version>
   </standard>

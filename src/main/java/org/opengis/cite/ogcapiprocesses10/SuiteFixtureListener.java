@@ -9,25 +9,19 @@ import java.util.logging.Level;
 import org.opengis.cite.ogcapiprocesses10.util.ClientUtils;
 import org.opengis.cite.ogcapiprocesses10.util.TestSuiteLogger;
 import org.opengis.cite.ogcapiprocesses10.util.URIUtils;
-import org.opengis.cite.ogcapiprocesses10.util.XMLUtils;
-import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
-import org.opengis.cite.ogcapiprocesses10.TestRunArg;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
-import org.w3c.dom.Document;
 
 import com.sun.jersey.api.client.Client;
 
 /**
- * A listener that performs various tasks before and after a test suite is run,
- * usually concerned with maintaining a shared test suite fixture. Since this
- * listener is loaded using the ServiceLoader mechanism, its methods will be
- * called before those of other suite listeners listed in the test suite
- * definition and before any annotated configuration methods.
+ * A listener that performs various tasks before and after a test suite is run, usually concerned with maintaining a
+ * shared test suite fixture. Since this listener is loaded using the ServiceLoader mechanism, its methods will be
+ * called before those of other suite listeners listed in the test suite definition and before any annotated
+ * configuration methods.
  *
- * Attributes set on an ISuite instance are not inherited by constituent test
- * group contexts (ITestContext). However, suite attributes are still accessible
- * from lower contexts.
+ * Attributes set on an ISuite instance are not inherited by constituent test group contexts (ITestContext). However,
+ * suite attributes are still accessible from lower contexts.
  *
  * @see org.testng.ISuite ISuite interface
  */
@@ -51,7 +45,7 @@ public class SuiteFixtureListener implements ISuiteListener {
      * Processes test suite arguments and sets suite attributes accordingly. The entity referenced by the
      * {@link TestRunArg#IUT iut} argument is retrieved and written to a File that is set as the value of the suite
      * attribute {@link SuiteAttribute#TEST_SUBJ_FILE testSubjectFile}.
-     * 
+     *
      * @param suite
      *            An ISuite object representing a TestNG test suite.
      */

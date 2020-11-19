@@ -4,7 +4,7 @@ import java.net.URI;
 
 /**
  * XML namespace names.
- * 
+ *
  * @see <a href="http://www.w3.org/TR/xml-names/">Namespaces in XML 1.0</a>
  *
  */

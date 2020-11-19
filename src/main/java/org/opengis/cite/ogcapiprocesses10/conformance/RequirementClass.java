@@ -1,7 +1,7 @@
 package org.opengis.cite.ogcapiprocesses10.conformance;
 
 /**
- * Updated at the OGC API - Tiles Sprint 2020 by ghobona
+ * 
  *
  * Encapsulates all known requirement classes.
  *
