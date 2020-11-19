@@ -3,10 +3,20 @@ package org.opengis.cite.ogcapiprocesses10;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientRequest;
 import com.sun.jersey.api.client.ClientResponse;
+
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
+import io.restassured.specification.RequestSpecification;
+
+import static io.restassured.RestAssured.given;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import org.opengis.cite.ogcapiprocesses10.util.ClientUtils;
+import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
 import org.testng.ITestContext;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
@@ -19,6 +29,16 @@ import org.w3c.dom.Document;
  */
 public class CommonFixture {
 
+	
+    protected RequestLoggingFilter requestLoggingFilter;
+
+    protected ResponseLoggingFilter responseLoggingFilter;
+    
+    private ByteArrayOutputStream requestOutputStream = new ByteArrayOutputStream();
+
+    private ByteArrayOutputStream responseOutputStream = new ByteArrayOutputStream();
+
+  
     /**
      * Root test suite package (absolute path).
      */
@@ -35,6 +55,9 @@ public class CommonFixture {
      * An HTTP response message.
      */
     protected ClientResponse response;
+    
+    
+    protected URI rootUri;
 
     /**
      * Initializes the common test fixture with a client component for 
@@ -45,16 +68,15 @@ public class CommonFixture {
      */
     @BeforeClass
     public void initCommonFixture(ITestContext testContext) {
-        Object obj = testContext.getSuite().getAttribute(SuiteAttribute.CLIENT.getName());
-        if (null != obj) {
-            this.client = Client.class.cast(obj);
-        }
-        obj = testContext.getSuite().getAttribute(SuiteAttribute.TEST_SUBJECT.getName());
-        if (null == obj) {
-            throw new SkipException("Test subject not found in ITestContext.");
-        }
+    	initLogging();
+    	rootUri = (URI) testContext.getSuite().getAttribute( SuiteAttribute.IUT.getName() );
+       
     }
 
+    protected RequestSpecification init() {
+        return given().filters( requestLoggingFilter, responseLoggingFilter ).log().all();
+    }    
+    
     @BeforeMethod
     public void clearMessages() {
         this.request = null;
@@ -95,5 +117,25 @@ public class CommonFixture {
             Map<String, String> qryParams, MediaType... mediaTypes) {
         return ClientUtils.buildGetRequest(endpoint, qryParams, mediaTypes);
     }
+    
+    /**
+     * Builds an HTTP request message that uses the GET method. This convenience method wraps a static method call to
+     * facilitate unit testing (Mockito workaround).
+     *
+     * @return A ClientRequest object.
+     *
+     * @see ClientUtils#buildGetRequest public ClientRequest buildGetRequest( URI endpoint, Map<String, String>
+     *      qryParams, MediaType... mediaTypes ) { return ClientUtils.buildGetRequest( endpoint, qryParams, mediaTypes
+     *      ); }
+     */
+
+    private void initLogging() {
+        this.requestOutputStream = new ByteArrayOutputStream();
+        this.responseOutputStream = new ByteArrayOutputStream();
+        PrintStream requestPrintStream = new PrintStream( requestOutputStream, true );
+        PrintStream responsePrintStream = new PrintStream( responseOutputStream, true );
+        requestLoggingFilter = new RequestLoggingFilter( requestPrintStream );
+        responseLoggingFilter = new ResponseLoggingFilter( responsePrintStream );
+    }    
 
 }

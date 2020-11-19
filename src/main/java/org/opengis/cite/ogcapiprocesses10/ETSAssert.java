@@ -170,41 +170,24 @@ public class ETSAssert {
     }
 
     /**
-     * Asserts that the given response message contains an OGC exception report.
-     * The message body must contain an XML document that has a document element
-     * with the following properties:
-     *
-     * <ul>
-     * <li>[local name] = "ExceptionReport"</li>
-     * <li>[namespace name] = "http://www.opengis.net/ows/2.0"</li>
-     * </ul>
-     *
-     * @param rsp
-     *            A ClientResponse object representing an HTTP response message.
-     * @param exceptionCode
-     *            The expected OGC exception code.
-     * @param locator
-     *            A case-insensitive string value expected to occur in the
-     *            locator attribute (e.g. a parameter name); the attribute value
-     *            will be ignored if the argument is null or empty.
+     * @param valueToAssert
+     *            the boolean to assert to be <code>true</code>
+     * @param failureMsg
+     *            the message to throw in case of a failure, should not be <code>null</code>
      */
-    public static void assertExceptionReport(ClientResponse rsp, String exceptionCode, String locator) {
-        Assert.assertEquals(rsp.getStatus(), ClientResponse.Status.BAD_REQUEST.getStatusCode(),
-                ErrorMessage.get(ErrorMessageKeys.UNEXPECTED_STATUS));
-        Document doc = rsp.getEntity(Document.class);
-        String expr = String.format("//ows:Exception[@exceptionCode = '%s']", exceptionCode);
-        NodeList nodeList = null;
-        try {
-            nodeList = XMLUtils.evaluateXPath(doc, expr, null);
-        } catch (XPathExpressionException xpe) {
-            // won't happen
-        }
-        Assert.assertTrue(nodeList.getLength() > 0, "Exception not found in response: " + expr);
-        if (null != locator && !locator.isEmpty()) {
-            Element exception = (Element) nodeList.item(0);
-            String locatorValue = exception.getAttribute("locator").toLowerCase();
-            Assert.assertTrue(locatorValue.contains(locator.toLowerCase()),
-                    String.format("Expected locator attribute to contain '%s']", locator));
-        }
+    public static void assertTrue( boolean valueToAssert, String failureMsg ) {
+        if ( !valueToAssert )
+            throw new AssertionError( failureMsg );
+    }
+
+    /**
+     * @param valueToAssert
+     *            the boolean to assert to be <code>false</code>
+     * @param failureMsg
+     *            the message to throw in case of a failure, should not be <code>null</code>
+     */
+    public static void assertFalse( boolean valueToAssert, String failureMsg ) {
+        if ( valueToAssert )
+            throw new AssertionError( failureMsg );
     }
 }

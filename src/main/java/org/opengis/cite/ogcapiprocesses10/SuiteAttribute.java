@@ -1,8 +1,12 @@
 package org.opengis.cite.ogcapiprocesses10;
 
+import com.reprezen.kaizen.oasparser.model3.OpenApi3;
 import com.sun.jersey.api.client.Client;
 
 import java.io.File;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Document;
 
@@ -16,19 +20,53 @@ public enum SuiteAttribute {
     /**
      * A client component for interacting with HTTP endpoints.
      */
-    CLIENT("httpClient", Client.class),
+    CLIENT( "httpClient", Client.class ),
+
     /**
-     * A DOM Document that represents the test subject or metadata about it.
+     * The root URL.
      */
-    TEST_SUBJECT("testSubject", Document.class),
+    IUT( "instanceUnderTest", URI.class ),
+
     /**
      * A File containing the test subject or a description of it.
      */
-    TEST_SUBJ_FILE("testSubjectFile", File.class);
+    TEST_SUBJ_FILE( "testSubjectFile", File.class ),
+
+    /**
+     * A File containing the test subject or a description of it.
+     */
+    TEST_SUBJECT( "testSubject", File.class ),    
+    
+    /**
+     * The number of collections to test.
+     */
+    NO_OF_COLLECTIONS( "noOfCollections", Integer.class ),
+
+    /**
+     * Parsed OpenApi3 document resource /api; Added during execution.
+     */
+    API_MODEL( "apiModel", OpenApi3.class ),
+
+    /**
+     * Requirement classes parsed from /conformance; Added during execution.
+     */
+    REQUIREMENTCLASSES( "requirementclasses", List.class ),
+
+    /**
+     * Parsed collections from resource /collections; Added during execution.
+     */
+    COLLECTIONS( "collections", List.class ),
+
+    /**
+     * Collection names assigned to a feature id parsed from resource /collections/{name}/items; Added during execution.
+     */
+    FEATUREIDS( "featureIds", Map.class );
+
     private final Class attrType;
+
     private final String attrName;
 
-    private SuiteAttribute(String attrName, Class attrType) {
+    SuiteAttribute( String attrName, Class attrType ) {
         this.attrName = attrName;
         this.attrType = attrType;
     }
@@ -43,8 +81,8 @@ public enum SuiteAttribute {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(attrName);
-        sb.append('(').append(attrType.getName()).append(')');
+        StringBuilder sb = new StringBuilder( attrName );
+        sb.append( '(' ).append( attrType.getName() ).append( ')' );
         return sb.toString();
     }
 }
