@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ctl:package xmlns:ctl="http://www.occamlab.com/ctl"
              xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-             xmlns:tns="http://www.opengis.net/cite/ogcapi-tiles-1.0"
+             xmlns:tns="http://www.opengis.net/cite/ogcapi-processes-1.0"
              xmlns:saxon="http://saxon.sf.net/"
              xmlns:tec="java:com.occamlab.te.TECore"
              xmlns:tng="java:org.opengis.cite.ogcapiprocesses10.TestNGController">
@@ -10,7 +10,7 @@
     <ctl:param name="testRunArgs">A Document node containing test run arguments (as XML properties).</ctl:param>
     <ctl:param name="outputDir">The directory in which the test results will be written.</ctl:param>
     <ctl:return>The test results as a Source object (root node).</ctl:return>
-    <ctl:description>Runs the OGC API - Tiles (${version}) test suite.</ctl:description>
+    <ctl:description>Runs the OGC API - processes (${version}) test suite.</ctl:description>
     <ctl:code>
       <xsl:variable name="controller" select="tng:new($outputDir)" />
       <xsl:copy-of select="tng:doTestRun($controller, $testRunArgs)" />
@@ -18,8 +18,8 @@
   </ctl:function>
 
   <ctl:suite name="tns:ets-${ets-code}-${version}">
-    <ctl:title>OGC API - Tiles Conformance Test Suite</ctl:title>
-    <ctl:description>Checks OGC API - Tiles implementations for conformance.</ctl:description>
+    <ctl:title>OGC API - Processes Conformance Test Suite</ctl:title>
+    <ctl:description>Checks OGC API - processes implementations for conformance.</ctl:description>
     <ctl:starting-test>tns:Main</ctl:starting-test>
   </ctl:suite>
 
@@ -28,12 +28,12 @@
     <ctl:code>
       <xsl:variable name="form-data">
         <ctl:form method="POST" width="800" height="600" xmlns="http://www.w3.org/1999/xhtml">
-          <h2>OGC API - Tiles Conformance Test Suite</h2>
+          <h2>OGC API - Processes Conformance Test Suite</h2>
           <div style="background:#F0F8FF" bgcolor="#F0F8FF">
             <p>The implementation under test (IUT) is checked against the following specifications:</p>
             <ul>
               <li>
-                <a href="http://docs.opengeospatial.org/is/17-069r3/17-069r3.html">OGC API - Tiles - Part 1: Core</a>
+                <a href="http://docs.opengeospatial.org/is/17-069r3/17-069r3.html">OGC API - processes - Part 1: Core</a>
               </li>
             </ul>
             <p>The following conformance levels are defined:</p>
