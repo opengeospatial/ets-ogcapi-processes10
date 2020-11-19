@@ -47,10 +47,10 @@
                        border-width: medium; padding:4px">Implementation under test
             </legend>
             <p>
-              <label for="ogc-api-tiles-uri">
+              <label for="ogc-api-processes-uri">
                 <h4 style="margin-bottom: 0.5em">Location of the landing page</h4>
               </label>
-              <input id="ogc-api-tiles-uri" name="ogc-api-tiles-uri" size="128" type="text"
+              <input id="ogc-api-processes-uri" name="ogc-api-processes-uri" size="128" type="text"
                      value="" />
             </p>
             <p>
@@ -79,7 +79,7 @@
       <xsl:variable name="test-run-props">
         <properties version="1.0">
           <entry key="iut">
-            <xsl:value-of select="normalize-space($form-data/values/value[@key='ogc-api-tiles-uri'])" />
+            <xsl:value-of select="normalize-space($form-data/values/value[@key='ogc-api-processes-uri'])" />
           </entry>
           <entry key="noofcollections">
             <xsl:choose>

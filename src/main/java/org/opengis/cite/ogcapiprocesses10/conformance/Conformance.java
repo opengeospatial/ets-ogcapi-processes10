@@ -32,7 +32,6 @@ import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 
 /**
- * Updated at the OGC API - Tiles Sprint 2020 by ghobona
  *
  * A.?.?. Conformance Path {root}/conformance
  *

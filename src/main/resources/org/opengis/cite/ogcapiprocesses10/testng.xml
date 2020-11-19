@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="ogcapi-tiles-1.0-${version}" verbose="0" configfailurepolicy="continue">
+  <parameter name="iut" value="" />
+  <parameter name="ics" value="" />
+
+  <listeners>
+    <listener class-name="org.opengis.cite.ogcapiprocesses10.TestRunListener" />
+    <listener class-name="org.opengis.cite.ogcapiprocesses10.SuiteFixtureListener" />
+    <listener class-name="org.opengis.cite.ogcapiprocesses10.TestFailureListener" />
+  </listeners>
+
+  <test name="Core">
+    <packages>
+      <package name="org.opengis.cite.ogcapiprocesses10.landingpage" />
+      <package name="org.opengis.cite.ogcapiprocesses10.conformance" />
+    </packages>
+    <classes>
+      <class name="org.opengis.cite.ogcapiprocesses10.SuitePreconditions" />
+    </classes>
+  </test>
+
+</suite>

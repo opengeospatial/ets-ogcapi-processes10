@@ -16,7 +16,6 @@ import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 
 /**
- * Updated at the OGC API - Tiles Sprint 2020 by ghobona
  *
  * A.2.2. Landing Page {root}/
  *
@@ -39,7 +38,7 @@ public class LandingPage extends CommonFixture {
      *  3. Validate the contents of the returned document using test /ats/core/root-success.
      * </pre>
      */
-    @Test(description = "Implements Requirement 34 of OGC API - Tiles", groups = "landingpage")
+    @Test(description = "Implements Requirement TBA", groups = "landingpage")
     public void landingPageRetrieval() {
         Response request = init().baseUri( rootUri.toString() ).accept( JSON ).when().request( GET, "/" );
         request.then().statusCode( 200 );
@@ -48,21 +47,19 @@ public class LandingPage extends CommonFixture {
 
     /**
      * <pre>
-     * Requirement 12
-     * If the API has mechanism to expose root resources (e.g. a landing page), the API SHALL advertise a URI to retrieve tile definitions defined by this service as links
-     * to the descriptions paths with rel: tiles.
+     * Requirement TBA  
      * </pre>
      */
-    @Test(description = "Implements Requirement 12 of OGC API - Tiles: Landing Page {root}/, Requirement 12 (Requirement /req/tiles/root/root-success)", groups = "landingpage")
-    public void tilesLandingPageValidation() {
+    @Test(description = "Implements Requirement TBA: Landing Page ", groups = "landingpage")
+    public void landingPageValidation() {
 
         List<Object> links = response.getList( "links" );
 
         Set<String> linkTypes = collectLinkTypes( links );
 
-        boolean expectedLinkTypesExists = linkTypes.contains( "tiles" );
+        boolean expectedLinkTypesExists = linkTypes.contains( "processes" );
         assertTrue( expectedLinkTypesExists,
-                    "The landing page must include at least links with relation type 'tiles', but contains "
+                    "The landing page must include at least links with relation type 'processes', but contains "
                                              + String.join( ", ", linkTypes ) );
 
 
