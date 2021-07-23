@@ -18,11 +18,11 @@ RUN cd /root/ && unzip -q teamengine-console-*-base.zip -d /root/te_base
 # set TE_BASE
 ENV JAVA_OPTS="-Xms1024m -Xmx2048m -DTE_BASE=/root/te_base"
 
-# add ETS for OGC APP Tiles 1.0
-ADD maven/ets-ogcapi-tiles10-*-ctl.zip /root/
-RUN cd /root/ && unzip -q ets-ogcapi-tiles10-*-ctl.zip -d /root/te_base/scripts
-ADD maven/ets-ogcapi-tiles10-*-deps.zip /root/
-RUN cd /root/ && unzip -q -o ets-ogcapi-tiles10-*-deps.zip -d /usr/local/tomcat/webapps/teamengine/WEB-INF/lib
+# add ETS for OGC API Processes 1.0
+ADD maven/ets-ogcapi-processes10-*-ctl.zip /root/
+RUN cd /root/ && unzip -q ets-ogcapi-processes10-*-ctl.zip -d /root/te_base/scripts
+ADD maven/ets-ogcapi-processes10-*-deps.zip /root/
+RUN cd /root/ && unzip -q -o ets-ogcapi-processes10-*-deps.zip -d /usr/local/tomcat/webapps/teamengine/WEB-INF/lib
 
 # run tomcat
 CMD ["catalina.sh", "jpda", "run"]
