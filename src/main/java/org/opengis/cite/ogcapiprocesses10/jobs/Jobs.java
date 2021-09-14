@@ -1,0 +1,799 @@
+package org.opengis.cite.ogcapiprocesses10.jobs;
+
+import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.openapi4j.core.exception.ResolutionException;
+import org.openapi4j.core.validation.ValidationException;
+import org.openapi4j.operation.validator.model.Response;
+import org.openapi4j.operation.validator.model.impl.Body;
+import org.openapi4j.operation.validator.model.impl.DefaultResponse;
+import org.openapi4j.operation.validator.validation.OperationValidator;
+import org.openapi4j.parser.OpenApi3Parser;
+import org.openapi4j.parser.model.v3.OpenApi3;
+import org.openapi4j.parser.model.v3.Operation;
+import org.openapi4j.parser.model.v3.Path;
+import org.openapi4j.schema.validator.ValidationData;
+import org.opengis.cite.ogcapiprocesses10.CommonFixture;
+import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
+import org.testng.Assert;
+import org.testng.ITestContext;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ *
+ * A.2.6. Jobs  {root}/jobs
+ *
+ * @author <a href="mailto:b.pross@52north.org">Benjamin Pross</a>
+ */
+public class Jobs extends CommonFixture {
+
+	private static final String OPERATION_ID_GET_JOBS = "getJobs";
+
+	private OpenApi3 openApi3;
+	
+	private String getJobsListPath = "/jobs";
+	
+	private String getProcessListPath = "/processes";
+	
+	private OperationValidator getJobsValidator;
+    
+    private URL getJobsListURL;
+    
+    private URL getInvalidJobURL;  
+    
+    private String echoProcessId;
+
+	private String echoProcessPath;
+	
+	@BeforeClass
+	public void setup(ITestContext testContext) {		
+		String processListEndpointString = rootUri.toString() + getJobsListPath;		
+		try {
+			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID_GET_JOBS);
+		    final Operation operation = openApi3.getOperationById(OPERATION_ID_GET_JOBS);
+		    getJobsValidator = new OperationValidator(openApi3, path, operation);
+		    getJobsListURL = new URL(processListEndpointString);
+		    getInvalidJobURL = new URL(processListEndpointString + "/invalid-job-" + UUID.randomUUID());
+		} catch (MalformedURLException | ResolutionException | ValidationException e) {
+			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
+		}
+		echoProcessId = (String) testContext.getSuite().getAttribute( SuiteAttribute.ECHO_PROCESS_ID.getName() );
+	    echoProcessPath = getProcessListPath + "/" + echoProcessId;
+	    parseEchoProcess();
+	}
+	
+	private void parseEchoProcess() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 17: /conf/core/job-creation-auto-execution-mode
+	* Test Purpose: Validate that the server correctly handles the execution mode for a process.
+	* Requirement: /req/core/job-creation-op
+	* Test Method: 
+	* 1.  Setting the HTTP `Prefer` header to include the `respond-sync` preference, construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request
+	* 2.  For processes that are supposed to execute asynchronously according to the req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode requirement, verify the successful execution according to the ats_core_job-creation-success-async,/conf/core/job-creation-success-async test
+	* 3.  For processes that are supposed to execute synchronously according to the req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode requirement, verify the successful execution according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* 4.  For processes that may execute either synchronously or asynchronously according to the req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode requirement, verify that successful execution according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	public void testJobCreationAutoExecutionMode() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 18: /conf/core/job-creation-default-execution-mode
+	* Test Purpose: Validate that the server correctly handles the default execution mode for a process.
+	* Requirement: /req/core/job-creation-op
+	* Test Method: 
+	* 1.  Without setting the HTTP `Prefer` header, construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request
+	* 2.  For processes that are supposed to execute asynchronously according to the req_core_job-creation-default-execution-mode,/req/core/job-creation-default-execution-mode requirement, verify the successful execution according to the ats_core_job-creation-success-async,/conf/core/job-creation-success-async test
+	* 3.  For processes that are supposed to execute synchronously according to the req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode requirement, verify the successful synchronous execution according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	public void testJobCreationDefaultExecutionMode() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test null: /conf/core/job-creation-default-outputs
+	* Test Purpose: Validate that the server correctly handles the case where no `outputs` parameter is specified on an execute request.
+	* Requirement: /req/core/job-creation-op
+	* Test Method: 
+	* 1.  For each process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to omit the `outputs` parameter
+	* 2.  Verify that each processes executed successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* 3.  Verify that each process includes all the outputs, as defined in the sc_process_description,process description, in the response
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	public void testJobCreationDefaultOutputs() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test null: /conf/core/job-creation-input-array
+	* Test Purpose: Verify that the server correctly recognizes the encoding of parameter values for input parameters with a maximum cardinality greater than one.
+	* Requirement: /req/core/job-creation-input-array
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the inputs with maximum cardinality  1 according to the requirement req_core_job-creation-input-array,/req/core/job-creation-input-array
+	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-input-array ", groups = "job")
+	public void testJobCreationInputArray() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 27: /conf/core/job-creation-input-inline-bbox
+	* Test Purpose: Validate that inputs with a bounding box schema encoded in-line in an execute request are correctly processed.
+	* Requirement: /req/core/job-creation-input-inline-bbox
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode values for the identified bounding box inputs in-line in the execute request
+	* 2.  Verify that each process executes successfully according to the ats_job-creation-success,relevant requirement based on the combination of execute parameters
+	* |===
+	* 
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-bbox ", groups = "job")
+	public void testJobCreationInputInlineBbox() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test null: /conf/core/job-creation-input-inline-binary
+	* Test Purpose: Validate that binary input values encoded as base-64 string in-line in an execute request are correctly processes.
+	* Requirement: /req/core/job-creation-input-binary
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode binary input values in-line in the execute request according to requirement req_core_job-creation-input-inline-binary,/req/core/job-creation-input-inline-binary
+	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-input-binary ", groups = "job")
+	public void testJobCreationInputInlineBinary() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test null: /conf/core/job-creation-input-inline-mixed
+	* Test Purpose: Validate that inputs of mixed content encoded in-line in an execute request are correctly processed.
+	* Requirement: /req/core/job-creation-input-inline-mixed
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the identified mix-content inputs in-line in the execute request according to requirement req_core_job-creation-input-inline-mixed,/req/core/job-creation-input-inline-mixed
+	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-mixed ", groups = "job")
+	public void testJobCreationInputInlineMixed() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 23: /conf/core/job-creation-input-inline-object
+	* Test Purpose: Validate that inputs with a complex object schema encoded in-line in an execute request are correctly processed.
+	* Requirement: /req/core/job-creation-input-inline-object
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the identified object inputs in-line in the execute request according to requirement req_core_job-creation-input-inline-object,/req/core/job-creation-input-inline-object
+	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* |===
+	* 
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-object ", groups = "job")
+	public void testJobCreationInputInlineObject() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test null: /conf/core/job-creation-input-inline
+	* Test Purpose: Validate in-line process input values are validated against the corresponding schema from the process description.
+	* Requirement: /req/core/job-creation-input-inline
+	* Test Method: 
+	* 1.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline ", groups = "job")
+	public void testJobCreationInputInline() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 22: /conf/core/job-creation-input-ref
+	* Test Purpose: Validate that input values specified by reference in an execute request are correctly processed.
+	* Requirement: /req/core/job-creation-input-ref
+	* Test Method: 
+	* 1.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-input-ref ", groups = "job")
+	public void testJobCreationInputRef() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test null: /conf/core/job-creation-input-validation
+	* Test Purpose: Verify that the server correctly validates process input values according to the definition obtained from the sc_process_description,process description.
+	* Requirement: /req/core/job-creation-input-validation
+	* Test Method: 
+	* 1.  For each process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the input values according to the schema from the definition of each input
+	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* 3.  For each process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode some of the input values in violation of the schema from the definition of the selected input
+	* 4.  Verify that each process generates an exception report that identifies the improperly specified input value(s)
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-input-validation ", groups = "job")
+	public void testJobCreationInputValidation() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 20: /conf/core/job-creation-inputs
+	* Test Purpose: Validate that servers can accept input values both inline and by reference.
+	* Requirement: /req/core/job-creation-inputs
+	* Test Method: 
+
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-inputs ", groups = "job")
+	public void testJobCreationInputs() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 16: /conf/core/job-creation-op
+	* Test Purpose: Validate the creation of a new job.
+	* Requirement: /req/core/job-creation-op
+	* Test Method: 
+	* 1.  Validate the creation of the job according the requirements req_core_job-creation-default-execution-mode,/req/core/job-creation-default-execution-mode, req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	public void testJobCreationOp() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 19: /conf/core/job-creation-request
+	* Test Purpose: Validate that the body of a job creation operation complies with the required structure and contents.
+	* Requirement: /req/core/job-creation-request
+	* Test Method: 
+
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-request ", groups = "job")
+	public void testJobCreationRequest() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 34: /conf/core/job-creation-success-async
+	* Test Purpose: Validate the results of a job that has been created using the `async` execution mode.
+	* Requirement: /req/core/job-creation-success-async
+	* Test Method: 
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-success-async ", groups = "job")
+	public void testJobCreationSuccessAsync() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 33: /conf/core/job-creation-sync-document
+	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_code,negotiated and the response type is `document`.
+	* Requirement: /req/core/job-creation-sync-document
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution has been sc_execution_mode,negotiated according to tests ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode and the requested response type is `document` (ie `"response": "document"`) according to requirement req_core_job-creation-sync-document,/req /core/job-creation-sync-document
+	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-document,/req/core/job-creation-sync-document
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-document ", groups = "job")
+	public void testJobCreationSyncDocument() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 32: /conf/core/job-creation-sync-raw-mixed-multi
+	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_mode,negotiated, the response type is `raw` and the output transmission is a mix of `value` and `reference`.
+	* Requirement: /req/core/job-creation-sync-raw-mixed-multi
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode, that more than one output is requested, that the requested response type is `raw` (ie `"response": "raw"`) and the the transmission mode is a mix of `value` (ie `"transmissionMode": "value"`) and reference (ie `"transmissionMode": "reference"`) according to requirement req_core_job-creation-sync-raw-mixed-multi,/req/core/job-creation-sync-raw-mixed-multi
+	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-raw-mixed-multi,/req/core/job-creation-sync-raw-mixed-multi
+	* 3.  For each output requested with `"transmissionMode": "value"` verify that the body of the corresponding part contains the output value
+	* 4.  For each output requested with `"transmissionMode": "reference"` verify that the body of the corresponding part is empty and the `Content-Location` header is included that points to the output value
+	* |===
+	* 
+	* 
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-mixed-multi ", groups = "job")
+	public void testJobCreationSyncRawMixedMulti() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 31: /conf/core/job-creation-sync-raw-ref
+	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_mode,negotiated, the response type is `raw` and the transmission mode is `ref`.
+	* Requirement: /req/core/job-creation-sync-raw-ref
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and the transmission mode is set to `ref` (ie `"transmissionMode": "ref"`) according to requirement req_core_job-creation-sync-raw-ref,/req/core/job-creation-sync-raw-ref
+	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-raw-ref,/req/core/job-creation-sync-raw-ref
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-ref ", groups = "job")
+	public void testJobCreationSyncRawRef() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 30: /conf/core/job-creation-sync-raw-value-multi
+	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_mode,negotiated, the response type is `raw` and the output transmission is `value`.
+	* Requirement: /req/core/job-creation-sync-raw-value-multi
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode, that more than one output is requested, that the requested response type is `raw` (ie `"response": "raw"`) and the the transmission mode is set to `value` (ie `"transmissionMode": "value"`) according to requirement req_core_job-creation-sync-raw-value-multi,/req/core/job-creation-sync-raw-value-multi
+	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-raw-value-multi,/req/core/job-creation-sync-raw-value-multi
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-multi ", groups = "job")
+	public void testJobCreationSyncRawValueMulti() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 28: /conf/core/job-creation-sync-raw-value-one
+	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_mode,negotiated, a single output value is requested, the response type is `raw` and the output transmission is `value`.
+	* Requirement: /req/core/job-creation-sync-raw-value-one
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode, that only one output is requested, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to `value` (ie `"transmissionMode": "value"`) according to requirement req_core_job-creation-sync-raw-value-one,/req/core/job-creation-sync-raw-value-one
+	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-raw-value-one,/req/core/job-creation-sync-raw-value-one
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-one ", groups = "job")
+	public void testJobCreationSyncRawValueOne() {
+		Assert.fail("Not implemented yet.");
+	}
+
+//	/**
+//	* <pre>
+//	* </pre>
+//	*/
+//	@Test(description = "Implements Requirement  ", groups = "")
+//	public void () {
+//
+//	}
+
+	/**
+	* <pre>
+	* Abstract Test 37: /conf/core/job-exception-no-such-job
+	* Test Purpose: Validate that an invalid job identifier is handled correctly.
+	* Requirement: /req/core/job-exception-no-such-job
+	* Test Method: 
+	* 1.  Validate that the document contains the exception type "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/no-such-job" 
+	* 2.  Validate the document for all supported media types using the resources and tests identified in job-exception-no-such-job
+	* |===
+	* 
+	* An exception response caused by the use of an invalid job identifier may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the response. All supported formats should be exercised.
+	* 
+	* [[job-exception-no-such-job]]
+	* 3. Schema and Tests for the Job Result for Non-existent Job
+	* [width="90%",cols="3",options="header"]
+	* |===
+	* |Format |Schema Document |Test ID
+	* |HTML |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_html_content,/conf/html/content
+	* |JSON |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_json_content,/conf/json/content
+	* |===
+	* 
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-exception-no-such-job ", groups = "job")
+	public void testJobExceptionNoSuchJob() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 35: /conf/core/job-op
+	* Test Purpose: Validate that the status info of a job can be retrieved.
+	* Requirement: /req/core/fc-op
+	* Test Method: 
+	* 1.  Validate the contents of the returned document using the test ats_core_job-success,/conf/core/job-success
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/fc-op ", groups = "job")
+	public void testJobOp() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test null: /conf/core/job-results-no-such-job
+	* Test Purpose: Validate that the job results retrieved using an invalid job identifier complies with the require structure and contents.
+	* Requirement: /req/core/job-results-exception-no-such-job
+	* Test Method: 
+	* 1.  Validate that the document contains the exception type "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/no-such-job" 
+	* 2.  Validate the document for all supported media types using the resources and tests identified in job-results-exception-no-such-job
+	* |===
+	* 
+	* The job results page for a job may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the job results for a non-existent job against that schema.  All supported formats should be exercised.
+	* 
+	* [[job-results-exception-no-such-job]]
+	* 3. Schema and Tests for the Job Result for Non-existent Job
+	* [width="90%",cols="3",options="header"]
+	* |===
+	* |Format |Schema Document |Test ID
+	* |HTML |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_html_content,/conf/html/content
+	* |JSON |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_json_content,/conf/json/content
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-exception-no-such-job ", groups = "job")
+	public void testJobResultsNoSuchJob() {
+		final ValidationData<Void> data = new ValidationData<>();
+		try {
+			HttpClient client = HttpClientBuilder.create().build();
+			HttpUriRequest request = new HttpGet(getInvalidJobURL.toString());
+			request.setHeader("Accept", "application/json");
+			HttpResponse httpResponse = client.execute(request);
+			StringWriter writer = new StringWriter();
+			String encoding = StandardCharsets.UTF_8.name();
+			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+			Body body = Body.from(responseNode);
+			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
+					.build();
+			getJobsValidator.validateResponse(response, data);
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getLocalizedMessage());
+		}
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 46: /conf/core/job-results-exception-results-not-ready
+	* Test Purpose: Validate that the job results retrieved for an incomplete job complies with the require structure and contents.
+	* Requirement: /req/core/job-results-exception-results-not-ready
+	* Test Method: 
+	* 1.  Validate that the document was returned with a 404
+	* 2.  Validate that the document contains the exception `type` "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/result-not-ready" 
+	* 3.  Validate the document for all supported media types using the resources and tests identified in job-results-exception-results-not-ready
+	* |===
+	* 
+	* The job results page for a job may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the job results for an incomplete job against that schema.  All supported formats should be exercised.
+	* 
+	* [[job-results-exception-results-not-ready]]
+	* 4. Schema and Tests for the Job Result for an Incomplete Job
+	* [width="90%",cols="3",options="header"]
+	* |===
+	* |Format |Schema Document |Test ID
+	* |HTML |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_html_content,/conf/html/content
+	* |JSON |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_json_content,/conf/json/content
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-exception-results-not-ready ", groups = "job")
+	public void testJobResultsExceptionResultsNotReady() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 47: /conf/core/job-results-failed
+	* Test Purpose: Validate that the job results for a failed job complies with the require structure and contents.
+	* Requirement: /req/core/job-results-failed
+	* Test Method: 
+	* 1.  Issue an HTTP GET request to the URL '/jobs/{jobID}/results'
+	* 2.  Validate that the document was returned with a HTTP error code (4XX or 5XX)
+	* 3.  Validate that the document contains an exception `type` that corresponds to the reason the job failed (eg InvalidParameterValue for invalid input data)
+	* 4.  Validate the document for all supported media types using the resources and tests identified in job-results-failed-schema
+	* |===
+	* 
+	* The job results page for a job may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the job results for a failed job against that schema.  All supported formats should be exercised.
+	* 
+	* [[job-results-failed-schema]]
+	* 5. Schema and Tests for the Job Result for a Failed Job
+	* [width="90%",cols="3",options="header"]
+	* |===
+	* |Format |Schema Document |Test ID
+	* |HTML |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_html_content,/conf/html/content
+	* |JSON |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_json_content,/conf/json/content
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-failed ", groups = "job")
+	public void testJobResultsFailed() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 38: /conf/core/job-results
+	* Test Purpose: Validate that the results of a job can be retrieved.
+	* Requirement: /req/core/job-results
+	* Test Method: 
+	* 1.  Validate that the document was returned with a status code 200
+	* 2.  Validate the contents of the returned document using the test ats_job-results-success,/conf/core/job-results-success
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results ", groups = "job")
+	public void testJobResults() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 44: /conf/core/job-results-async-document
+	* Test Purpose: Validate that the server responds as expected when the asynchronous execution is sc_execution_mode,negotiated and the response type is `document`.
+	* Requirement: /req/core/job-results-async-document
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that asynchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode and that the requested response type is `document` (ie `"response": "document"`) according to requirement req_core_job-creation-async-document,/req/core/job-creation-async-document
+	* 2.  If the server responds asynchronously periodically retrieve the status of the asynchronously execute job as per test ats_core_job-op,/conf/core/job-op
+	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-document,/req/core/job-results-async-document
+	* |====
+	* 
+	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed:
+	* 
+	* [width="90%",cols="2,6a"]
+	* |====
+	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
+	* 4.  If the link exists, get the job status as per test ats_core_job-op,/conf/cor e/job-op and ensure that the job status is set to `successful`
+	* 5.  Get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to the test ats_core_job-results-async-document,/conf/core/job-results-async-document
+	* 6.  If the link does not exist then verify that the synchronous response conforms to the requirement req_core_job-creation-sync-document,/req/core/job-creation-sync-documen
+	* |====
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-async-document ", groups = "job")
+	public void testJobResultsAsyncDocument() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 43: /conf/core/job-results-async-raw-mixed-multi
+	* Test Purpose: Validate that the server responds as expected when asynchronous execution is sc_execution_mode,negotiated, more than one output is requested, the response type is `raw` and the output transmission is a mix of `value` and `reference`.
+	* Requirement: /req/core/job-results-async-raw-mixed-multi
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that asynchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to a mix of `value` (ie `"outputTransmission": "value"`) and `reference` (ie `"outputTransmission": "reference"`) according to requirement req_core_job-creation-async-raw-mixed-multi,/req/core/job-creation-async-raw-mixed-multi
+	* 2.  Periodically retrieve the status of the asynchronously execute job as per test ats_core_job-op,/conf/core/job-op
+	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-raw-mixed-multi,/conf/core/job-results-async-raw-mixed-multi
+	* 4.  For each output requested with `"transmissionMode": "value"` verify that the body of the corresponding part contains the output value
+	* 5.  For each output requested with `"transmissionMode": "reference"` verify that the body of the corresponding part is empty and the `Content-Location` header is included that points to the output value
+	* |====
+	* 
+	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed.
+	* 
+	* [width="90%",cols="2,6a"]
+	* |====
+	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
+	* 6.  If the link exists, get the job status as per test ats_core_job-op,/conf/cor e/job-op and ensure that the job status is set to `successful`
+	* 7.  Get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to the test ats_core_job-results-async-raw-mixed-multi,/conf/core/job-results-async-raw-mixed-multi
+	* 8.  If the link does not exist then verify that the synchronous response conforms to requirement req_core_job-creation-sync-raw-mixed-multi,/req/core/job-creation-sync-raw-mixed-multi
+	* |====
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-mixed-multi ", groups = "job")
+	public void testJobResultsAsyncRawMixedMulti() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 42: /conf/core/job-results-async-raw-ref
+	* Test Purpose: Validate that the server responds as expected when asynchronous execution is ,sc_execution_mode,negotiated, the response type is `raw` and the output transmission is `reference`.
+	* Requirement: /req/core/job-results-async-raw-ref
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to `reference` (ie `"outputTransmission": "reference"`) according to requirement req_core_job-creation-async-raw-ref,/req/core/job-creation-async-raw-ref
+	* 2.  If the server responds asynchronously, periodically retrieve the status of the asynchronously executed job as per test ats_core_job-op,/conf/core/job-op
+	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-raw-ref,/req/core/job-results-async-ref
+	* |====
+	* 
+	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed.
+	* 
+	* [width="90%",cols="2,6a"]
+	* |====
+	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
+	* 4.  If the link exists, get the job status as per test ats_core_job-op,/conf/core/job-op and ensure that the job status is set to `successful`
+	* 5.  Get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to the test ats_core_job-results-async-document,/conf/core/job-results-async-document
+	* 6.  If the link does not exist then verify that the synchronous response conforms to requirement req_core_job-creation-sync-raw-ref,/req/core/job-creation-sync-raw-ref
+	* |====
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-ref ", groups = "job")
+	public void testJobResultsAsyncRawRef() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 41: /conf/core/job-results-async-raw-value-multi
+	* Test Purpose: Validate that the server responds as expected when asynchronous execution is sc_execution_mode,negotiated, more than one output is requested, the response type is `raw` and the output transmission is `value`.
+	* Requirement: /req/core/job-results-async-raw-value-multi
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that asynchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to `value` (ie `"outputTransmission": "value"`) according to requirement req_core_job-creation-async-raw-value-multi,/req/core/job-creation-async-raw-value-multi
+	* 2.  Periodically retrieve the status of the asynchronously execute job as per test ats_core_job-op,/conf/core/job-op
+	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-raw-value-multi,/conf/core/job-results-async-raw-value-multi
+	* |====
+	* 
+	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed.
+	* 
+	* [width="90%",cols="2,6a"]
+	* |====
+	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
+	* 4.  If the link exists, get the job status as per test ats_core_job-op,/conf/cor e/job-op and ensure that the job status is set to `successful`
+	* 5.  Get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to the test ats_core_job-results-async-raw-value-multi,/conf/core/job-results-async-raw-value-multi
+	* 6.  If the link does not exist then verify that the synchronous response conforms to requirement req_core_job-creation-sync-raw-value-multi,/req/core/job-creation-sync-raw-value-multi
+	* |====
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-multi ", groups = "job")
+	public void testJobResultsAsyncRawValueMulti() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 40: /conf/core/job-results-async-raw-value-one
+	* Test Purpose: Validate that the server responds as expected when asynchronous execution is sc_execution_mode,negotiated, one output is requested, the response type is `raw` and the output transmission is `value`.
+	* Requirement: /req/core/job-results-async-raw-value-one
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that asynchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to `value` (ie `"outputTransmission": "value"`) according to requirement req_core_job-creation-async-raw-value-one,/req/core/job-creation-async-raw-value-one
+	* 2.  If the server responds asynchronously, periodically retrieve the status of the asynchronously executed job as per test ats_core_job-op,/conf/core/job-op
+	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-raw-value-one,/req/core/job-results-async-raw-value-one
+	* |====
+	* 
+	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed.
+	* 
+	* [width="90%",cols="2,6a"]
+	* |====
+	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
+	* 4.  If the link exists, get the job status as per test ats_core_job-op,/conf/core/job-op and ensure that the job status is set to `successful`
+	* 5.  Get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to the test ats_core_job-results-async-raw-value-multi,/conf/core/job-results-async-raw-value-multi
+	* 6.  If the link does not exist then verify that the synchronous response conforms to requirement req_core_job-creation-sync-raw-value-one/req/core/job-creation-sync-raw-value-one
+	* |====
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-one ", groups = "job")
+	public void testJobResultsAsyncRawValueOne() {
+		Assert.fail("Not implemented yet.");
+	}
+
+	/**
+	* <pre>
+	* Abstract Test 39: /conf/core/job-results-sync
+	* Test Purpose: Validate that the server responds as expected when getting results from a job for a process that has been executed synchronously.
+	* Requirement: /req/core/job-results-sync
+	* Test Method: 
+	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode
+	* 2.  Inspect the headers of the response and see if a `Link` header is included with `rel=monitor`
+	* 3.  If the link exists, get the job status as per test ats_core_job-op,/conf/core/job-op and ensure that the job status is set to `successful`
+	* |====
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-results-sync ", groups = "job")
+	public void testJobResultsSync() {
+		Assert.fail("Not implemented yet.");
+	}
+
+//	/**
+//	* <pre>
+//	* </pre>
+//	*/
+//	@Test(description = "Implements Requirement  ", groups = "")
+//	public void () {
+//
+//	}
+
+	/**
+	* <pre>
+	* Abstract Test 36: /conf/core/job-success
+	* Test Purpose: Validate that the job status info complies with the require structure and contents.
+	* Requirement: /req/core/job-success
+	* Test Method: 
+	* |===
+	* 
+	* The status info page for a job may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the status info against that schema. All supported formats should be exercised.
+	* 
+	* [[job-status-info-schema]]
+	* 1. Schema and Tests for the Job Status Info 
+	* [width="90%",cols="3",options="header"]
+	* |===
+	* |Format |Schema Document |Test ID
+	* |HTML |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/landingPage.yaml[statusInfo.yaml] |ats_html,/conf/html/content
+	* |JSON |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/landingPage.yaml[statusInfo.yaml] |ats_json_content,/conf/json/content
+	* |===
+	* TODO: Check additional content
+	* </pre>
+	*/
+	@Test(description = "Implements Requirement /req/core/job-success ", groups = "job")
+	public void testJobSuccess() {
+		Assert.fail("Not implemented yet.");
+	}
+}

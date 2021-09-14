@@ -14,6 +14,9 @@
     <packages>
       <package name="org.opengis.cite.ogcapiprocesses10.landingpage" />
       <package name="org.opengis.cite.ogcapiprocesses10.conformance" />
+      <package name="org.opengis.cite.ogcapiprocesses10.processlist" />
+      <package name="org.opengis.cite.ogcapiprocesses10.process" />
+      <package name="org.opengis.cite.ogcapiprocesses10.jobs" />
     </packages>
     <classes>
       <class name="org.opengis.cite.ogcapiprocesses10.SuitePreconditions" />

@@ -67,17 +67,16 @@ public class SuiteFixtureListener implements ISuiteListener {
         TestSuiteLogger.log( Level.FINE, String.format( "Wrote test subject to file: %s (%d bytes)",
                                                         entityFile.getAbsolutePath(), entityFile.length() ) );
         suite.setAttribute( SuiteAttribute.TEST_SUBJ_FILE.getName(), entityFile );
-
-        String noOfCollections = params.get( TestRunArg.NOOFCOLLECTIONS.toString() );
+        
+        String echoProcessId = params.get( TestRunArg.ECHOPROCESSID.toString() );
         try {
-            if ( noOfCollections != null ) {
-                int noOfCollectionsInt = Integer.parseInt( noOfCollections );
-                suite.setAttribute( SuiteAttribute.NO_OF_COLLECTIONS.getName(), noOfCollectionsInt );
-            }
+        	if ( echoProcessId != null ) {
+        		suite.setAttribute( SuiteAttribute.ECHO_PROCESS_ID.getName(), echoProcessId );
+        	}
         } catch ( NumberFormatException e ) {
-            TestSuiteLogger.log( Level.WARNING,
-                                 String.format( "Could not parse parameter %s: %s. Expected is a valid integer",
-                                                TestRunArg.NOOFCOLLECTIONS.toString(), noOfCollections ) );
+        	TestSuiteLogger.log( Level.WARNING,
+        			String.format( "Could not parse parameter %s: %s. Expected is a valid string",
+        					TestRunArg.ECHOPROCESSID.toString(), echoProcessId ) );
         }
     }
 
