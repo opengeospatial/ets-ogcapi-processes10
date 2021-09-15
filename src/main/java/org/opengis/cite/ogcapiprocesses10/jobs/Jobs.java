@@ -1,10 +1,13 @@
 package org.opengis.cite.ogcapiprocesses10.jobs;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
@@ -12,7 +15,10 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.openapi4j.core.exception.ResolutionException;
 import org.openapi4j.core.validation.ValidationException;
@@ -27,6 +33,7 @@ import org.openapi4j.parser.model.v3.Path;
 import org.openapi4j.schema.validator.ValidationData;
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
+import org.opengis.cite.ogcapiprocesses10.util.ExecutionMode;
 import org.testng.Assert;
 import org.testng.ITestContext;
 import org.testng.annotations.BeforeClass;
@@ -34,6 +41,9 @@ import org.testng.annotations.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 /**
  *
@@ -44,32 +54,58 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class Jobs extends CommonFixture {
 
 	private static final String OPERATION_ID_GET_JOBS = "getJobs";
+	private static final String OPERATION_ID_GET_STATUS = "getStatus";
+	private static final String OPERATION_ID_EXECUTE = "execute";
 
 	private OpenApi3 openApi3;
 	
 	private String getJobsListPath = "/jobs";
 	
+//	private String getJobPath = "/jobs";
+	
 	private String getProcessListPath = "/processes";
 	
 	private OperationValidator getJobsValidator;
+	
+	private OperationValidator getStatusValidator;
+	
+	private OperationValidator executeValidator;
     
     private URL getJobsListURL;
+    
+    private URL getProcessesListURL;
     
     private URL getInvalidJobURL;  
     
     private String echoProcessId;
 
 	private String echoProcessPath;
+
+	private List<Input> inputs;
+	
+	private List<Output> outputs;
+	
+	private ObjectMapper objectMapper = new ObjectMapper();
 	
 	@BeforeClass
-	public void setup(ITestContext testContext) {		
-		String processListEndpointString = rootUri.toString() + getJobsListPath;		
+	public void setup(ITestContext testContext) {
+		inputs = new ArrayList<Input>();
+		outputs = new ArrayList<Output>();
+		String processListEndpointString = rootUri.toString() + getProcessListPath;		
+		String jobsListEndpointString = rootUri.toString() + getJobsListPath;		
 		try {
 			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID_GET_JOBS);
 		    final Operation operation = openApi3.getOperationById(OPERATION_ID_GET_JOBS);
 		    getJobsValidator = new OperationValidator(openApi3, path, operation);
-		    getJobsListURL = new URL(processListEndpointString);
+		    final Path executePath = openApi3.getPathItemByOperationId(OPERATION_ID_EXECUTE);
+		    final Operation executeOperation = openApi3.getOperationById(OPERATION_ID_EXECUTE);
+		    executeValidator = new OperationValidator(openApi3, executePath, executeOperation);
+		    final Path getStatusPath = openApi3.getPathItemByOperationId(OPERATION_ID_GET_STATUS);
+		    final Operation getStatusOperation = openApi3.getOperationById(OPERATION_ID_GET_STATUS);
+		    getStatusValidator = new OperationValidator(openApi3, getStatusPath, getStatusOperation);
+		    getJobsListURL = new URL(jobsListEndpointString);
+		    getProcessesListURL = new URL(processListEndpointString);
 		    getInvalidJobURL = new URL(processListEndpointString + "/invalid-job-" + UUID.randomUUID());
 		} catch (MalformedURLException | ResolutionException | ValidationException e) {
 			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
@@ -80,8 +116,98 @@ public class Jobs extends CommonFixture {
 	}
 	
 	private void parseEchoProcess() {
-		// TODO Auto-generated method stub
 		
+		try {
+			HttpClient client = HttpClientBuilder.create().build();
+			HttpUriRequest request = new HttpGet(rootUri + echoProcessPath);
+			request.setHeader("Accept", "application/json");
+			HttpResponse httpResponse = client.execute(request);
+			StringWriter writer = new StringWriter();
+			String encoding = StandardCharsets.UTF_8.name();
+			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+			JsonNode inputsNode = responseNode.get("inputs");			
+			if(inputsNode instanceof ArrayNode) {
+				ArrayNode inputsArrayNode = (ArrayNode)inputsNode;
+				
+				for (int i = 0; i < inputsArrayNode.size(); i++) {
+					System.out.println(inputsArrayNode.get(i));
+				}
+			} else {
+				Iterator<String> inputNames = inputsNode.fieldNames();				
+				while (inputNames.hasNext()) {
+					String id = (String) inputNames.next();
+					JsonNode inputNode = inputsNode.get(id);
+					JsonNode schemaNode = inputNode.get("schema");
+					Input input = createInput(schemaNode, id);
+					inputs.add(input);
+					System.out.println(schemaNode);
+				}
+			}
+			JsonNode outputsNode = responseNode.get("outputs");			
+			if(outputsNode instanceof ArrayNode) {
+				ArrayNode outputsArrayNode = (ArrayNode)outputsNode;
+				
+				for (int i = 0; i < outputsArrayNode.size(); i++) {
+					System.out.println(outputsArrayNode.get(i));
+				}
+			} else {
+				Iterator<String> outputNames = outputsNode.fieldNames();				
+				while (outputNames.hasNext()) {
+					String id = (String) outputNames.next();
+					JsonNode outputNode = outputsNode.get(id);
+					JsonNode schemaNode = outputNode.get("schema");
+					Output output = createOutput(schemaNode, id);
+					outputs.add(output);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+	private JsonNode createExecuteJsonNode(String echoProcessId) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		for (Input input : inputs) {
+			addInput(input, inputsNode);
+		}
+		for (Output output : outputs) {
+			addOutput(output, outputsNode);
+		}
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		return executeNode;
+	}
+
+	private void addOutput(Output output, ObjectNode outputsNode) {
+		ObjectNode outputNode = objectMapper.createObjectNode();
+		outputNode.set("transmissionMode", new TextNode("value"));
+		outputsNode.set(output.getId(), outputNode);		
+	}
+
+	private void addInput(Input input, ObjectNode inputsNode) {
+		List<Type> types = input.getTypes();
+		ObjectNode inputNode = objectMapper.createObjectNode();
+		
+		for (Type type : types) {
+			if(type.getTypeDefinition().equals("string")) {
+//		        inputNode.set("value", new TextNode("teststring"));
+				inputsNode.set(input.getId(), new TextNode("teststring"));
+			} else if(input.isBbox()) {
+				inputNode.set("crs", new TextNode("urn:ogc:def:crs:EPSG:6.6:4326"));
+				ArrayNode arrayNode = objectMapper.createArrayNode();
+				arrayNode.add(345345345);
+				arrayNode.add(345345345);
+				arrayNode.add(345345345);
+				arrayNode.add(345345345);
+				inputNode.set("bbox", arrayNode);
+				inputsNode.set(input.getId(), inputNode);
+			}
+		}
 	}
 
 	/**
@@ -164,9 +290,6 @@ public class Jobs extends CommonFixture {
 	* Test Method: 
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode values for the identified bounding box inputs in-line in the execute request
 	* 2.  Verify that each process executes successfully according to the ats_job-creation-success,relevant requirement based on the combination of execute parameters
-	* |===
-	* 
-	* TODO: Check additional content
 	* </pre>
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-bbox ", groups = "job")
@@ -303,8 +426,40 @@ public class Jobs extends CommonFixture {
 	* </pre>
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
-	public void testJobCreationOp() {
-		Assert.fail("Not implemented yet.");
+	public void testJobCreationOp() {		
+		//create job
+		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+		final ValidationData<Void> data = new ValidationData<>();		
+		try {			
+			HttpClient client = HttpClientBuilder.create().build();
+			String executeEndpoint = rootUri + echoProcessPath + "/execution";
+			HttpPost request = new HttpPost(executeEndpoint);
+			request.setHeader("Accept", "application/json");
+			request.setHeader("Prefer", "respond-async ");
+			ContentType contentType = ContentType.APPLICATION_JSON;
+			request.setEntity(new StringEntity(executeNode.toString(), contentType));
+			HttpResponse httpResponse = client.execute(request);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+			Header locationHeader = httpResponse.getFirstHeader("location");
+			String locationString = locationHeader.getValue();
+			client = HttpClientBuilder.create().build();
+			HttpGet statusRequest = new HttpGet(locationString);
+			request.setHeader("Accept", "application/json");
+			httpResponse = client.execute(statusRequest);
+			StringWriter writer = new StringWriter();
+			String encoding = StandardCharsets.UTF_8.name();
+			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+			Body body = Body.from(responseNode);
+			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+					.build();
+			getStatusValidator.validateResponse(response, data);
+			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -467,16 +622,42 @@ public class Jobs extends CommonFixture {
 	* <pre>
 	* Abstract Test 35: /conf/core/job-op
 	* Test Purpose: Validate that the status info of a job can be retrieved.
-	* Requirement: /req/core/fc-op
+	* Requirement: /req/core/job
 	* Test Method: 
 	* 1.  Validate the contents of the returned document using the test ats_core_job-success,/conf/core/job-success
 	* |===
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/fc-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job ", groups = "job")
 	public void testJobOp() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+		final ValidationData<Void> data = new ValidationData<>();		
+		try {			
+			HttpClient client = HttpClientBuilder.create().build();
+			String executeEndpoint = rootUri + echoProcessPath + "/execution";
+			HttpPost request = new HttpPost(executeEndpoint);
+			request.setHeader("Accept", "application/json");
+//			request.setHeader("Content-Type", "application/json");
+			ContentType contentType = ContentType.APPLICATION_JSON;
+			request.setEntity(new StringEntity(executeNode.toString(), contentType));
+			HttpResponse httpResponse = client.execute(request);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+//			StringWriter writer = new StringWriter();
+//			String encoding = StandardCharsets.UTF_8.name();
+//			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+//			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+//			Body body = Body.from(responseNode);
+//			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+//			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+//					.build();
+//			executeValidator.validateResponse(response, data);
+//			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -786,14 +967,46 @@ public class Jobs extends CommonFixture {
 	* [width="90%",cols="3",options="header"]
 	* |===
 	* |Format |Schema Document |Test ID
-	* |HTML |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/landingPage.yaml[statusInfo.yaml] |ats_html,/conf/html/content
-	* |JSON |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/landingPage.yaml[statusInfo.yaml] |ats_json_content,/conf/json/content
+	* |HTML |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml[statusInfo.yaml] |ats_html,/conf/html/content
+	* |JSON |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml[statusInfo.yaml] |ats_json_content,/conf/json/content
 	* |===
 	* TODO: Check additional content
 	* </pre>
 	*/
 	@Test(description = "Implements Requirement /req/core/job-success ", groups = "job")
 	public void testJobSuccess() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+		final ValidationData<Void> data = new ValidationData<>();		
+		try {			
+			HttpClient client = HttpClientBuilder.create().build();
+			String executeEndpoint = rootUri + echoProcessPath + "/execution";
+			HttpPost request = new HttpPost(executeEndpoint);
+			request.setHeader("Accept", "application/json");
+			request.setHeader("Prefer", "respond-async ");
+			ContentType contentType = ContentType.APPLICATION_JSON;
+			request.setEntity(new StringEntity(executeNode.toString(), contentType));
+			HttpResponse httpResponse = client.execute(request);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+			Header locationHeader = httpResponse.getFirstHeader("location");
+			String locationString = locationHeader.getValue();
+			client = HttpClientBuilder.create().build();
+			HttpGet statusRequest = new HttpGet(locationString);
+			request.setHeader("Accept", "application/json");
+			httpResponse = client.execute(statusRequest);
+			StringWriter writer = new StringWriter();
+			String encoding = StandardCharsets.UTF_8.name();
+			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+			Body body = Body.from(responseNode);
+			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+					.build();
+			getStatusValidator.validateResponse(response, data);
+			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 }

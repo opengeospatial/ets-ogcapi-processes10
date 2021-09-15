@@ -15,6 +15,7 @@ import org.openapi4j.core.validation.ValidationResults;
 import org.openapi4j.core.validation.ValidationResults.ValidationItem;
 import org.openapi4j.parser.model.v3.OpenApi3;
 import org.openapi4j.parser.model.v3.Server;
+import org.opengis.cite.ogcapiprocesses10.CommonFixture.Output;
 import org.opengis.cite.ogcapiprocesses10.util.ClientUtils;
 import org.testng.ITestContext;
 import org.testng.annotations.BeforeClass;
@@ -208,7 +209,12 @@ public class CommonFixture {
 		return input;
 	}
 	
-	class Type {
+    protected Output createOutput(JsonNode schemaNode, String id) {
+		Output output = new Output(id);
+		return output;
+	}
+	
+	public class Type {
 		
 		private String typeDefinition;
 		private String contentEncoding;
@@ -257,7 +263,7 @@ public class CommonFixture {
 		}
 	}
 
-	class Input {
+	public class Input {
 		
 		private String id;
 		private List<Type> types;
@@ -308,5 +314,39 @@ public class CommonFixture {
 		
 	}
 
+	public class Output {
+		
+		private String id;
+		private List<Type> types;
+		
+		public Output(String id) {
+			this.id = id;
+		}
+
+		public String getId() {
+			return id;
+		}
+
+		public void setId(String id) {
+			this.id = id;
+		}
+
+		public List<Type> getTypes() {
+			return types;
+		}
+
+		public void setTypes(List<Type> types) {
+			this.types = types;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("Id: " + id + "\n");
+			builder.append("\tType: " + types + "\n");
+			return builder.toString();
+		}
+		
+	}
 
 }
