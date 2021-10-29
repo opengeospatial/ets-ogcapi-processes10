@@ -164,7 +164,7 @@ public class Process extends CommonFixture {
 	* [width="90%",cols="3",options="header"]
 	* |===
 	* |Model |Schema Document |Test ID
-	* |OGC Process Description JSON|link:http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/process.yaml[process.yaml] |req_ogc-process-description_json-encoding,/conf/ogc-process-description/json-encoding
+	* |OGC Process Description JSON|link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/process.yaml[process.yaml] |req_ogc-process-description_json-encoding,/conf/ogc-process-description/json-encoding
 	* |===
 	* TODO: Check additional content
 	* </pre>

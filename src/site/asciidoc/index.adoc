@@ -1,5 +1,5 @@
-= OGC API - Tiles Conformance Test Suite
+= OGC API - Processes - Part 1: Core Conformance Test Suite
 
 == Scope
 
-This executable test suite (ETS) verifies that an OGC API - Tiles instance.
+This executable test suite (ETS) verifies that an OGC API - Processes - Part 1: Core instance.

@@ -8,8 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
+import org.opengis.cite.ogcapiprocesses10.util.TestSuiteLogger;
 import org.testng.annotations.Test;
 
 import io.restassured.path.json.JsonPath;
@@ -23,7 +25,7 @@ import io.restassured.response.Response;
  */
 public class LandingPage extends CommonFixture {
 
-    private JsonPath response;
+	private JsonPath response;
 
 
     /**
@@ -41,6 +43,7 @@ public class LandingPage extends CommonFixture {
     @Test(description = "Implements Requirement TBA", groups = "landingpage")
     public void landingPageRetrieval() {
         Response request = init().baseUri( rootUri.toString() ).accept( JSON ).when().request( GET, "/" );
+        TestSuiteLogger.log(Level.INFO, rootUri.toString());
         request.then().statusCode( 200 );
         response = request.jsonPath();
     }

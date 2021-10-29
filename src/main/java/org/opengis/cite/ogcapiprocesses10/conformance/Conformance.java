@@ -66,7 +66,7 @@ public class Conformance extends CommonFixture {
     }
 
     /**
-     * Partly addresses Requirement 1 : /req/tiles/core/conformance-success
+     * Partly addresses Requirement 1 : /req/processes/core/conformance-success
      *
      * @param testPoint
      *            the test point to test, never <code>null</code>
@@ -79,7 +79,7 @@ public class Conformance extends CommonFixture {
     }
 
     /**
-     * Requirement 1 : /req/tiles/core/conformance-success
+     * Requirement 1 : /req/processes/core/conformance-success
      *
      * Abstract Test ?: /ats/core/conformance-success
      */
@@ -89,7 +89,7 @@ public class Conformance extends CommonFixture {
         JsonPath jsonPath = response.jsonPath();
         this.requirementClasses = parseAndValidateRequirementClasses( jsonPath );
         assertTrue( this.requirementClasses.contains( CORE ),
-                    "Requirement class \"http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/core\" is not available from path "
+                    "Requirement class \"http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core\" is not available from path "
                                                               + testPointUri );
     }
 
@@ -106,7 +106,6 @@ public class Conformance extends CommonFixture {
 
         List<RequirementClass> requirementClasses = new ArrayList<>();
         for ( Object conformTo : conformsTo ) {
-        	System.out.println("conformsTo "+conformsTo);
             if ( conformTo instanceof String ) {
                 String conformanceClass = (String) conformTo;
                 RequirementClass requirementClass = RequirementClass.byConformanceClass( conformanceClass );

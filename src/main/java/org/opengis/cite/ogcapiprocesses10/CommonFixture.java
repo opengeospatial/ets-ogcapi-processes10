@@ -15,7 +15,6 @@ import org.openapi4j.core.validation.ValidationResults;
 import org.openapi4j.core.validation.ValidationResults.ValidationItem;
 import org.openapi4j.parser.model.v3.OpenApi3;
 import org.openapi4j.parser.model.v3.Server;
-import org.opengis.cite.ogcapiprocesses10.CommonFixture.Output;
 import org.opengis.cite.ogcapiprocesses10.util.ClientUtils;
 import org.testng.ITestContext;
 import org.testng.annotations.BeforeClass;
@@ -47,6 +46,12 @@ public class CommonFixture {
     protected URI rootUri;
     
     protected final String CONTENT_TYPE = "Content-Type";
+    
+    protected final String CONTENT_MEDIA_TYPE_PROPERTY_KEY = "contentMediaType";
+    
+    protected final String CONTENT_SCHEMA_PROPERTY_KEY = "contentSchema";
+    
+    protected final String CONTENT_ENCODING_PROPERTY_KEY = "contentEncoding";
 
     /**
      * Initializes the common test fixture with a client component for interacting with HTTP endpoints.
@@ -60,6 +65,7 @@ public class CommonFixture {
         rootUri = (URI) testContext.getSuite().getAttribute( SuiteAttribute.IUT.getName() );
         try {
 			specURI = new URI("https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/openapi.yaml");
+//			specURI = new URI("file:///d:/tmp2/geoprocessing-WPS-all-in-one-1.0-draft.7-SNAPSHOT-oas3-swagger.yaml");
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
@@ -116,16 +122,12 @@ public class CommonFixture {
         responseLoggingFilter = new ResponseLoggingFilter( responsePrintStream );
     }
     
-    protected String printResults(ValidationResults validationResults) {
-    	
-    	List<ValidationItem> validationItems = validationResults.items();
-    	
-    	StringBuilder printedResultsStringBuilder = new StringBuilder();
-    	
+    protected String printResults(ValidationResults validationResults) {    	
+    	List<ValidationItem> validationItems = validationResults.items();    	
+    	StringBuilder printedResultsStringBuilder = new StringBuilder();    	
     	for (ValidationItem validationItem : validationItems) {
 			printedResultsStringBuilder.append(validationItem + "\n");
-		}
-    	
+		}    	
     	return printedResultsStringBuilder.toString();
     }
     
@@ -162,8 +164,7 @@ public class CommonFixture {
 					if(format.equals("byte")) {
 						type.setBinary(true);
 					}
-				}
-				
+				}				
 			}
 			input.addType(type);
 		}else {
@@ -198,7 +199,18 @@ public class CommonFixture {
 										type.setBinary(true);
 									}
 								}
-								
+								JsonNode contentMediaTypeNode = oneOfChildNode.get(CONTENT_MEDIA_TYPE_PROPERTY_KEY);
+								if(contentMediaTypeNode != null && !contentMediaTypeNode.isMissingNode()) {
+									type.setContentMediaType(contentMediaTypeNode.asText());
+								}
+								JsonNode contentEncodingNode = oneOfChildNode.get(CONTENT_ENCODING_PROPERTY_KEY);
+								if(contentEncodingNode != null && !contentEncodingNode.isMissingNode()) {
+									type.setContentEncoding(contentEncodingNode.asText());
+								}
+								JsonNode contentSchemaNode = oneOfChildNode.get(CONTENT_SCHEMA_PROPERTY_KEY);
+								if(contentSchemaNode != null && !contentSchemaNode.isMissingNode()) {
+									type.setContentSchema(contentSchemaNode.asText());
+								}
 							}
 							input.addType(type);							
 						}						
@@ -219,11 +231,13 @@ public class CommonFixture {
 		private String typeDefinition;
 		private String contentEncoding;
 		private String contentMediaType;
+		private String contentSchema;
 		private boolean isBinary;
 
 		public Type(String typeDefinition) {
 			this.typeDefinition = typeDefinition;
 		}
+		
 		public boolean isBinary() {
 			return isBinary;
 		}
@@ -248,6 +262,15 @@ public class CommonFixture {
 			this.contentMediaType = contentMediaType;
 		}
 		
+		public void setContentSchema(String schema) {
+			this.contentSchema = schema;
+			
+		}
+		
+		public String getContentSchema() {
+			return contentSchema;
+		}
+
 		public String getTypeDefinition() {
 			return typeDefinition;
 		}

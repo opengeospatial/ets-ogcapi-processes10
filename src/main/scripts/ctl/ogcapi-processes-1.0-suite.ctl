@@ -33,7 +33,7 @@
             <p>The implementation under test (IUT) is checked against the following specifications:</p>
             <ul>
               <li>
-                <a href="http://docs.opengeospatial.org/is/17-069r3/17-069r3.html">OGC API - processes - Part 1: Core</a>
+                <a href="https://docs.ogc.org/DRAFTS/18-062.html" target="_blank">DRAFT OGC API - processes - Part 1: Core</a>
               </li>
             </ul>
             <p>The following conformance levels are defined:</p>

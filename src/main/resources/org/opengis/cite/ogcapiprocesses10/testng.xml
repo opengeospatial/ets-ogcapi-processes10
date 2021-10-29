@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
-<suite name="ogcapi-tiles-1.0-${version}" verbose="0" configfailurepolicy="continue">
+<suite name="ogcapi-processes-1.0-${version}" verbose="0" configfailurepolicy="continue">
   <parameter name="iut" value="" />
   <parameter name="ics" value="" />
 
