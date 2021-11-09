@@ -19,28 +19,29 @@ import io.restassured.response.Response;
 
 /**
  *
- * A.2.2. Landing Page {root}/
+ * A.2.1. Landing Page {root}/
  *
  * @author <a href="mailto:goltz@lat-lon.de">Lyn Goltz </a>
  */
 public class LandingPage extends CommonFixture {
 
-	private JsonPath response;
+    private JsonPath response;
 
 
     /**
      * <pre>
-     * Abstract Test 3: /ats/core/root-op
+     * cf. core/abstract_tests/core/ATS_landingpage-success.adoc
+     * Abstract Test 1: /conf/core/landingpage-op
      * Test Purpose: Validate that a landing page can be retrieved from the expected location.
      * Requirement: /req/core/root-op
      *
      * Test Method:
      *  1. Issue an HTTP GET request to the URL {root}/
      *  2. Validate that a document was returned with a status code 200
-     *  3. Validate the contents of the returned document using test /ats/core/root-success.
+     *  3. Validate the contents of the returned document using test /conf/core/landingpage-success.
      * </pre>
      */
-    @Test(description = "Implements Requirement TBA", groups = "landingpage")
+    @Test(description = "Implements Abstract Test 1: /conf/core/landingpage-op", groups = "landingpage")
     public void landingPageRetrieval() {
         Response request = init().baseUri( rootUri.toString() ).accept( JSON ).when().request( GET, "/" );
         TestSuiteLogger.log(Level.INFO, rootUri.toString());
@@ -50,21 +51,29 @@ public class LandingPage extends CommonFixture {
 
     /**
      * <pre>
-     * Requirement TBA  
+     * cf. core/abstract_tests/core/ATS_landingpage-success.adoc
      * </pre>
      */
-    @Test(description = "Implements Requirement TBA: Landing Page ", groups = "landingpage")
+    @Test(description = "Implements Abstract Test 2: /conf/core/landingpage-success", groups = "landingpage")
     public void landingPageValidation() {
 
         List<Object> links = response.getList( "links" );
 
         Set<String> linkTypes = collectLinkTypes( links );
 
-        boolean expectedLinkTypesExists = linkTypes.contains( "processes" );
-        assertTrue( expectedLinkTypesExists,
-                    "The landing page must include at least links with relation type 'processes', but contains "
-                                             + String.join( ", ", linkTypes ) );
-
+	String required[] = {
+	    "service-desc",
+	    "service-doc",
+	    "http://www.opengis.net/def/rel/ogc/1.0/conformance",
+	    "http://www.opengis.net/def/rel/ogc/1.0/processes"
+	};
+	
+	for(int i=0;i<required.length;i++){
+	    boolean expectedLinkTypesExists = linkTypes.contains( required[i] );
+	    assertTrue( expectedLinkTypesExists,
+			"The landing page must include at least links with relation type '"+required[i]+"', but contains "
+			+ String.join( ", ", linkTypes ) );
+	}
 
     }
 

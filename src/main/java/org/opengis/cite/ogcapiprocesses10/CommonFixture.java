@@ -65,7 +65,6 @@ public class CommonFixture {
         rootUri = (URI) testContext.getSuite().getAttribute( SuiteAttribute.IUT.getName() );
         try {
 			specURI = new URI("https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/openapi.yaml");
-//			specURI = new URI("file:///d:/tmp2/geoprocessing-WPS-all-in-one-1.0-draft.7-SNAPSHOT-oas3-swagger.yaml");
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}

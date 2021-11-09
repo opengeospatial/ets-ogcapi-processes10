@@ -33,7 +33,7 @@ import io.restassured.response.Response;
 
 /**
  *
- * A.?.?. Conformance Path {root}/conformance
+ * A.2.3. Conformance Path {root}/conformance
  *
  *
  * @author <a href="mailto:goltz@lat-lon.de">Lyn Goltz </a>
@@ -47,7 +47,7 @@ public class Conformance extends CommonFixture {
         OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute( API_MODEL.getName() );
         URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
 
-        TestPoint tp = new TestPoint(rootUri.toString(),"/conformance",null);
+        TestPoint tp = new TestPoint(rootUri.toString(),"conformance",null);
 
 
         List<TestPoint> testPoints = new ArrayList<TestPoint>();
@@ -73,7 +73,7 @@ public class Conformance extends CommonFixture {
      */
     @Test(description = "Implements A.?.?. Conformance Path {root}/conformance,", groups = "conformance", dataProvider = "conformanceUris")
     public void validateConformanceOperationAndResponse( TestPoint testPoint ) {
-        String testPointUri = new UriBuilder( testPoint ).buildUrl();
+        String testPointUri = testPoint.getServerUrl() + testPoint.getPath(); //new UriBuilder( testPoint ).buildUrl();
         Response response = init().baseUri( testPointUri ).accept( JSON ).when().request( GET );
         validateConformanceOperationResponse( testPointUri, response );
     }
