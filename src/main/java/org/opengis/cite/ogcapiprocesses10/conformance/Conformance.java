@@ -42,7 +42,7 @@ public class Conformance extends CommonFixture {
 
     private List<RequirementClass> requirementClasses;
 
-    @DataProvider(name = "conformanceUris")
+    @DataProvider(name = "A.2.3. Conformance Path /conformance")
     public Object[][] conformanceUris( ITestContext testContext ) {
         OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute( API_MODEL.getName() );
         URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
@@ -67,13 +67,13 @@ public class Conformance extends CommonFixture {
 
     /**
      * Partly addresses Requirement 1 : /req/processes/core/conformance-success
-     *
+     * 
      * @param testPoint
      *            the test point to test, never <code>null</code>
      */
-    @Test(description = "Implements A.?.?. Conformance Path {root}/conformance,", groups = "conformance", dataProvider = "conformanceUris")
+    @Test(description = "Implements /conf/core/conformance-success (partial)", groups = "conformance", dataProvider = "A.2.3. Conformance Path /conformance")
     public void validateConformanceOperationAndResponse( TestPoint testPoint ) {
-        String testPointUri = testPoint.getServerUrl() + testPoint.getPath(); //new UriBuilder( testPoint ).buildUrl();
+        String testPointUri = testPoint.getServerUrl() + testPoint.getPath();
         Response response = init().baseUri( testPointUri ).accept( JSON ).when().request( GET );
         validateConformanceOperationResponse( testPointUri, response );
     }
@@ -81,7 +81,10 @@ public class Conformance extends CommonFixture {
     /**
      * Requirement 1 : /req/processes/core/conformance-success
      *
-     * Abstract Test ?: /ats/core/conformance-success
+     * Abstract Test A.2.3.6.1: /conf/core/conformance-success
+     * Abstract Test A.2.3.6.2: /conf/core/conformance-success TODO
+     * Abstract Test A.2.3.6.3: /conf/core/conformance-success
+     * Abstract Test A.2.3.6.4: /conf/core/conformance-success TODO
      */
     private void validateConformanceOperationResponse( String testPointUri, Response response ) {
         response.then().statusCode( 200 );

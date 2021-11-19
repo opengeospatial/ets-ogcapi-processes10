@@ -1,14 +1,34 @@
 #
 # Prior to use this Dockerfile, please use the following commands:
 #
+# mkdir CITE
+# cd CITE
 # git clone https://github.com/opengeospatial/teamengine src
 # git clone https://github.com/opengeospatial/ets-common.git src1
 # cd src1
 # git clone -b testbed17 https://github.com/opengeospatial/ets-ogcapi-processes10.git
+# cp ets-ogcapi-processes10/Dockerfile ..
+# cd ..
+#
+
+#
+# Go inside the CITE directory
+# Build with the following command:
+# docker build . -t teamengine/ogcapi-processes:latest
+# Run using the following command:
+# docker run -d --name cite-teamengine -p 8080:8080 teamengine/ogcapi-processes:latest
+# Log using the following command:
+# docker logs -f cite-teamengine
+# Stop using the following command:
+# docker stop cite-teamengine
+# Remove using the following command:
+# docker rm cite-teamengine
 #
 
 #
 # Build stage
+#  1. build the teamengine
+#  2. build the Test Suite
 #
 FROM maven:3.8.3-jdk-8-slim AS build
 ARG BUILD_DEPS=" \
@@ -24,6 +44,9 @@ RUN apt-get update && \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $BUILD_DEPS && \
     rm -rf /var/lib/apt/lists/*
 
+#
+# Create the container to be run based on tomcat
+#
 FROM tomcat:7.0-jre8
 ARG BUILD_DEPS=" \
     unzip \
