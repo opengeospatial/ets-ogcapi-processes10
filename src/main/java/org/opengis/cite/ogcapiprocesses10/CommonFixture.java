@@ -23,9 +23,22 @@ import org.testng.annotations.BeforeMethod;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
+import com.networknt.schema.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.URI;
+import java.util.Set;
+
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.specification.RequestSpecification;
+
+import io.restassured.response.Response;
+import static io.restassured.http.ContentType.HTML;
+import static io.restassured.http.Method.GET;
+
 
 /**
  * A supporting base class that sets up a common test fixture. These configuration methods are invoked before those
@@ -107,11 +120,57 @@ public class CommonFixture {
      *
      * @return A ClientRequest object.
      *
-     * @see ClientUtils#buildGetRequest public ClientRequest buildGetRequest( URI endpoint, Map<String, String>
+     * @see ClientUtils#buildGetRequest public ClientRequest buildGetRequest( URI endpoint, Map String, String 
      *      qryParams, MediaType... mediaTypes ) { return ClientUtils.buildGetRequest( endpoint, qryParams, mediaTypes
      *      ); }
      */
 
+
+    /**
+     * 
+     */
+    protected boolean validateResponseAgainstSchema(String urlSchema,String body){
+	ObjectMapper objMapper =new ObjectMapper(new YAMLFactory());
+	JsonSchemaFactory factory = JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).objectMapper(objMapper).build();
+	SchemaValidatorsConfig config = new SchemaValidatorsConfig();
+	config.setTypeLoose(false);
+	try{
+	    JsonSchema jsonSchema = factory.getSchema(new URI(urlSchema), config);
+	    ObjectMapper objectMapper =new ObjectMapper();
+	    JsonNode json = objectMapper.readTree(body);
+	    Set<ValidationMessage> validationResult = jsonSchema.validate(json);
+	    if (validationResult.isEmpty()) {
+		System.out.println("no validation errors :-)");
+		return true;
+	    } else {
+		validationResult.forEach(vm -> System.out.println(vm.getMessage()));
+		return false;
+	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    return false;
+	}
+    }
+
+    /**
+     * Try to implement testing for A.5. Conformance Class HTML
+     * TODO: Abtract Test 56: /conf/html/content 
+     * Abtract Test 57: /conf/html/definition
+     */
+    protected void checkHtmlConfClass(String uri){
+	Response request = init().baseUri( uri ).accept( HTML ).when().request( GET );
+        //TestSuiteLogger.log(Level.INFO, rootUri.toString());
+        request.then().statusCode( 200 );
+	String headerValue = request.getHeader("Content-Type");
+	System.out.println("Content-type header fecthed: "+headerValue);
+	if(headerValue.indexOf("text/html")<0)
+	    throw new AssertionError( "The Content-type header should be text/html but '"
+				     + headerValue
+				     + "' has been found" );
+	String bodyHTML = request.getBody().asString();
+    }
+
+    
     private void initLogging() {
         this.requestOutputStream = new ByteArrayOutputStream();
         this.responseOutputStream = new ByteArrayOutputStream();
@@ -139,86 +198,86 @@ public class CommonFixture {
 	}
 	
     protected Input createInput(JsonNode schemaNode, String id) {
-		Input input = new Input(id);
-		JsonNode typeNode = schemaNode.get("type");
-		if(typeNode != null) {
-			String typeDefinition = typeNode.asText();
-			Type type = new Type(typeDefinition);
-			if(typeDefinition.equals("object")) {
-				JsonNode propertiesNode = schemaNode.get("properties");
+	Input input = new Input(id);
+	JsonNode typeNode = schemaNode.get("type");
+	if(typeNode != null) {
+	    String typeDefinition = typeNode.asText();
+	    Type type = new Type(typeDefinition);
+	    if(typeDefinition.equals("object")) {
+		JsonNode propertiesNode = schemaNode.get("properties");
+		if(propertiesNode != null) {
+		    Iterator<String> propertyNames = propertiesNode.fieldNames();
+		    while (propertyNames.hasNext()) {
+			String propertyName = (String) propertyNames.next();
+			if(propertyName.equals("bbox")) {
+			    input.setBbox(true);
+			    break;
+			}
+		    }
+		}
+	    } else if(typeDefinition.equals("string")) {
+		JsonNode formatNode = schemaNode.get("format");
+		if(formatNode != null) {
+		    String format  = formatNode.asText();
+		    if(format.equals("byte")) {
+			type.setBinary(true);
+		    }
+		}				
+	    }
+	    input.addType(type);
+	}else {
+	    //oneOf, allOf, anyOf
+	    JsonNode oneOfNode = schemaNode.get("oneOf");
+	    if(oneOfNode != null) {
+		if(oneOfNode instanceof ArrayNode) {
+		    ArrayNode oneOfArrayNode = (ArrayNode)oneOfNode;
+		    for (int i = 0; i < oneOfArrayNode.size(); i++) {
+			JsonNode oneOfChildNode = oneOfArrayNode.get(i);		
+			JsonNode oneOfTypeNode = oneOfChildNode.get("type");
+			if(oneOfTypeNode != null) {							
+			    String typeDefinition = oneOfTypeNode.asText();
+			    Type type = new Type(typeDefinition);
+			    if(typeDefinition.equals("object")) {
+				JsonNode propertiesNode = oneOfChildNode.get("properties");
 				if(propertiesNode != null) {
-					Iterator<String> propertyNames = propertiesNode.fieldNames();
-					while (propertyNames.hasNext()) {
-						String propertyName = (String) propertyNames.next();
-						if(propertyName.equals("bbox")) {
-							input.setBbox(true);
-							break;
-						}
+				    Iterator<String> propertyNames = propertiesNode.fieldNames();
+				    while (propertyNames.hasNext()) {
+					String propertyName = (String) propertyNames.next();
+					if(propertyName.equals("bbox")) {
+					    input.setBbox(true);
+					    break;
 					}
+				    }
 				}
-			} else if(typeDefinition.equals("string")) {
-				JsonNode formatNode = schemaNode.get("format");
+			    } else if(typeDefinition.equals("string")) {
+				JsonNode formatNode = oneOfChildNode.get("format");
 				if(formatNode != null) {
-					String format  = formatNode.asText();
-					if(format.equals("byte")) {
-						type.setBinary(true);
-					}
-				}				
-			}
-			input.addType(type);
-		}else {
-			//oneOf, allOf, anyOf
-			JsonNode oneOfNode = schemaNode.get("oneOf");
-			if(oneOfNode != null) {
-				if(oneOfNode instanceof ArrayNode) {
-					ArrayNode oneOfArrayNode = (ArrayNode)oneOfNode;
-					for (int i = 0; i < oneOfArrayNode.size(); i++) {
-						JsonNode oneOfChildNode = oneOfArrayNode.get(i);		
-						JsonNode oneOfTypeNode = oneOfChildNode.get("type");
-						if(oneOfTypeNode != null) {							
-							String typeDefinition = oneOfTypeNode.asText();
-							Type type = new Type(typeDefinition);
-							if(typeDefinition.equals("object")) {
-								JsonNode propertiesNode = oneOfChildNode.get("properties");
-								if(propertiesNode != null) {
-									Iterator<String> propertyNames = propertiesNode.fieldNames();
-									while (propertyNames.hasNext()) {
-										String propertyName = (String) propertyNames.next();
-										if(propertyName.equals("bbox")) {
-											input.setBbox(true);
-											break;
-										}
-									}
-								}
-							} else if(typeDefinition.equals("string")) {
-								JsonNode formatNode = oneOfChildNode.get("format");
-								if(formatNode != null) {
-									String format  = formatNode.asText();
-									if(format.equals("byte")) {
-										type.setBinary(true);
-									}
-								}
-								JsonNode contentMediaTypeNode = oneOfChildNode.get(CONTENT_MEDIA_TYPE_PROPERTY_KEY);
-								if(contentMediaTypeNode != null && !contentMediaTypeNode.isMissingNode()) {
-									type.setContentMediaType(contentMediaTypeNode.asText());
-								}
-								JsonNode contentEncodingNode = oneOfChildNode.get(CONTENT_ENCODING_PROPERTY_KEY);
-								if(contentEncodingNode != null && !contentEncodingNode.isMissingNode()) {
-									type.setContentEncoding(contentEncodingNode.asText());
-								}
-								JsonNode contentSchemaNode = oneOfChildNode.get(CONTENT_SCHEMA_PROPERTY_KEY);
-								if(contentSchemaNode != null && !contentSchemaNode.isMissingNode()) {
-									type.setContentSchema(contentSchemaNode.asText());
-								}
-							}
-							input.addType(type);							
-						}						
-					}
+				    String format  = formatNode.asText();
+				    if(format.equals("byte")) {
+					type.setBinary(true);
+				    }
 				}
-			}
-		}		
-		return input;
-	}
+				JsonNode contentMediaTypeNode = oneOfChildNode.get(CONTENT_MEDIA_TYPE_PROPERTY_KEY);
+				if(contentMediaTypeNode != null && !contentMediaTypeNode.isMissingNode()) {
+				    type.setContentMediaType(contentMediaTypeNode.asText());
+				}
+				JsonNode contentEncodingNode = oneOfChildNode.get(CONTENT_ENCODING_PROPERTY_KEY);
+				if(contentEncodingNode != null && !contentEncodingNode.isMissingNode()) {
+				    type.setContentEncoding(contentEncodingNode.asText());
+				}
+				JsonNode contentSchemaNode = oneOfChildNode.get(CONTENT_SCHEMA_PROPERTY_KEY);
+				if(contentSchemaNode != null && !contentSchemaNode.isMissingNode()) {
+				    type.setContentSchema(contentSchemaNode.asText());
+				}
+			    }
+			    input.addType(type);							
+			}						
+		    }
+		}
+	    }
+	}		
+	return input;
+    }
 	
     protected Output createOutput(JsonNode schemaNode, String id) {
 		Output output = new Output(id);
