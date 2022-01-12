@@ -47,8 +47,9 @@ public class LandingPage extends CommonFixture {
     private JsonPath response;
     private String body;
     
-    //private static String utrlSchema="http://beta.schemas.opengis.net/ogcapi/common/part1/0.1/core/openapi/schemas/landingPage.json";
-    private static String urlSchema="https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/landingPage.yaml";
+    //private static String utrlSchema="http://schemas.opengis.net/ogcapi/common/part1/0.1/core/openapi/schemas/landingPage.json";
+    //private static String urlSchema="https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/landingPage.yaml";
+    private static String urlSchema="http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/landingPage.yaml";
 
     /**
      * <pre>
