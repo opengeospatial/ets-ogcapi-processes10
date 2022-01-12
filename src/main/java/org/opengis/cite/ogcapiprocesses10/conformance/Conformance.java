@@ -42,7 +42,8 @@ public class Conformance extends CommonFixture {
 
     private List<RequirementClass> requirementClasses;
     //private static String utrlSchema="http://beta.schemas.opengis.net/ogcapi/common/part1/0.1/core/openapi/schemas/conformance.json";
-    private static String urlSchema="https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/confClasses.yaml";
+    //private static String urlSchema="https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/confClasses.yaml";
+    private static String urlSchema="http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/confClasses.yaml";
     
     @DataProvider(name = "conformance")
     public Object[][] conformanceUris( ITestContext testContext ) {
