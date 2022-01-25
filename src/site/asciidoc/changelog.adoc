@@ -1,6 +1,5 @@
-= Release Notes OGC API - Tiles
+= Release Notes OGC API - Processes - Part 1: Core
 
 
 
-== 0.1 (2020-04-23)
-- OGC API - Tiles Sprint
+== 0.1 TBA

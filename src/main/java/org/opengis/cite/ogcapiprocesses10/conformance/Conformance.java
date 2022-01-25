@@ -33,7 +33,7 @@ import io.restassured.response.Response;
 
 /**
  *
- * A.?.?. Conformance Path {root}/conformance
+ * A.2.3. Conformance Path {root}/conformance
  *
  *
  * @author <a href="mailto:goltz@lat-lon.de">Lyn Goltz </a>
@@ -41,13 +41,16 @@ import io.restassured.response.Response;
 public class Conformance extends CommonFixture {
 
     private List<RequirementClass> requirementClasses;
-
-    @DataProvider(name = "conformanceUris")
+    //private static String utrlSchema="http://beta.schemas.opengis.net/ogcapi/common/part1/0.1/core/openapi/schemas/conformance.json";
+    //private static String urlSchema="https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/confClasses.yaml";
+    private static String urlSchema="http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/confClasses.yaml";
+    
+    @DataProvider(name = "conformance")
     public Object[][] conformanceUris( ITestContext testContext ) {
         OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute( API_MODEL.getName() );
         URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
 
-        TestPoint tp = new TestPoint(rootUri.toString(),"/conformance",null);
+        TestPoint tp = new TestPoint(rootUri.toString(),"conformance",null);
 
 
         List<TestPoint> testPoints = new ArrayList<TestPoint>();
@@ -66,30 +69,36 @@ public class Conformance extends CommonFixture {
     }
 
     /**
-     * Partly addresses Requirement 1 : /req/tiles/core/conformance-success
-     *
+     * Partly addresses Requirement 1 : /req/processes/core/conformance-success
+     * 
      * @param testPoint
      *            the test point to test, never <code>null</code>
      */
-    @Test(description = "Implements A.?.?. Conformance Path {root}/conformance,", groups = "conformance", dataProvider = "conformanceUris")
+    @Test(description = "Implements /conf/core/conformance-success (partial)", groups = "A.2.3. Conformance Path /conformance", dataProvider = "conformance")
     public void validateConformanceOperationAndResponse( TestPoint testPoint ) {
-        String testPointUri = new UriBuilder( testPoint ).buildUrl();
+        String testPointUri = testPoint.getServerUrl() + testPoint.getPath();
         Response response = init().baseUri( testPointUri ).accept( JSON ).when().request( GET );
         validateConformanceOperationResponse( testPointUri, response );
     }
 
     /**
-     * Requirement 1 : /req/tiles/core/conformance-success
+     * Requirement 1 : /req/processes/core/conformance-success
      *
-     * Abstract Test ?: /ats/core/conformance-success
+     * Abstract Test A.2.3.6.1: /conf/core/conformance-success
+     * Abstract Test A.2.3.6.2: /conf/core/conformance-success 
+     * Abstract Test A.2.3.6.3: /conf/core/conformance-success
+     * Abstract Test A.2.3.6.4: /conf/core/conformance-success TODO / DOABLE?
      */
     private void validateConformanceOperationResponse( String testPointUri, Response response ) {
         response.then().statusCode( 200 );
 
+	assertTrue( validateResponseAgainstSchema(Conformance.urlSchema,response.getBody().asString()),
+		    "Unable to validate the response document against: "+Conformance.urlSchema);
+	
         JsonPath jsonPath = response.jsonPath();
         this.requirementClasses = parseAndValidateRequirementClasses( jsonPath );
         assertTrue( this.requirementClasses.contains( CORE ),
-                    "Requirement class \"http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/core\" is not available from path "
+                    "Requirement class \"http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core\" is not available from path "
                                                               + testPointUri );
     }
 
@@ -106,7 +115,6 @@ public class Conformance extends CommonFixture {
 
         List<RequirementClass> requirementClasses = new ArrayList<>();
         for ( Object conformTo : conformsTo ) {
-        	System.out.println("conformsTo "+conformsTo);
             if ( conformTo instanceof String ) {
                 String conformanceClass = (String) conformTo;
                 RequirementClass requirementClass = RequirementClass.byConformanceClass( conformanceClass );

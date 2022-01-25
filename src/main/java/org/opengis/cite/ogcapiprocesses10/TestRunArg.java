@@ -13,7 +13,12 @@ public enum TestRunArg {
     /**
      * The number of collections to test (a value less or equal to 0 means all collections).
      */
-    NOOFCOLLECTIONS;
+    NOOFCOLLECTIONS,
+	
+	/**
+	 * The id of the echo process.
+	 */
+	ECHOPROCESSID;
 
     @Override
     public String toString() {

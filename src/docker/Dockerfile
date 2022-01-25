@@ -24,5 +24,7 @@ RUN cd /root/ && unzip -q ets-ogcapi-processes10-*-ctl.zip -d /root/te_base/scri
 ADD maven/ets-ogcapi-processes10-*-deps.zip /root/
 RUN cd /root/ && unzip -q -o ets-ogcapi-processes10-*-deps.zip -d /usr/local/tomcat/webapps/teamengine/WEB-INF/lib
 
+RUN rm -R /root/te_base/scripts/note
+
 # run tomcat
 CMD ["catalina.sh", "jpda", "run"]

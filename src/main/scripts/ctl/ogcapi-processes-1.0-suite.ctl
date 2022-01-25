@@ -33,7 +33,7 @@
             <p>The implementation under test (IUT) is checked against the following specifications:</p>
             <ul>
               <li>
-                <a href="http://docs.opengeospatial.org/is/17-069r3/17-069r3.html">OGC API - processes - Part 1: Core</a>
+                <a href="https://docs.ogc.org/DRAFTS/18-062.html" target="_blank">DRAFT OGC API - processes - Part 1: Core</a>
               </li>
             </ul>
             <p>The following conformance levels are defined:</p>
@@ -54,18 +54,10 @@
                      value="" />
             </p>
             <p>
-              <h4 style="margin-bottom: 0.5em">Number of tested collections</h4>
+              <h4 style="margin-bottom: 0.5em">Identifier of echo process</h4>
               <div>
-                <input type="radio" id="collectionsLimitLimited" name="collectionsLimit" value="limited" checked="checked"
-                       onchange="document.getElementById('noOfCollections').disabled=document.getElementById('collectionsLimitAll').checked;"/>
-                <label for="noOfCollectionsAll">Limited number of collections:</label>
-                <input type="number" id="noOfCollections" name="noOfCollections" value="3" min="1" />
-              </div>
-              <div>
-                <input type="radio" id="collectionsLimitAll" name="collectionsLimit" value="all"
-                       onchange="document.getElementById('noOfCollections').disabled=document.getElementById('collectionsLimitAll').checked;" />
-
-                <label for="noOfCollectionsAll">All collections</label>
+                <label for="echoProcessId">Identifier of echo process</label>
+                <input type="text" id="echoProcessId" name="echoProcessId" value="echo" />
               </div>
             </p>
           </fieldset>
@@ -81,13 +73,8 @@
           <entry key="iut">
             <xsl:value-of select="normalize-space($form-data/values/value[@key='ogc-api-processes-uri'])" />
           </entry>
-          <entry key="noofcollections">
-            <xsl:choose>
-              <xsl:when test="$form-data/values/value[@key='collectionsLimit'] = 'all'">-1</xsl:when>
-              <xsl:otherwise>
-                <xsl:value-of select="$form-data/values/value[@key='noOfCollections']" />
-              </xsl:otherwise>
-            </xsl:choose>
+          <entry key="echoprocessid">
+              <xsl:value-of select="$form-data/values/value[@key='echoProcessId']" />
           </entry>
         </properties>
       </xsl:variable>

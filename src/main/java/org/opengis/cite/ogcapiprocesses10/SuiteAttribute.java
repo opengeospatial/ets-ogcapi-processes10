@@ -33,6 +33,11 @@ public enum SuiteAttribute {
      * The number of collections to test.
      */
     NO_OF_COLLECTIONS( "noOfCollections", Integer.class ),
+    
+    /**
+     * The id of the echo process.
+     */
+    ECHO_PROCESS_ID( "echoProcessId", String.class ),
 
     /**
      * Parsed OpenApi3 document resource /api; Added during execution.

@@ -7,7 +7,6 @@
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.opengis.cite</groupId>
   <artifactId>ets-ogcapi-processes10</artifactId>
   <version>0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
@@ -50,7 +49,7 @@
   <properties>
     <ets-code>ogcapi-processes-1.0</ets-code>
     <spec-version>0.1</spec-version>
-    <docker.teamengine.version>5.4</docker.teamengine.version>
+    <docker.teamengine.version>5.5-SNAPSHOT</docker.teamengine.version>
   </properties>
 
   <dependencies>
@@ -89,6 +88,43 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
     </dependency>
+	<dependency>
+		<groupId>org.openapi4j</groupId>
+		<artifactId>openapi-operation-validator</artifactId>
+		<version>1.0.7</version>
+	</dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.12.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <version>2.10.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.swagger.parser.v3</groupId>
+      <artifactId>swagger-parser</artifactId>
+      <version>2.0.28</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.30</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.7</version>
+    </dependency>
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>1.0.63</version>
+    </dependency>
+
     <dependency>
       <groupId>net.jadler</groupId>
       <artifactId>jadler-core</artifactId>
@@ -159,7 +195,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.3</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
           <tagNameFormat>@{project.version}</tagNameFormat>
@@ -169,7 +204,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
-        <version>3.7.1</version>
         <executions>
           <execution>
             <id>site-package</id>
@@ -211,7 +245,7 @@
           <configuration>
             <images>
               <image>
-                <name>ogccite/${project.artifactId}</name>
+                <name>ogccite/${project.artifactId}:latest</name>
                 <build>
                   <dockerFileDir>${project.basedir}/src/docker</dockerFileDir>
                   <tags>
@@ -234,6 +268,7 @@
                   </assembly>
                 </build>
                 <run>
+<!--                   <containerNamePattern>%a</containerNamePattern> -->
                   <ports>
                     <port>8081:8080</port>
                   </ports>
@@ -328,6 +363,25 @@
               <execution>
                 <goals>
                   <goal>copy</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>docker-remove</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>remove</id>
+                <goals>
+                  <goal>remove</goal>
                 </goals>
               </execution>
             </executions>
