@@ -748,9 +748,9 @@ public class Jobs extends CommonFixture {
 	* Test Purpose: Validate the creation of a new job.
 	* Requirement: /req/core/job-creation-op
 	* Test Method: 
-	* 1.  Validate the creation of the job according the requirements req_core_job-creation-default-execution-mode,/req/core/job-creation-default-execution-mode, req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode
-	* |===
-	* TODO: Check additional content
+	* 1.  Validate the creation of the job according the requirements req_core_job-creation-default-execution-mode,
+	* /req/core/job-creation-default-execution-mode, 
+	* req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode
 	* </pre>
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
