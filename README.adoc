@@ -7,6 +7,26 @@ This executable test suite is for the OGC API - Processes draft standard.
 Visit the http://opengeospatial.github.io/ets-ogcapi-processes10/[project documentation website TBD]
 for more information, including the API documentation.
 
+== 2 minutes method
+
+Run the following commands:
+
+[source,bash]
+mkdir CITE
+cd CITE
+git clone https://github.com/opengeospatial/teamengine src
+git clone https://github.com/opengeospatial/ets-common.git src1
+cd src1
+git clone -b testbed17 https://github.com/GeoLabs/ets-ogcapi-processes10.git
+cd ..
+# Build the docker image
+docker build . -t teamengine/ogcapi-processes:latest
+# Run the docker container 
+docker run -d --name cite-teamengine -p 8080:8080 teamengine/ogcapi-processes:latest
+
+From here, you can now access http://localhost:8080/teamengine to access the deployed teamengine with the OGC API - Processes Test Suite.
+
+
 == How to build the test suite
 
 The test suite is built using https://maven.apache.org/[Apache Maven v3].
