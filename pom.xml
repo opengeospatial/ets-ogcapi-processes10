@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.opengis.cite</groupId>
     <artifactId>ets-common</artifactId>
-    <version>10-SNAPSHOT</version>
+    <version>9</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -56,6 +56,7 @@
     <dependency>
       <groupId>org.opengis.cite.teamengine</groupId>
       <artifactId>teamengine-spi</artifactId>
+      <version>5.4.1</version>
     </dependency>
     <dependency>
       <groupId>org.opengis.cite</groupId>
