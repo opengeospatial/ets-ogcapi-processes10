@@ -70,17 +70,12 @@
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
-      <version>3.1.0</version>
+      <version>3.3.0</version>
     </dependency>
     <dependency>
       <groupId>com.reprezen.kaizen</groupId>
       <artifactId>openapi-parser</artifactId>
       <version>4.0.4</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.inject</groupId>
-      <artifactId>guice</artifactId>
-      <version>4.0</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -90,12 +85,13 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
     </dependency>
-	<dependency>
-		<groupId>org.openapi4j</groupId>
-		<artifactId>openapi-operation-validator</artifactId>
-		<version>1.0.7</version>
-	</dependency>
 
+    <dependency>
+      <groupId>org.openapi4j</groupId>
+      <artifactId>openapi-operation-validator</artifactId>
+      <version>1.0.7</version>
+    </dependency>
+    
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
@@ -106,25 +102,32 @@
       <artifactId>jackson-dataformat-yaml</artifactId>
       <version>2.10.1</version>
     </dependency>
+    <!--
     <dependency>
       <groupId>io.swagger.parser.v3</groupId>
       <artifactId>swagger-parser</artifactId>
       <version>2.0.28</version>
     </dependency>
+    -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.30</version>
+      <version>1.7.20</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.7</version>
+      <version>3.4</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.7</version>
     </dependency>
     <dependency>
       <groupId>com.networknt</groupId>
       <artifactId>json-schema-validator</artifactId>
-      <version>1.0.63</version>
+      <version>1.0.66</version>
     </dependency>
 
     <dependency>

@@ -15,13 +15,7 @@ import java.util.HashMap;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 
-import io.swagger.v3.parser.*;
-import io.swagger.parser.*;
-import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.*;
-import io.swagger.v3.oas.models.*;
-
-import org.apache.commons.io.IOUtils;
+//import org.apache.commons.io.IOUtils;
 
 import java.util.HashSet;
 import java.util.List;
