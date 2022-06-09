@@ -353,7 +353,7 @@ public class Jobs extends CommonFixture {
 
 	/**
 	* <pre>
-	* Abstract Test null: /conf/core/job-creation-default-outputs
+	* Abstract Test 27: /conf/core/job-creation-default-outputs
 	* Test Purpose: Validate that the server correctly handles the case where no `outputs` parameter is specified on an execute request.
 	* Requirement: /req/core/job-creation-op
 	* Test Method: 
@@ -390,19 +390,30 @@ public class Jobs extends CommonFixture {
 
 	/**
 	* <pre>
-	* Abstract Test null: /conf/core/job-creation-input-array
+	* Abstract Test 23: /conf/core/job-creation-input-array
 	* Test Purpose: Verify that the server correctly recognizes the encoding of parameter values for input parameters with a maximum cardinality greater than one.
 	* Requirement: /req/core/job-creation-input-array
 	* Test Method: 
-	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the inputs with maximum cardinality  1 according to the requirement req_core_job-creation-input-array,/req/core/job-creation-input-array
-	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
+	* 1.  Get a description of each process offered by the server using test /conf/core/process.
+	* 2.  Inspect the description of each process and identify the list of processes that have inputs with a maximum cardinality greater that one.
+	* 3.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the inputs with maximum cardinality  1 according to the requirement req_core_job-creation-input-array,/req/core/job-creation-input-array
+	* 4.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
 	* |===
 	* TODO: Check additional content
 	* </pre>
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-input-array ", groups = "job")
 	public void testJobCreationInputArray() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNodeWithInputArray(echoProcessId);
+		TestSuiteLogger.log(Level.INFO, executeNode.toString());
+		try {
+			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -431,7 +442,7 @@ public class Jobs extends CommonFixture {
 
 	/**
 	* <pre>
-	* Abstract Test null: /conf/core/job-creation-input-inline-binary
+	* Abstract Test 26: /conf/core/job-creation-input-inline-binary
 	* Test Purpose: Validate that binary input values encoded as base-64 string in-line in an execute request are correctly processes.
 	* Requirement: /req/core/job-creation-input-binary
 	* Test Method: 
@@ -443,12 +454,21 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-input-binary ", groups = "job")
 	public void testJobCreationInputInlineBinary() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNodeWithBinaryInput(echoProcessId);
+		TestSuiteLogger.log(Level.INFO, executeNode.toString());
+		try {
+			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
 	* <pre>
-	* Abstract Test null: /conf/core/job-creation-input-inline-mixed
+	* Abstract Test 25: /conf/core/job-creation-input-inline-mixed
 	* Test Purpose: Validate that inputs of mixed content encoded in-line in an execute request are correctly processed.
 	* Requirement: /req/core/job-creation-input-inline-mixed
 	* Test Method: 
@@ -460,7 +480,16 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-mixed ", groups = "job")
 	public void testJobCreationInputInlineMixed() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNodeWithMixedInput(echoProcessId);
+		TestSuiteLogger.log(Level.INFO, executeNode.toString());
+		try {
+			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -490,6 +519,105 @@ public class Jobs extends CommonFixture {
 	}
 
 	private JsonNode createExecuteJsonNodeWithObject(String echoProcessId) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		boolean foundObjectInput = false;
+		for (Input input : inputs) {
+			boolean inputIsObject = false;
+			List<Type> types = input.getTypes();
+			if(foundObjectInput) {
+				addInput(input, inputsNode);
+				continue;
+			}
+			for (Type type : types) {
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+					addObjectInput(input, inputsNode);
+					foundObjectInput = true;
+					inputIsObject = true;
+					continue;
+				}
+			}
+			if(!inputIsObject) {
+				addInput(input, inputsNode);				
+			}
+		}
+		for (Output output : outputs) {
+			addOutput(output, outputsNode);
+		}
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		return executeNode;
+	}
+
+	private JsonNode createExecuteJsonNodeWithInputArray(String echoProcessId) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		boolean foundObjectInput = false;
+		for (Input input : inputs) {
+			boolean inputIsObject = false;
+			List<Type> types = input.getTypes();
+			if(foundObjectInput) {
+				addInput(input, inputsNode);
+				continue;
+			}
+			for (Type type : types) {
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+					addObjectInput(input, inputsNode);
+					foundObjectInput = true;
+					inputIsObject = true;
+					continue;
+				}
+			}
+			if(!inputIsObject) {
+				addInput(input, inputsNode);				
+			}
+		}
+		for (Output output : outputs) {
+			addOutput(output, outputsNode);
+		}
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		return executeNode;
+	}
+
+	private JsonNode createExecuteJsonNodeWithBinaryInput(String echoProcessId) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		boolean foundObjectInput = false;
+		for (Input input : inputs) {
+			boolean inputIsObject = false;
+			List<Type> types = input.getTypes();
+			if(foundObjectInput) {
+				addInput(input, inputsNode);
+				continue;
+			}
+			for (Type type : types) {
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+					addObjectInput(input, inputsNode);
+					foundObjectInput = true;
+					inputIsObject = true;
+					continue;
+				}
+			}
+			if(!inputIsObject) {
+				addInput(input, inputsNode);				
+			}
+		}
+		for (Output output : outputs) {
+			addOutput(output, outputsNode);
+		}
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		return executeNode;
+	}
+
+	private JsonNode createExecuteJsonNodeWithMixedInput(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
