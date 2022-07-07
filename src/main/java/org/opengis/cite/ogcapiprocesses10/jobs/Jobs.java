@@ -1044,7 +1044,15 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-mixed-multi ", groups = "job")
 	public void testJobCreationSyncRawMixedMulti() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
+		try {
+			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -1061,7 +1069,15 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-ref ", groups = "job")
 	public void testJobCreationSyncRawRef() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
+		try {
+			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -1078,7 +1094,15 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-multi ", groups = "job")
 	public void testJobCreationSyncRawValueMulti() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
+		try {
+			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -1108,14 +1132,6 @@ public class Jobs extends CommonFixture {
 		}
 	}
 
-//	/**
-//	* <pre>
-//	* </pre>
-//	*/
-//	@Test(description = "Implements Requirement  ", groups = "")
-//	public void () {
-//
-//	}
 
 	/**
 	* <pre>
