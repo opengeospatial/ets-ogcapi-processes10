@@ -18,7 +18,17 @@ public enum TestRunArg {
 	/**
 	 * The id of the echo process.
 	 */
-	ECHOPROCESSID;
+	ECHOPROCESSID, 	
+	
+	/**
+	 * Limit of processes to be tested against the OGC Process Description Conformance Class.
+	 */
+	PROCESSTESTLIMIT,
+    
+    /**
+     * Boolean indicating whether all processes should be tested against the OGC Process Description Conformance Class.
+     */
+	TESTALLPROCESSES;
 
     @Override
     public String toString() {

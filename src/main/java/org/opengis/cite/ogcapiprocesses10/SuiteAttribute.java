@@ -38,7 +38,17 @@ public enum SuiteAttribute {
      * The id of the echo process.
      */
     ECHO_PROCESS_ID( "echoProcessId", String.class ),
+    
+    /**
+     * Boolean indicating whether all processes should be tested against the OGC Process Description Conformance Class.
+     */
+    TEST_ALL_PROCESSES( "testAllProcesses", Boolean.class ),
 
+    /**
+     * Number of processes that should be tested against the OGC Process Description Conformance Class.
+     */
+    PROCESS_TEST_LIMIT( "processTestLimit", Integer.class ),
+    
     /**
      * Parsed OpenApi3 document resource /api; Added during execution.
      */
