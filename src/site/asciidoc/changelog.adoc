@@ -1,13 +1,5 @@
 = Release Notes OGC API - Processes - Part 1: Core
 
-== 0.2 (2022-05-30)
-- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/6[#6]: OGC API Processes 1.0 and OGC API Features 1.0 test suites cannot be deployed to same TEAM Engine instance
-- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/5[#5]: Landing page of TEAM Engine displays 0.1 in version column
-- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/4[#4]: Release notes are not displayed on project documentation website
 
-== 0.1 (2022-01-27)
-- Implement A.5.  Conformance Class HTML
-- Implement A.2.  Conformance Class Core
-- Implement A.3.  Conformance Class OGC Process
-- Implement A.2.  Conformance Class Core
-- Prepare ETS
+
+== 0.1 TBA
