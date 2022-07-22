@@ -94,6 +94,8 @@ public class SuiteFixtureListener implements ISuiteListener {
         try {
         	if ( testAllProcesses != null ) {
         		suite.setAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName(), Boolean.valueOf(testAllProcesses) );
+        	}else {
+        		suite.setAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName(), false );
         	}
         } catch ( NumberFormatException e ) {
         	TestSuiteLogger.log( Level.WARNING,

@@ -69,7 +69,7 @@
               <h4 style="margin-bottom: 0.5em">Test all processes</h4>
               <div>
                 <label for="testAllProcesses">Test all processes against the OGC Process Description Conformance Class</label>
-                <input type="checkBox" id="testAllProcesses" name="testAllProcesses"/>
+                <input type="checkBox" id="testAllProcesses" name="testAllProcesses" />
               </div>
             </p>
             <p>
