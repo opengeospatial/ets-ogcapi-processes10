@@ -33,12 +33,17 @@
             <p>The implementation under test (IUT) is checked against the following specifications:</p>
             <ul>
               <li>
-                <a href="https://docs.ogc.org/DRAFTS/18-062.html" target="_blank">DRAFT OGC API - processes - Part 1: Core</a>
+                <a href="https://docs.ogc.org/is/18-062r2/18-062r2.html" target="_blank">OGC API - processes - Part 1: Core</a>
               </li>
             </ul>
             <p>The following conformance levels are defined:</p>
             <ul>
               <li>Core</li>
+              <li>JSON</li>
+              <li>HTML</li>
+              <li>OpenAPI 3.0</li>
+              <li>Job list</li>
+              <li>OGC Process Description</li>
             </ul>
           </div>
           <fieldset style="background:#ccffff">
@@ -56,8 +61,22 @@
             <p>
               <h4 style="margin-bottom: 0.5em">Identifier of echo process</h4>
               <div>
-                <label for="echoProcessId">Identifier of echo process</label>
+                <label for="echoProcessId">Identifier of echo process for execute tests</label>
                 <input type="text" id="echoProcessId" name="echoProcessId" value="echo" />
+              </div>
+            </p>
+            <p>
+              <h4 style="margin-bottom: 0.5em">Test all processes</h4>
+              <div>
+                <label for="testAllProcesses">Test all processes against the OGC Process Description Conformance Class</label>
+                <input type="checkBox" id="testAllProcesses" name="testAllProcesses" />
+              </div>
+            </p>
+            <p>
+              <h4 style="margin-bottom: 0.5em">Number of process to be tested</h4>
+              <div>
+                <label for="processTestLimit">Number of process to be tested against the OGC Process Description Conformance Class</label>
+                <input type="number" id="processTestLimit" name="processTestLimit" value="3"/>
               </div>
             </p>
           </fieldset>
@@ -75,6 +94,19 @@
           </entry>
           <entry key="echoprocessid">
               <xsl:value-of select="$form-data/values/value[@key='echoProcessId']" />
+          </entry>
+          <entry key="testallprocesses">
+              <xsl:choose>
+              <xsl:when test="$form-data/values/value[@key='testAllProcesses'] eq 'checked'">
+                  <xsl:value-of select="$form-data/values/value[@key='testAllProcesses']" />
+              </xsl:when>
+              <xsl:otherwise>
+                  <xsl:value-of select="false" />
+              </xsl:otherwise>
+              </xsl:choose>
+          </entry>
+          <entry key="processtestlimit">
+              <xsl:value-of select="$form-data/values/value[@key='processTestLimit']" />
           </entry>
         </properties>
       </xsl:variable>

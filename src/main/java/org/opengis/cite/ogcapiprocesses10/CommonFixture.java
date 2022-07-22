@@ -58,6 +58,10 @@ public class CommonFixture {
 
     protected URI rootUri;
     
+    protected int limit = 0;
+    
+    protected boolean testAllProcesses = false;
+    
     protected final String CONTENT_TYPE = "Content-Type";
     
     protected final String CONTENT_MEDIA_TYPE_PROPERTY_KEY = "contentMediaType";
@@ -76,6 +80,8 @@ public class CommonFixture {
     public void initCommonFixture( ITestContext testContext ) {
         initLogging();
         rootUri = (URI) testContext.getSuite().getAttribute( SuiteAttribute.IUT.getName() );
+        limit = (Integer) testContext.getSuite().getAttribute( SuiteAttribute.PROCESS_TEST_LIMIT.getName() );
+        testAllProcesses = (Boolean) testContext.getSuite().getAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName() );
         try {
 			specURI = new URI("https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/openapi.yaml");
 		} catch (URISyntaxException e) {
