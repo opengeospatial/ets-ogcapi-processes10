@@ -96,14 +96,7 @@
               <xsl:value-of select="$form-data/values/value[@key='echoProcessId']" />
           </entry>
           <entry key="testallprocesses">
-              <xsl:choose>
-              <xsl:when test="$form-data/values/value[@key='testAllProcesses'] eq 'checked'">
-                  <xsl:value-of select="$form-data/values/value[@key='testAllProcesses']" />
-              </xsl:when>
-              <xsl:otherwise>
-                  <xsl:value-of select="false" />
-              </xsl:otherwise>
-              </xsl:choose>
+              <xsl:value-of select="$form-data/values/value[@key='testAllProcesses']" />
           </entry>
           <entry key="processtestlimit">
               <xsl:value-of select="$form-data/values/value[@key='processTestLimit']" />
