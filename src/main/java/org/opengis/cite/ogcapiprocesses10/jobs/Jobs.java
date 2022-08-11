@@ -71,7 +71,7 @@ public class Jobs extends CommonFixture {
 	private static final String RESPONSE_VALUE_RAW = "raw";
 	private static final String TEST_STRING_INPUT = "teststring";
 	private static final Object TYPE_DEFINITION_OBJECT = "object";
-
+	
 	private OpenApi3 openApi3;
 	
 	private String getJobsListPath = "/jobs";
@@ -267,7 +267,6 @@ public class Jobs extends CommonFixture {
 		
 		for (Type type : types) {
 			if(type.getTypeDefinition().equals("string")) {
-//		        inputNode.set("value", new TextNode("teststring"));
 				inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
 			} else if(input.isBbox()) {
 				inputNode.set("crs", new TextNode("urn:ogc:def:crs:EPSG:6.6:4326"));
@@ -714,8 +713,36 @@ public class Jobs extends CommonFixture {
 	}
 
 	private JsonNode createExecuteJsonNodeWithHref(String echoProcessId2) throws SkipException {
-		// TODO Auto-generated method stub
-		throw new SkipException("No input with href detected.");
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		boolean foundObjectInput = false;
+		for (Input input : inputs) {
+			boolean inputIsObject = false;
+			List<Type> types = input.getTypes();
+			if (foundObjectInput) {
+				addInput(input, inputsNode);
+				continue;
+			}
+			for (Type type : types) {
+				if (type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+					addObjectInput(input, inputsNode);
+					foundObjectInput = true;
+					inputIsObject = true;
+					continue;
+				}
+			}
+			if (!inputIsObject) {
+				addInput(input, inputsNode);
+			}
+		}
+		for (Output output : outputs) {
+			addOutput(output, outputsNode);
+		}
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		return executeNode;
 	}
 
 	/**
@@ -934,7 +961,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 			Header locationHeader = httpResponse.getFirstHeader("location");
 			String locationString = locationHeader.getValue();
 			httpResponse = sendGetRequest(locationString, "application/json");
@@ -962,7 +989,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+			Assert.assertTrue(statusCode == 200 ||  statusCode == 201, "Got unexpected status code: " + statusCode);
 			Header locationHeader = httpResponse.getFirstHeader("location");
 			String locationString = locationHeader.getValue();
 			httpResponse = sendGetRequest(locationString, "application/json");
@@ -1416,7 +1443,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1483,7 +1510,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 			Header locationHeader = httpResponse.getFirstHeader("location");
 			String locationString = locationHeader.getValue();
 			httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
@@ -1557,7 +1584,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 			JsonNode responseNode = parseResponse(httpResponse);
 			Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
 		} catch (Exception e) {
@@ -1611,15 +1638,12 @@ public class Jobs extends CommonFixture {
 			boolean foundRelMonitorHeader = false;
 			String statusUrl = "";
 			for (Header header : headers) {
-//				HeaderElement[] headerElements = header.getElements();
-//				for (HeaderElement headerElement : headerElements) {
 				String heaerValue = header.getValue();
-					if(heaerValue.contains("rel=monitor")) {
-						foundRelMonitorHeader = true;
-						statusUrl = heaerValue.split(";")[0];
-						break;
-					}
-//				}
+				if (heaerValue.contains("rel=monitor")) {
+					foundRelMonitorHeader = true;
+					statusUrl = heaerValue.split(";")[0];
+					break;
+				}
 			}
 			if(!foundRelMonitorHeader) {
 				throw new SkipException("Did not find Link with value rel=monitor, skipping test.");
@@ -1630,15 +1654,6 @@ public class Jobs extends CommonFixture {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
-
-//	/**
-//	* <pre>
-//	* </pre>
-//	*/
-//	@Test(description = "Implements Requirement  ", groups = "")
-//	public void () {
-//
-//	}
 
 	/**
 	* <pre>
