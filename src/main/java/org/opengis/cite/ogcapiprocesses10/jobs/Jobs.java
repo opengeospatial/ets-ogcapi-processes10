@@ -817,6 +817,7 @@ public class Jobs extends CommonFixture {
 	
 	private HttpPost createPostRequest(JsonNode executeNode) {
 		HttpPost request = new HttpPost(executeEndpoint);
+	    this.reqEntity = request;
 		request.setHeader("Accept", "application/json");
 		ContentType contentType = ContentType.APPLICATION_JSON;
 		request.setEntity(new StringEntity(executeNode.toString(), contentType));
@@ -825,6 +826,7 @@ public class Jobs extends CommonFixture {
 	
 	private HttpResponse sendPostRequestASync(JsonNode executeNode) throws IOException {
 		HttpPost request = new HttpPost(executeEndpoint);
+	    this.reqEntity = request;
 		request.setHeader("Accept", "application/json");
 		request.setHeader("Prefer", "respond-async ");
 		ContentType contentType = ContentType.APPLICATION_JSON;
@@ -916,6 +918,7 @@ public class Jobs extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			String executeEndpoint = rootUri + echoProcessPath + "/execution";
 			HttpPost request = new HttpPost(executeEndpoint);
+		    this.reqEntity = request;
 			request.setHeader("Accept", "application/json");
 			request.setHeader("Prefer", "respond-async ");
 			ContentType contentType = ContentType.APPLICATION_JSON;
@@ -1017,9 +1020,10 @@ public class Jobs extends CommonFixture {
 	}
 	
 	private HttpResponse sendGetRequest(String url, String acceptType) throws IOException {		
-		HttpGet statusRequest = new HttpGet(url);
-		statusRequest.setHeader("Accept", acceptType);
-		return clientBuilder.build().execute(statusRequest);
+		HttpGet request = new HttpGet(url);
+	    this.reqEntity = request;
+	    request.setHeader("Accept", acceptType);
+		return clientBuilder.build().execute(request);
 	}
 
 	/**
@@ -1212,6 +1216,7 @@ public class Jobs extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			String executeEndpoint = rootUri + echoProcessPath + "/execution";
 			HttpPost request = new HttpPost(executeEndpoint);
+		    this.reqEntity = request;
 			request.setHeader("Accept", "application/json");
 			ContentType contentType = ContentType.APPLICATION_JSON;
 			request.setEntity(new StringEntity(executeNode.toString(), contentType));

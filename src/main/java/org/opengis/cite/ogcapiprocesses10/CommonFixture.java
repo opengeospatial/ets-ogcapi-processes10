@@ -1,6 +1,8 @@
 package org.opengis.cite.ogcapiprocesses10;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.HTML;
+import static io.restassured.http.Method.GET;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -10,34 +12,33 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.http.HttpRequest;
 import org.openapi4j.core.validation.ValidationResults;
 import org.openapi4j.core.validation.ValidationResults.ValidationItem;
 import org.openapi4j.parser.model.v3.OpenApi3;
 import org.openapi4j.parser.model.v3.Server;
-import org.opengis.cite.ogcapiprocesses10.util.ClientUtils;
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
-import com.networknt.schema.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.net.URI;
-import java.util.Set;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SchemaValidatorsConfig;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
-import io.restassured.specification.RequestSpecification;
-
 import io.restassured.response.Response;
-import static io.restassured.http.ContentType.HTML;
-import static io.restassured.http.Method.GET;
+import io.restassured.specification.RequestSpecification;
 
 
 /**
@@ -62,6 +63,9 @@ public class CommonFixture {
     
     protected boolean testAllProcesses = false;
     
+    /** A String representing the request. */
+    protected HttpRequest reqEntity;
+    
     protected final String CONTENT_TYPE = "Content-Type";
     
     protected final String CONTENT_MEDIA_TYPE_PROPERTY_KEY = "contentMediaType";
@@ -69,6 +73,8 @@ public class CommonFixture {
     protected final String CONTENT_SCHEMA_PROPERTY_KEY = "contentSchema";
     
     protected final String CONTENT_ENCODING_PROPERTY_KEY = "contentEncoding";
+    
+    private static final String REQ_ATTR = "request";
 
     /**
      * Initializes the common test fixture with a client component for interacting with HTTP endpoints.
@@ -435,5 +441,25 @@ public class CommonFixture {
 		}
 		
 	}
+
+    /**
+     * Augments the test result with supplementary attributes in the event that
+     * a test method failed. The "request" attribute contains a String
+     * representing the request entity (POST method) or query component (GET
+     * method). The "response" attribute contains the content of the response
+     * entity.
+     * 
+     * @param result
+     *            A description of the test result.
+     */
+    @AfterMethod
+    public void addAttributesOnTestFailure(ITestResult result) {
+        if (result.getStatus() != ITestResult.FAILURE) {
+            return;
+        }
+        if (null != this.reqEntity) {
+            result.setAttribute(REQ_ATTR, this.reqEntity.toString());
+        }
+    }
 
 }

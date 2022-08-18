@@ -50,7 +50,7 @@ public class Conformance extends CommonFixture {
         OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute( API_MODEL.getName() );
         URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
 
-        TestPoint tp = new TestPoint(rootUri.toString(),"conformance",null);
+        TestPoint tp = new TestPoint(rootUri.toString(),"/conformance",null);
 
 
         List<TestPoint> testPoints = new ArrayList<TestPoint>();
@@ -75,7 +75,7 @@ public class Conformance extends CommonFixture {
      *            the test point to test, never <code>null</code>
      */
     @Test(description = "Implements /conf/core/conformance-success (partial)", groups = "A.2.3. Conformance Path /conformance", dataProvider = "conformance")
-    public void validateConformanceOperationAndResponse( TestPoint testPoint ) {
+    public void testValidateConformanceOperationAndResponse( TestPoint testPoint ) {
         String testPointUri = testPoint.getServerUrl() + testPoint.getPath();
         Response response = init().baseUri( testPointUri ).accept( JSON ).when().request( GET );
         validateConformanceOperationResponse( testPointUri, response );

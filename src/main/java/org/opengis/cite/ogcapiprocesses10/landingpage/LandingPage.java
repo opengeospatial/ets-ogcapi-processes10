@@ -59,7 +59,7 @@ public class LandingPage extends CommonFixture {
      * </pre>
      */
     @Test(description = "Implements Abstract Test 1: /conf/core/landingpage-op", groups = "A.2.1. Landing Page /")
-    public void landingPageRetrieval() {
+    public void testLandingPageRetrieval() {
         Response request = init().baseUri( rootUri.toString() ).accept( JSON ).when().request( GET, "/" );
         TestSuiteLogger.log(Level.INFO, rootUri.toString());
         request.then().statusCode( 200 );
@@ -73,7 +73,7 @@ public class LandingPage extends CommonFixture {
      * </pre>
      */
     @Test(description = "Implements Abstract Test 2: /conf/core/landingpage-success", groups = "A.2.1. Landing Page /")
-    public void landingPageValidation() {
+    public void testLandingPageValidation() {
 
         List<Object> links = response.getList( "links" );
 
@@ -109,7 +109,6 @@ public class LandingPage extends CommonFixture {
 	checkHtmlConfClass(rootUri.toString());
 	
     }
-
 	
     private Set<String> collectLinkTypes( List<Object> links ) {
         Set<String> linkTypes = new HashSet<>();

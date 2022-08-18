@@ -108,6 +108,7 @@ public class Process extends CommonFixture {
 	try {
 	    HttpClient client = HttpClientBuilder.create().build();
 	    HttpUriRequest request = new HttpGet(getInvalidProcessURL.toString());
+	    this.reqEntity = request;
 	    request.setHeader("Accept", "application/json");
 	    HttpResponse httpResponse = client.execute(request);
 	    StringWriter writer = new StringWriter();
@@ -145,6 +146,7 @@ public class Process extends CommonFixture {
 
 	    HttpClient client = HttpClientBuilder.create().build();
 	    HttpUriRequest request = new HttpGet(rootUri.toString()+echoProcessPath);
+	    this.reqEntity = request;
 	    request.setHeader("Accept", "application/json");
 	    HttpResponse httpResponse = client.execute(request);
 	    StringWriter writer = new StringWriter();
@@ -189,6 +191,7 @@ public class Process extends CommonFixture {
 	try {
 	    HttpClient client = HttpClientBuilder.create().build();
 	    HttpUriRequest request = new HttpGet(rootUri + echoProcessPath);
+	    this.reqEntity = request;
 	    request.setHeader("Accept", "application/json");
 	    HttpResponse httpResponse = client.execute(request);
 	    StringWriter writer = new StringWriter();

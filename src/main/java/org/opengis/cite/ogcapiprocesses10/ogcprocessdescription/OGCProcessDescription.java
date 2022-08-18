@@ -85,6 +85,7 @@ public class OGCProcessDescription extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
+		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -131,6 +132,7 @@ public class OGCProcessDescription extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
+		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -164,6 +166,7 @@ public class OGCProcessDescription extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
+		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -202,6 +205,7 @@ public class OGCProcessDescription extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
+		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -238,6 +242,7 @@ public class OGCProcessDescription extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
+		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -271,6 +276,7 @@ public class OGCProcessDescription extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
+		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();

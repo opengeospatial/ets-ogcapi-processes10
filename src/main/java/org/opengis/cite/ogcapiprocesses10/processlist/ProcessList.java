@@ -81,6 +81,7 @@ public class ProcessList extends CommonFixture {
 	    final ValidationData<Void> data = new ValidationData<>();
 	    try {
 			Request request = new PathSettingRequest(rootUri.toString(), getProcessListPath + "?limit=10", Request.Method.GET);
+		    this.reqEntity = new HttpGet(rootUri.toString() + getProcessListPath + "?limit=10");
 			validator.validateQuery(request, data);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -108,6 +109,7 @@ public class ProcessList extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(testEndpoint);
 			request.setHeader("Accept", "application/json");
+		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -115,7 +117,7 @@ public class ProcessList extends CommonFixture {
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			JsonNode processesNode = responseNode.get("processes");
 			if(!(processesNode instanceof ArrayNode)) {
-				Assert.fail("No processes available: " + testEndpoint);				
+				Assert.fail("No processes available.");				
 			} else {
 				ArrayNode processesArrayNode = (ArrayNode)processesNode;
 				Assert.assertTrue(processesArrayNode.size() == 1, "Wrong number of processes, expected 1, got " + processesArrayNode.size());
@@ -143,6 +145,7 @@ public class ProcessList extends CommonFixture {
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(testEndpoint);
+		    this.reqEntity = request;
 			request.setHeader("Accept", "application/json");
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
@@ -151,7 +154,7 @@ public class ProcessList extends CommonFixture {
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			JsonNode linksNode = responseNode.get("links");
 			if(!(linksNode instanceof ArrayNode)) {
-				Assert.fail("No links available: " + testEndpoint);				
+				Assert.fail("No links available.");				
 			} else {
 				ArrayNode linksArrayNode = (ArrayNode)linksNode;
 //				Assert.assertTrue(linksArrayNode.size() == 1, "Wrong number of processes, expected 1, got " + linksArrayNode.size());
@@ -178,6 +181,7 @@ public class ProcessList extends CommonFixture {
 	    final ValidationData<Void> data = new ValidationData<>();
 	    try {
 			Request request = new PathSettingRequest(rootUri.toString(), getProcessListPath, Request.Method.GET);
+		    this.reqEntity = new HttpGet(rootUri.toString() + getProcessListPath);
 			validator.validatePath(request, data);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -214,6 +218,7 @@ public class ProcessList extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
+		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
