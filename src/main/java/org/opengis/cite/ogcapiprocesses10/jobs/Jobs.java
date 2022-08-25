@@ -649,6 +649,105 @@ public class Jobs extends CommonFixture {
 		return executeNode;
 	}
 
+	private JsonNode createExecuteJsonNodeRawMixedMulti(String echoProcessId) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		boolean foundObjectInput = false;
+		for (Input input : inputs) {
+			boolean inputIsObject = false;
+			List<Type> types = input.getTypes();
+			if(foundObjectInput) {
+				addInput(input, inputsNode);
+				continue;
+			}
+			for (Type type : types) {
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+					addObjectInput(input, inputsNode);
+					foundObjectInput = true;
+					inputIsObject = true;
+					continue;
+				}
+			}
+			if(!inputIsObject) {
+				addInput(input, inputsNode);				
+			}
+		}
+		for (Output output : outputs) {
+			addOutput(output, outputsNode);
+		}
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		return executeNode;
+	}
+
+	private JsonNode createExecuteJsonNodeRawRef(String echoProcessId) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		boolean foundObjectInput = false;
+		for (Input input : inputs) {
+			boolean inputIsObject = false;
+			List<Type> types = input.getTypes();
+			if(foundObjectInput) {
+				addInput(input, inputsNode);
+				continue;
+			}
+			for (Type type : types) {
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+					addObjectInput(input, inputsNode);
+					foundObjectInput = true;
+					inputIsObject = true;
+					continue;
+				}
+			}
+			if(!inputIsObject) {
+				addInput(input, inputsNode);				
+			}
+		}
+		for (Output output : outputs) {
+			addOutput(output, outputsNode);
+		}
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		return executeNode;
+	}
+
+	private JsonNode createExecuteJsonNodeRawValueMulti(String echoProcessId) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		boolean foundObjectInput = false;
+		for (Input input : inputs) {
+			boolean inputIsObject = false;
+			List<Type> types = input.getTypes();
+			if(foundObjectInput) {
+				addInput(input, inputsNode);
+				continue;
+			}
+			for (Type type : types) {
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+					addObjectInput(input, inputsNode);
+					foundObjectInput = true;
+					inputIsObject = true;
+					continue;
+				}
+			}
+			if(!inputIsObject) {
+				addInput(input, inputsNode);				
+			}
+		}
+		for (Output output : outputs) {
+			addOutput(output, outputsNode);
+		}
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		return executeNode;
+	}
+
 	private void addObjectInput(Input input, ObjectNode inputsNode) {
 		ObjectNode inputObjectNode = objectMapper.createObjectNode();		
 		inputObjectNode.set("value", new TextNode(TEST_STRING_INPUT));		
@@ -1481,7 +1580,26 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-results-async-raw-mixed-multi ", groups = "job")
 	public void testJobResultsAsyncRawMixedMulti() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNodeRawMixedMulti(echoProcessId);
+		final ValidationData<Void> data = new ValidationData<>();		
+		try {
+			HttpResponse httpResponse = sendPostRequestASync(executeNode);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+			Header locationHeader = httpResponse.getFirstHeader("location");
+			String locationString = locationHeader.getValue();
+			httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
+			JsonNode responseNode = parseResponse(httpResponse);
+			Body body = Body.from(responseNode);
+			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+					.build();
+			getStatusValidator.validateResponse(response, data);
+			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -1510,7 +1628,7 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-results-async-raw-ref ", groups = "job")
 	public void testJobResultsAsyncRawRef() {
 		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+		JsonNode executeNode = createExecuteJsonNodeRawRef(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();		
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
@@ -1556,7 +1674,26 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-multi ", groups = "job")
 	public void testJobResultsAsyncRawValueMulti() {
-		Assert.fail("Not implemented yet.");
+		//create job
+		JsonNode executeNode = createExecuteJsonNodeRawValueMulti(echoProcessId);
+		final ValidationData<Void> data = new ValidationData<>();		
+		try {
+			HttpResponse httpResponse = sendPostRequestASync(executeNode);
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+			Header locationHeader = httpResponse.getFirstHeader("location");
+			String locationString = locationHeader.getValue();
+			httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
+			JsonNode responseNode = parseResponse(httpResponse);
+			Body body = Body.from(responseNode);
+			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+					.build();
+			getStatusValidator.validateResponse(response, data);
+			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+		} catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage());
+		}
 	}
 
 	/**
