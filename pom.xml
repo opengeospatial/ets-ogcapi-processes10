@@ -8,7 +8,7 @@
 
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ets-ogcapi-processes10</artifactId>
-  <version>0.3</version>
+  <version>0.4-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>OGC API-Processes 1.0 Conformance Test Suite</name>
@@ -29,7 +29,7 @@
     <connection>scm:git:https://github.com/opengeospatial/ets-ogcapi-processes10.git</connection>
     <developerConnection>scm:git:git@github.com:opengeospatial/ets-ogcapi-processes10.git</developerConnection>
     <url>https://github.com/opengeospatial/ets-ogcapi-processes10</url>
-    <tag>0.3</tag>
+    <tag>HEAD</tag>
   </scm>
   <issueManagement>
     <system>GitHub Issue Tracker</system>
