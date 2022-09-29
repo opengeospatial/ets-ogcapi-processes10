@@ -12,6 +12,7 @@ for more information, including the API documentation.
 Run the following commands:
 
 [source,bash]
+....
 # Clone this repository
 git clone https://github.com/opengeospatial/ets-ogcapi-processes10
 cd ets-ogcapi-processes10
@@ -21,6 +22,7 @@ docker build . -t teamengine/ogcapi-processes:latest
 
 # Run the docker container
 docker run -d --name cite-teamengine -p 8080:8080 teamengine/ogcapi-processes:latest
+....
 
 From here, you can now access http://localhost:8080/teamengine to access the deployed teamengine with the OGC API - Processes Test Suite.
 
