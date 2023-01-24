@@ -42,9 +42,13 @@ suite in a command shell:
 This test suite comes with a Dockerfile which can be used to easily setup the OGC test harness with
 the test suite.
 
-You need to retrieve the https://hub.docker.com/r/ogccite/ets-ogcapi-processes10[image from Docker Hub] by running the following
+To run the test suite locally, using docker, execute following maven command from the root folder of the repository:
 
-    docker run -p 8081:8080 ogccite/ets-ogcapi-processes10
+`mvn clean install -Dsource=8  docker:run -Pdocker`
+
+Alternatively, you can retrieve a docker https://hub.docker.com/r/ogccite/ets-ogcapi-processes10[image from Docker Hub] by running the following
+
+`docker run -p 8081:8080 ogccite/ets-ogcapi-processes10`
 
 Then, open http://localhost:8081/teamengine/ to see below
 
