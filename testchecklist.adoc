@@ -4,8 +4,8 @@
 |===
 |Serial | Identifier | Java Class.method
 | | Core  | 
-| Abstract test A.1 | /conf/core/landingpage-op | LandingPage.testLandingPageRetrieval
-| Abstract test A.2 | /conf/core/landingpage-success | LandingPage.testLandingPageValidation
+| Abstract test A.1 | /conf/core/landingpage-op | LandingPage.testLandingPageRetrieval (CHECKED)
+| Abstract test A.2 | /conf/core/landingpage-success | LandingPage.testLandingPageValidation (CHECKED)
 | Abstract test A.3 | /conf/core/api-definition-op | Not implemented
 | Abstract test A.4 | /conf/core/api-definition-success | Not implemented
 | Abstract test A.5 | /conf/core/conformance-op | Conformance.conformanceUris
