@@ -1,5 +1,6 @@
 package org.opengis.cite.ogcapiprocesses10.processlist;
 
+import java.io.FileWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -55,14 +56,15 @@ public class ProcessList extends CommonFixture {
 	@BeforeClass
 	public void setup() {		
 		String processListEndpointString = rootUri.toString() + getProcessListPath;		
-		try {
+		try {		
 			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
 			addServerUnderTest(openApi3);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
 		    final Operation operation = openApi3.getOperationById(OPERATION_ID);
 		    validator = new OperationValidator(openApi3, path, operation);
 		    getProcessListURL = new URL(processListEndpointString);
-		} catch (MalformedURLException | ResolutionException | ValidationException e) {
+		} catch (MalformedURLException | ResolutionException | ValidationException e) {	
+			
 			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -177,16 +179,16 @@ public class ProcessList extends CommonFixture {
 	 * </pre>
 	 */
 	@Test(description = "Implements Requirement /req/core/process-list ", groups = "processlist")
-	public void testProcessList() {
+	public void testProcessList() {		
 	    final ValidationData<Void> data = new ValidationData<>();
 	    try {
-			Request request = new PathSettingRequest(rootUri.toString(), getProcessListPath, Request.Method.GET);
-		    this.reqEntity = new HttpGet(rootUri.toString() + getProcessListPath);
-			validator.validatePath(request, data);
+			Request request = new PathSettingRequest(rootUri.toString(), getProcessListPath, Request.Method.GET);	
+		    this.reqEntity = new HttpGet(rootUri.toString() + getProcessListPath);		
+			validator.validatePath(request, data);			
 		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail("Could not validate path: " + getProcessListPath + "\n" + printResults(data.results()));
-		}
+			e.printStackTrace();			
+			Assert.fail("Could not validate path: " + getProcessListPath + "\n" + printResults(data.results()));		
+		}	  
 		Assert.assertTrue(data.isValid(), printResults(data.results()));
 	}
 
