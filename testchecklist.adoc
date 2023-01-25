@@ -14,8 +14,8 @@
 | Abstract test A.8 | /conf/core/process-list |  ProcessList.testProcessList (CHECKED)
 | Abstract test A.9 | /conf/core/pl-limit-definition |  ProcessList.testPlLimitDefinition (CHECKED)
 | Abstract test A.10 | /conf/core/process-list-success | ProcessList.testProcessListSuccess (CHECKED)
-| Abstract test A.11 | /conf/core/pl-links | ProcessList.testPlLinks
-| Abstract test A.12 | /conf/core/pl-limit-response | ProcessList.testPlLimitResponse
+| Abstract test A.11 | /conf/core/pl-links | ProcessList.testPlLinks (CHECKED)
+| Abstract test A.12 | /conf/core/pl-limit-response | ProcessList.testPlLimitResponse (CHECKED)
 | Abstract test A.13 | /conf/core/process | Process.testProcess
 | Abstract test A.14 | /conf/core/process-success | Process.testProcessSuccess
 | Abstract test A.15 | /conf/core/process-exception-no-such-process | Process.testProcessExceptionNoSuchProcess
