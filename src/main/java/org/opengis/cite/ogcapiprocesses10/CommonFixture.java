@@ -89,7 +89,7 @@ public class CommonFixture {
         limit = (Integer) testContext.getSuite().getAttribute( SuiteAttribute.PROCESS_TEST_LIMIT.getName() );
         testAllProcesses = (Boolean) testContext.getSuite().getAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName() );
         try {
-			specURI = new URI("https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/openapi.yaml");
+			specURI = new URI("https://api.swaggerhub.com/apis/OGC/ogcapi-processes-1-example-1/1.0.0");
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
