@@ -12,7 +12,7 @@
 | Abstract test A.6 | /conf/core/conformance-success | Conformance.testValidateConformanceOperationAndResponse (CHECKED)
 | Abstract test A.7 | /conf/core/http | GeneralHttp.testHttp (CHECKED)
 | Abstract test A.8 | /conf/core/process-list |  ProcessList.testProcessList (CHECKED)
-| Abstract test A.9 | /conf/core/pl-limit-definition |  ProcessList.testPlLimitDefinition
+| Abstract test A.9 | /conf/core/pl-limit-definition |  ProcessList.testPlLimitDefinition (CHECKED)
 | Abstract test A.10 | /conf/core/process-list-success | ProcessList.testProcessListSuccess
 | Abstract test A.11 | /conf/core/pl-links | ProcessList.testPlLinks
 | Abstract test A.12 | /conf/core/pl-limit-response | ProcessList.testPlLimitResponse
