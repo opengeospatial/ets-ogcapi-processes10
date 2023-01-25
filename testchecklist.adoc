@@ -8,9 +8,9 @@
 | Abstract test A.2 | /conf/core/landingpage-success | LandingPage.testLandingPageValidation (CHECKED)
 | Abstract test A.3 | /conf/core/api-definition-op | Not implemented
 | Abstract test A.4 | /conf/core/api-definition-success | Not implemented
-| Abstract test A.5 | /conf/core/conformance-op | Conformance.conformanceUris
+| Abstract test A.5 | /conf/core/conformance-op | Conformance.conformanceUris (CHECKED)
 | Abstract test A.6 | /conf/core/conformance-success | Conformance.testValidateConformanceOperationAndResponse (CHECKED)
-| Abstract test A.7 | /conf/core/http | GeneralHttp.testHttp
+| Abstract test A.7 | /conf/core/http | GeneralHttp.testHttp (CHECKED)
 | Abstract test A.8 | /conf/core/process-list |  ProcessList.testProcessList
 | Abstract test A.9 | /conf/core/pl-limit-definition |  ProcessList.testPlLimitDefinition
 | Abstract test A.10 | /conf/core/process-list-success | ProcessList.testProcessListSuccess
