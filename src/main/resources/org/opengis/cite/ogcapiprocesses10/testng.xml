@@ -12,6 +12,7 @@
 
   <test name="Core">
     <packages>
+      <package name="org.opengis.cite.ogcapiprocesses10.general" />
       <package name="org.opengis.cite.ogcapiprocesses10.landingpage" />
       <package name="org.opengis.cite.ogcapiprocesses10.conformance" />
       <package name="org.opengis.cite.ogcapiprocesses10.processlist" />
