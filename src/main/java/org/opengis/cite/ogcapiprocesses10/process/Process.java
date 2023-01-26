@@ -66,6 +66,7 @@ public class Process extends CommonFixture {
     public void setup(ITestContext testContext) {		
 	String processListEndpointString = rootUri.toString() + getProcessListPath;		
 	try {
+	
 	    openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
 	    addServerUnderTest(openApi3);
 	    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID_GET_PROCESS_DESCRIPTION);
@@ -155,6 +156,7 @@ public class Process extends CommonFixture {
 	    JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 	    Body body = Body.from(responseNode);
 	    Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+	
 	    Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
 		.build();
 	    getProcessDescriptionValidator.validateResponse(response, data);
