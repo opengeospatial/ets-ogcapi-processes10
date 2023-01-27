@@ -97,7 +97,8 @@ public class CommonFixture {
 	    //specURI = new URI("https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/openapi.yaml");
 	    //specURI = new URI("https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/ogcapi-processes-1.yaml");
 	    //specURI = new URI("https://raw.githubusercontent.com/GeoLabs/ogcapi-processes/fix-failed-loading-openapi/openapi/ogcapi-processes.yaml");
-	    specURI = new URI("https://raw.githubusercontent.com/GeoLabs/ogcapi-processes/fix-failed-loading-openapi/openapi.yaml");
+	    //specURI = new URI("https://raw.githubusercontent.com/GeoLabs/ogcapi-processes/fix-failed-loading-openapi/openapi.yaml");
+	    specURI = new URI("http://localhost:8080/teamengine/spec/ogcapi/processes/part1/1.0.0/openapi/ogcapi-processes-1.yaml");
 	} catch (URISyntaxException e) {
 	    e.printStackTrace();
 	}

@@ -68,6 +68,10 @@ RUN cd /root && \
     unzip -q -o teamengine-console-*-base.zip -d /root/te_base && \
     unzip -q -o ets-ogcapi-processes10-*-ctl.zip -d /root/te_base/scripts && \
     unzip -q -o ets-ogcapi-processes10-*-deps.zip -d /usr/local/tomcat/webapps/teamengine/WEB-INF/lib && \
+    mkdir -p /usr/local/tomcat/webapps/teamengine/spec && \
+    curl -k -o ogcapi-processes-p1-1_0_0.zip https://schemas.opengis.net/ogcapi/ogcapi-processes-p1-1_0_0.zip && \
+    unzip -q -o ogcapi-processes-p1-1_0_0.zip -d /usr/local/tomcat/webapps/teamengine/spec && \
+    sed "s#title: A sample API conforming#title: |-\n    A sample API conforming#g" -i /usr/local/tomcat/webapps/teamengine/spec/ogcapi/processes/part1/1.0.0/openapi/ogcapi-processes-1.yaml && \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $BUILD_DEPS && \
     rm -rf /var/lib/apt/lists/* /root/*zip /root/*war
 
