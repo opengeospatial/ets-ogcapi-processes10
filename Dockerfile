@@ -30,7 +30,8 @@
 #  1. build the teamengine
 #  2. build the Test Suite
 #
-FROM maven:3.8.3-jdk-8-slim AS build
+#FROM maven:3.8.3-jdk-8-slim AS build
+FROM maven:3.8.6-jdk-8-slim AS build
 ARG BUILD_DEPS=" \
     git \
 "

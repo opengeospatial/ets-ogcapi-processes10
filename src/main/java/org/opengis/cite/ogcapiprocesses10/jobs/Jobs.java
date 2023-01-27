@@ -252,6 +252,7 @@ public class Jobs extends CommonFixture {
 		}
 		executeNode.set("inputs", inputsNode);
 		executeNode.set("outputs", outputsNode);
+		/* Shouldn't we validate the executeNode against the execute.yaml schema? */
 		return executeNode;
 	}
 
@@ -1234,6 +1235,17 @@ public class Jobs extends CommonFixture {
 		}
 	}
 
+    private void validateExecuteOneOutput(HttpResponse httpResponse){
+	try{
+	    // Should consider response mimetype and encoding
+	    StringWriter writer = new StringWriter();
+	    String encoding = StandardCharsets.UTF_8.name();
+	    IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+	    Assert.assertEquals(writer.toString(), TEST_STRING_INPUT);
+	} catch (Exception e) {
+	    Assert.fail(e.getLocalizedMessage());
+	}
+    }
 	/**
 	* <pre>
 	* Abstract Test 28: /conf/core/job-creation-sync-raw-value-one
@@ -1248,17 +1260,16 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-one ", groups = "job")
 	public void testJobCreationSyncRawValueOne() {
-		// create job
-		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
-		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
-			JsonNode responseNode = parseResponse(httpResponse);
-			Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+	    // create job
+	    JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
+	    try {
+		HttpResponse httpResponse = sendPostRequestSync(executeNode);
+		int statusCode = httpResponse.getStatusLine().getStatusCode();
+		Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+		validateExecuteOneOutput(httpResponse);
+	    } catch (Exception e) {
+		Assert.fail(e.getLocalizedMessage());
+	    }
 	}
 
 	/**
@@ -1721,17 +1732,26 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-one ", groups = "job")
 	public void testJobResultsAsyncRawValueOne() {
-		// create job
-		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
-		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			JsonNode responseNode = parseResponse(httpResponse);
-			Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+	    // create job
+	    JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
+	    try {
+		System.out.println(executeNode);
+		HttpResponse httpResponse = sendPostRequestASync(executeNode);
+		System.out.println(httpResponse);
+		int statusCode = httpResponse.getStatusLine().getStatusCode();
+		Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+		System.out.println(httpResponse);
+		if(statusCode==200){
+		    JsonNode responseNode = parseResponse(httpResponse);
+		    System.out.println(responseNode);
+		    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+		}else{
+		    // Need to fetch the href with rel="monitor"
+		    JsonNode responseNode = parseResponse(httpResponse);
 		}
+	    } catch (Exception e) {
+		Assert.fail(e.getLocalizedMessage());
+	    }
 	}
 
 	private JsonNode createExecuteJsonNodeOneInput(String echoProcessId, String responseValue) {
@@ -1773,24 +1793,25 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+			System.out.println(executeNode);
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			Header[] headers = httpResponse.getHeaders("Link");
-			boolean foundRelMonitorHeader = false;
+			/*boolean foundRelMonitorHeader = false;
 			String statusUrl = "";
 			for (Header header : headers) {
-				String heaerValue = header.getValue();
-				if (heaerValue.contains("rel=monitor")) {
+				String headerValue = header.getValue();
+				if (headerValue.contains("rel=monitor")) {
 					foundRelMonitorHeader = true;
-					statusUrl = heaerValue.split(";")[0];
+					statusUrl = headerValue.split(";")[0];
 					break;
 				}
 			}
 			if(!foundRelMonitorHeader) {
 				throw new SkipException("Did not find Link with value rel=monitor, skipping test.");
 			}
-			httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
+			httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());*/
 			validateResponse(httpResponse, getResultValidator, data);
 		} catch (IOException e) {
 			Assert.fail(e.getLocalizedMessage());

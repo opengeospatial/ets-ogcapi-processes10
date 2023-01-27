@@ -14,4 +14,6 @@ public class OgcApiProcesses10 {
 
     public static final String GEOJSON_MIME_TYPE = "application/geo+json";
 
+    public static final String PROBLEM_MIME_TYPE = "application/problem+json";
+
 }

@@ -13,7 +13,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpRequest;
 import org.openapi4j.core.validation.ValidationResults;
 import org.openapi4j.core.validation.ValidationResults.ValidationItem;
@@ -21,6 +25,7 @@ import org.openapi4j.parser.model.v3.OpenApi3;
 import org.openapi4j.parser.model.v3.Server;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -89,10 +94,13 @@ public class CommonFixture {
         limit = (Integer) testContext.getSuite().getAttribute( SuiteAttribute.PROCESS_TEST_LIMIT.getName() );
         testAllProcesses = (Boolean) testContext.getSuite().getAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName() );
         try {
-			specURI = new URI("https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/openapi.yaml");
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
+	    //specURI = new URI("https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/openapi.yaml");
+	    //specURI = new URI("https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/ogcapi-processes-1.yaml");
+	    //specURI = new URI("https://raw.githubusercontent.com/GeoLabs/ogcapi-processes/fix-failed-loading-openapi/openapi/ogcapi-processes.yaml");
+	    specURI = new URI("https://raw.githubusercontent.com/GeoLabs/ogcapi-processes/fix-failed-loading-openapi/openapi.yaml");
+	} catch (URISyntaxException e) {
+	    e.printStackTrace();
+	}
     }
 
     @BeforeMethod
@@ -180,6 +188,19 @@ public class CommonFixture {
 				     + headerValue
 				     + "' has been found" );
 	String bodyHTML = request.getBody().asString();
+    }
+
+    protected JsonNode parseJsonResponse(HttpResponse httpResponse){
+	try{
+	    StringWriter writer = new StringWriter();
+	    String encoding = StandardCharsets.UTF_8.name();
+	    IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+	    JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+	    return responseNode;
+	} catch(Exception e){
+	    Assert.fail("Could not parse the response. Exception: " + e.getLocalizedMessage());
+	    return null;
+	}
     }
 
     

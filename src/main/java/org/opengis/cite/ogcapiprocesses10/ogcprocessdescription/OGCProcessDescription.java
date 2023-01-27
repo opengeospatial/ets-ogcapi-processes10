@@ -4,6 +4,8 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Iterator;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -32,6 +34,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
+import static org.opengis.cite.ogcapiprocesses10.EtsAssert.assertTrue;
+
 /**
 *
 * A.3 OGC Process Description
@@ -45,69 +49,86 @@ public class OGCProcessDescription extends CommonFixture {
 	private OpenApi3 openApi3;
 	
 	private String getProcessListPath = "/processes";
+	private String getProcessDescriptionPath = "/processes/{processId}";
 	
+	private OperationValidator validatorList;
 	private OperationValidator validator;
     
     private URL getProcessListURL;
+    //private static String urlSchema_inputs="http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/inputDescription.yaml";
+    private static String urlSchema_inputs="https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/swagger/inputDescription.yaml";
+    private static String urlSchema_schema="https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/swagger/schema.yaml";
+    private static String urlSchema_outputs="https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/swagger/outputDescription.yaml";
     
 	@BeforeClass
 	public void setup() {		
 		String processListEndpointString = rootUri.toString() + getProcessListPath;		
 		try {
-			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
-			addServerUnderTest(openApi3);
-		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
-		    final Operation operation = openApi3.getOperationById(OPERATION_ID);
-		    validator = new OperationValidator(openApi3, path, operation);
+		    openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+		    addServerUnderTest(openApi3);
+		    final Path path1 = openApi3.getPathItemByOperationId(OPERATION_ID);
+		    final Operation operation1 = openApi3.getOperationById(OPERATION_ID);
+		    validator = new OperationValidator(openApi3, path1, operation1);
 		    getProcessListURL = new URL(processListEndpointString);
+		    // Shouldn't we fetch the process list from here and reuse it afterward?
 		} catch (MalformedURLException | ResolutionException | ValidationException e) {
-			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
+			Assert.fail("Could not set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
 		}
 	}
 
+    private void validateIndividualProcess(HttpResponse httpResponse, JsonNode responseNode,OperationValidator lvalidator,final ValidationData<Void> data){
+	Body body = Body.from(responseNode);
+	Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+	Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
+	    .build();
+	lvalidator.validateResponse(response, data);
+	Assert.assertTrue(data.isValid(), printResults(data.results()));
+    }
 
-	/**
-	 * <pre>
-	 * Abstract Test 48: /conf/ogc-process-description/json-encoding
-	 * Test Purpose: Verify that a JSON-encoded OGC Process Description complies with the required structure and contents.
-	 * Requirement: /req/ogc-process-description/json-encoding
-	 * Test Method: 
-	 * |===
-	 * 1. Retrieve a description of each process according to test /conf/core/process.
+    
+    /**
+     * <pre>
+     * Abstract Test 48: /conf/ogc-process-description/json-encoding
+     * Test Purpose: Verify that a JSON-encoded OGC Process Description complies with the required structure and contents.
+     * Requirement: /req/ogc-process-description/json-encoding
+     * Test Method: 
+     * |===
+     * 1. Retrieve a description of each process according to test /conf/core/process.
      *
      * 2. For each process, verify the contents of the response body validate against the JSON Schema: process.yaml.
-	 * </pre>
-	 */
+     * </pre>
+     */
 	@Test(description = "Implements Requirement /req/ogc-process-description/json-encoding", groups = "ogcprocessdescription")
 	public void testOGCProcessDescriptionJSON() {
 		final ValidationData<Void> data = new ValidationData<>();
+		final ValidationData<Void> dataIndividual = new ValidationData<>();
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
-		    this.reqEntity = request;
+			this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+			JsonNode responseNode = parseJsonResponse(httpResponse);
 			JsonNode processesNode = responseNode.get("processes");
 			if(processesNode.isArray()) {
-				ArrayNode processesArrayNode = (ArrayNode)processesNode;
-				if(testAllProcesses) {
-					for (JsonNode jsonNode : processesArrayNode) {
-
-						client = HttpClientBuilder.create().build();
-						request = new HttpGet(getProcessListURL.toString());
-					}
-				}
+			    ArrayNode processesArrayNode = (ArrayNode)processesNode;
+			    int cnt=0;
+			    // Loop over the processes and validate their processDescription
+			    // TODO: discuss with the development team about the choice for testing (shouldn't we also test the processTestLimit? cf. SuiteAttribute class)
+			    for (JsonNode jsonNode : processesArrayNode) {
+				validateIndividualProcess(httpResponse,jsonNode,validator,data);
+				HttpClient client1 = HttpClientBuilder.create().build();
+				HttpUriRequest request1 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").asText());
+				request1.setHeader("Accept", "application/json");
+				//this.reqEntity = request1;
+				HttpResponse httpResponse1 = client1.execute(request1);
+				JsonNode responseNode1 = parseJsonResponse(httpResponse1);
+				validateIndividualProcess(httpResponse1,responseNode1,validator,dataIndividual);
+				if(!testAllProcesses && cnt==limit-1/* another name processTestLimit cf. CommonFixture*/)
+				    break;
+				cnt++;
+			    }
 			}
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -120,30 +141,53 @@ public class OGCProcessDescription extends CommonFixture {
 	 * Requirement: /req/ogc-process-description/inputs-def
 	 * Test Method: 
 	 * |===
-     * 1. Retrieve a description of each process according to test /conf/core/process.
-     *
-     * 2. For each process, verify that the definition of the inputs conforms to the JSON Schema: inputDescription.yaml.
+	 * 1. Retrieve a description of each process according to test /conf/core/process.
+	 *
+	 * 2. For each process, verify that the definition of the inputs conforms to the JSON Schema: inputDescription.yaml.
 	 * </pre>
 	 */
 	@Test(description = "Implements Requirement /req/ogc-process-description/inputs-def", groups = "ogcprocessdescription")
 	public void testOGCProcessDescriptionInputsDef() {
 		final ValidationData<Void> data = new ValidationData<>();
+		final ValidationData<Void> dataIndividual = new ValidationData<>();
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
-		    this.reqEntity = request;
+			this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			JsonNode responseNode = parseJsonResponse(httpResponse);
+			JsonNode processesNode = responseNode.get("processes");
+			if(processesNode.isArray()) {
+			    ArrayNode processesArrayNode = (ArrayNode)processesNode;
+			    int cnt=0;
+			    // Loop over the processes and validate their processDescription
+			    // TODO: discuss with the development team about the choice for testing (shouldn't we also test the processTestLimit? cf. SuiteAttribute class)
+			    for (JsonNode jsonNode : processesArrayNode) {
+				validateIndividualProcess(httpResponse,jsonNode,validator,data);
+				HttpClient client1 = HttpClientBuilder.create().build();
+				HttpUriRequest request1 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").asText());
+				request1.setHeader("Accept", "application/json");
+				//this.reqEntity = request1;
+				HttpResponse httpResponse1 = client1.execute(request1);
+				JsonNode responseNode1 = parseJsonResponse(httpResponse1);
+				if(responseNode1.get("inputs")!=null){
+				    Iterator<Map.Entry<String,JsonNode>> currentFields=responseNode1.get("inputs").fields();
+					// Loop over the inputs and validate their processDescription
+					for (int i=0;currentFields.hasNext(); i++) {
+					    Map.Entry<String,JsonNode> currentField=currentFields.next();
+					    System.out.println(currentField.getKey());
+					    System.out.println(currentField.getValue());
+					    assertTrue( validateResponseAgainstSchema(urlSchema_inputs,currentField.getValue().asText()),
+							"The input identified as " + currentField.getKey() + " from " + jsonNode.get("id").asText() + " process does not conform to the schema: "+urlSchema_inputs);
+					}
+				}
+				validateIndividualProcess(httpResponse1,responseNode1,validator,dataIndividual);
+				if(!testAllProcesses && cnt==limit-1/* another name processTestLimit cf. CommonFixture*/)
+				    break;
+				cnt++;
+			    }
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -162,22 +206,49 @@ public class OGCProcessDescription extends CommonFixture {
 	@Test(description = "Implements Requirement /req/ogc-process-description/input-def", groups = "ogcprocessdescription")
 	public void testOGCProcessDescriptionInputDef() {
 		final ValidationData<Void> data = new ValidationData<>();
+		final ValidationData<Void> dataIndividual = new ValidationData<>();
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
-		    this.reqEntity = request;
+			this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			JsonNode responseNode = parseJsonResponse(httpResponse);
+			JsonNode processesNode = responseNode.get("processes");
+			if(processesNode.isArray()) {
+			    ArrayNode processesArrayNode = (ArrayNode)processesNode;
+			    int cnt=0;
+			    // Loop over the processes and validate their processDescription
+			    // TODO: discuss with the development team about the choice for testing (shouldn't we also test the processTestLimit? cf. SuiteAttribute class)
+			    for (JsonNode jsonNode : processesArrayNode) {
+				validateIndividualProcess(httpResponse,jsonNode,validator,data);
+				HttpClient client1 = HttpClientBuilder.create().build();
+				HttpUriRequest request1 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").asText());
+				request1.setHeader("Accept", "application/json");
+				//this.reqEntity = request1;
+				HttpResponse httpResponse1 = client1.execute(request1);
+				JsonNode responseNode1 = parseJsonResponse(httpResponse1);
+				if(responseNode1.get("inputs")!=null){
+				    Iterator<Map.Entry<String,JsonNode>> currentFields=responseNode1.get("inputs").fields();
+					// Loop over the inputs and validate their processDescription
+					for (int i=0;currentFields.hasNext(); i++) {
+					    Map.Entry<String,JsonNode> currentField=currentFields.next();
+					    JsonNode currentSchema=currentField.getValue().get("schema");
+					    if(currentSchema==null)
+						Assert.fail("No schema for this input: "+currentField.getKey()+" from the following process: "+jsonNode.get("id").asText());
+					    else{
+						System.out.println(currentField.getKey());
+						System.out.println(currentField.getValue());
+						assertTrue( validateResponseAgainstSchema(urlSchema_schema,currentSchema.asText()),
+							    "The input identified as " + currentField.getKey() + " from " + jsonNode.get("id").asText() + " process does not conform to the schema: "+urlSchema_schema);
+					    }
+					}
+				}
+				if(!testAllProcesses && cnt==limit-1/* another name processTestLimit cf. CommonFixture*/)
+				    break;
+				cnt++;
+			    }
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -201,22 +272,34 @@ public class OGCProcessDescription extends CommonFixture {
 	@Test(description = "Implements Requirement /req/ogc-process-description/input-mixed-type", groups = "ogcprocessdescription")
 	public void testOGCProcessDescriptionMixedType() {
 		final ValidationData<Void> data = new ValidationData<>();
+		final ValidationData<Void> dataIndividual = new ValidationData<>();
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
-		    this.reqEntity = request;
+			this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			JsonNode responseNode = parseJsonResponse(httpResponse);
+			JsonNode processesNode = responseNode.get("processes");
+			if(processesNode.isArray()) {
+			    ArrayNode processesArrayNode = (ArrayNode)processesNode;
+			    int cnt=0;
+			    // Loop over the processes and validate their processDescription
+			    // TODO: discuss with the development team about the choice for testing (shouldn't we also test the processTestLimit? cf. SuiteAttribute class)
+			    for (JsonNode jsonNode : processesArrayNode) {
+				validateIndividualProcess(httpResponse,jsonNode,validator,data);
+				HttpClient client1 = HttpClientBuilder.create().build();
+				HttpUriRequest request1 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").asText());
+				request1.setHeader("Accept", "application/json");
+				//this.reqEntity = request1;
+				HttpResponse httpResponse1 = client1.execute(request1);
+				JsonNode responseNode1 = parseJsonResponse(httpResponse1);
+				validateIndividualProcess(httpResponse1,responseNode1,validator,dataIndividual);
+				if(!testAllProcesses && cnt==limit-1/* another name processTestLimit cf. CommonFixture*/)
+				    break;
+				cnt++;
+			    }
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -236,24 +319,47 @@ public class OGCProcessDescription extends CommonFixture {
 	 * </pre>
 	 */
 	@Test(description = "Implements Requirement /req/ogc-process-description/outputs-def", groups = "ogcprocessdescription")
-	public void testProcessListSuccess() {
+	public void testOGCProcessDescriptionOutputsDef() {
 		final ValidationData<Void> data = new ValidationData<>();
+		final ValidationData<Void> dataIndividual = new ValidationData<>();
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
-		    this.reqEntity = request;
+			this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			JsonNode responseNode = parseJsonResponse(httpResponse);
+			JsonNode processesNode = responseNode.get("processes");
+			if(processesNode.isArray()) {
+			    ArrayNode processesArrayNode = (ArrayNode)processesNode;
+			    int cnt=0;
+			    // Loop over the processes and validate their processDescription
+			    // TODO: discuss with the development team about the choice for testing (shouldn't we also test the processTestLimit? cf. SuiteAttribute class)
+			    for (JsonNode jsonNode : processesArrayNode) {
+				validateIndividualProcess(httpResponse,jsonNode,validator,data);
+				HttpClient client1 = HttpClientBuilder.create().build();
+				HttpUriRequest request1 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").asText());
+				request1.setHeader("Accept", "application/json");
+				//this.reqEntity = request1;
+				HttpResponse httpResponse1 = client1.execute(request1);
+				JsonNode responseNode1 = parseJsonResponse(httpResponse1);
+				if(responseNode1.get("inputs")!=null){
+				    Iterator<Map.Entry<String,JsonNode>> currentFields=responseNode1.get("outputs").fields();
+					// Loop over the inputs and validate their processDescription
+					for (int i=0;currentFields.hasNext(); i++) {
+					    Map.Entry<String,JsonNode> currentField=currentFields.next();
+					    System.out.println(currentField.getKey());
+					    System.out.println(currentField.getValue());
+					    assertTrue( validateResponseAgainstSchema(urlSchema_outputs,currentField.getValue().asText()),
+							"The output identified as " + currentField.getKey() + " from " + jsonNode.get("id").asText() + " process does not conform to the schema: "+urlSchema_outputs);
+					}
+				}
+				validateIndividualProcess(httpResponse1,responseNode1,validator,dataIndividual);
+				if(!testAllProcesses && cnt==limit-1/* another name processTestLimit cf. CommonFixture*/)
+				    break;
+				cnt++;
+			    }
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -272,22 +378,50 @@ public class OGCProcessDescription extends CommonFixture {
 	@Test(description = "Implements Requirement /req/ogc-process-description/output-def ", groups = "ogcprocessdescription")
 	public void testOGCProcessDescriptionOutputDef() {
 		final ValidationData<Void> data = new ValidationData<>();
+		final ValidationData<Void> dataIndividual = new ValidationData<>();
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
-		    this.reqEntity = request;
+			this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			JsonNode responseNode = parseJsonResponse(httpResponse);
+			JsonNode processesNode = responseNode.get("processes");
+			if(processesNode.isArray()) {
+			    ArrayNode processesArrayNode = (ArrayNode)processesNode;
+			    int cnt=0;
+			    // Loop over the processes and validate their processDescription
+			    // TODO: discuss with the development team about the choice for testing (shouldn't we also test the processTestLimit? cf. SuiteAttribute class)
+			    for (JsonNode jsonNode : processesArrayNode) {
+				validateIndividualProcess(httpResponse,jsonNode,validator,data);
+				HttpClient client1 = HttpClientBuilder.create().build();
+				HttpUriRequest request1 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").asText());
+				request1.setHeader("Accept", "application/json");
+				//this.reqEntity = request1;
+				HttpResponse httpResponse1 = client1.execute(request1);
+				JsonNode responseNode1 = parseJsonResponse(httpResponse1);
+				if(responseNode1.get("inputs")!=null){
+				    Iterator<Map.Entry<String,JsonNode>> currentFields=responseNode1.get("outputs").fields();
+					// Loop over the inputs and validate their processDescription
+					for (int i=0;currentFields.hasNext(); i++) {
+					    Map.Entry<String,JsonNode> currentField=currentFields.next();
+					    JsonNode currentSchema=currentField.getValue().get("schema");
+					    if(currentSchema==null)
+						Assert.fail("No schema for this input: "+currentField.getKey()+" from the following process: "+jsonNode.get("id").asText());
+					    else{
+						System.out.println(currentField.getKey());
+						System.out.println(currentField.getValue());
+						assertTrue( validateResponseAgainstSchema(urlSchema_schema,currentSchema.asText()),
+							    "The output identified as " + currentField.getKey() + " from " + jsonNode.get("id").asText() + " process does not conform to the schema: "+urlSchema_schema);
+					    }
+					}
+				}
+				validateIndividualProcess(httpResponse1,responseNode1,validator,dataIndividual);
+				if(!testAllProcesses && cnt==limit-1/* another name processTestLimit cf. CommonFixture*/)
+				    break;
+				cnt++;
+			    }
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
