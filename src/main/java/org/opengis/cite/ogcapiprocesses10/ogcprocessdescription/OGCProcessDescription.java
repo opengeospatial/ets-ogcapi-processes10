@@ -111,10 +111,6 @@ public class OGCProcessDescription extends CommonFixture {
 					for (int i=0; i < Math.min(processTestLimit,5); i++) {  //we intentionally limit this to 5
 						
 						JsonNode jsonNode = processesArrayNode.get(i);
-
-					
-						
-						//=========
 					
 							HttpClient client2 = HttpClientBuilder.create().build();
 							HttpUriRequest request2 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").textValue());
@@ -131,11 +127,10 @@ public class OGCProcessDescription extends CommonFixture {
 									.build();
 							validator.validateResponse(response2, data);
 							Assert.assertTrue(data.isValid(), printResults(data.results()));	
-						
-						//==========
+		
 					}
 				}
-				else {
+				else { //test echo process only
 				
 					HttpClient client2 = HttpClientBuilder.create().build();
 					HttpUriRequest request2 = new HttpGet(getProcessListURL.toString()+"/"+echoProcessId);
@@ -175,13 +170,15 @@ public class OGCProcessDescription extends CommonFixture {
      * 2. For each process, verify that the definition of the inputs conforms to the JSON Schema: inputDescription.yaml.
 	 * </pre>
 	 */
-	@Test(description = "Implements Requirement /req/ogc-process-description/inputs-def", groups = "ogcprocessdescription")
+	@Test(description = "Implements Requirement /req/ogc-process-description/inputs-def", groups = "ogcprocessdescription", dependsOnMethods = { "testOGCProcessDescriptionJSON" })
 	public void testOGCProcessDescriptionInputsDef() {
+		//This test depends on the testOGCProcessDescriptionJSON method.
+		//Whereas testOGCProcessDescriptionJSON validates process descriptions, the testOGCProcessDescriptionInputsDef test confirms that the validates processes had Inputs defined in them.
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+		
 			
-			
-			
+			{
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
@@ -191,15 +188,58 @@ public class OGCProcessDescription extends CommonFixture {
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			JsonNode processesNode = responseNode.get("processes");
+			if(processesNode.isArray()) {
+				ArrayNode processesArrayNode = (ArrayNode)processesNode;
+				if(testAllProcesses) {
+			
+					for (int i=0; i < Math.min(processTestLimit,5); i++) {  //we intentionally limit this to 5
+						
+						JsonNode jsonNode = processesArrayNode.get(i);
+					
+							HttpClient client2 = HttpClientBuilder.create().build();
+							HttpUriRequest request2 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").textValue());
+							request2.setHeader("Accept", "application/json");
+							  this.reqEntity = request2;
+							HttpResponse httpResponse2 = client2.execute(request2);
+							StringWriter writer2 = new StringWriter();
+							String encoding2 = StandardCharsets.UTF_8.name();
+							IOUtils.copy(httpResponse2.getEntity().getContent(), writer2, encoding2);
+							JsonNode responseNode2 = new ObjectMapper().readTree(writer2.toString());
+							Body body2 = Body.from(responseNode2);
+							Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
+							Response response2 = new DefaultResponse.Builder(httpResponse2.getStatusLine().getStatusCode()).body(body2).header(CONTENT_TYPE, contentType2.getValue())
+									.build();
+							Assert.assertTrue(responseNode2.has("inputs"), "No 'inputs' field was found in the process description of '"+jsonNode.get("id").textValue()+"'. ");	
+							
+		
+					}
+				}
+				else { //test echo process only
+				
+					HttpClient client2 = HttpClientBuilder.create().build();
+					HttpUriRequest request2 = new HttpGet(getProcessListURL.toString()+"/"+echoProcessId);
+					request2.setHeader("Accept", "application/json");
+					  this.reqEntity = request2;
+					HttpResponse httpResponse2 = client2.execute(request2);
+					StringWriter writer2 = new StringWriter();
+					String encoding2 = StandardCharsets.UTF_8.name();
+					IOUtils.copy(httpResponse2.getEntity().getContent(), writer2, encoding2);
+					JsonNode responseNode2 = new ObjectMapper().readTree(writer2.toString());
+					Body body2 = Body.from(responseNode2);
+					Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
+					Response response2 = new DefaultResponse.Builder(httpResponse2.getStatusLine().getStatusCode()).body(body2).header(CONTENT_TYPE, contentType2.getValue())
+							.build();
+					Assert.assertTrue(responseNode2.has("inputs"), "No 'inputs' field was found in the process description of '"+echoProcessId+"'. ");	
+				}
+			}
+			}
+			
+			
+			
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
-		}
+		}		
 	}
 
 	/**
