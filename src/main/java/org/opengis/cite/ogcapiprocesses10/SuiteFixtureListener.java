@@ -91,9 +91,10 @@ public class SuiteFixtureListener implements ISuiteListener {
         }
         
         String testAllProcesses = params.get( TestRunArg.TESTALLPROCESSES.toString() );
+
         try {
         	if ( testAllProcesses != null ) {
-        		suite.setAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName(), Boolean.valueOf(testAllProcesses) );
+        		suite.setAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName(), Boolean.valueOf(testAllProcesses.equals("on")?true:false) );
         	}else {
         		suite.setAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName(), false );
         	}
