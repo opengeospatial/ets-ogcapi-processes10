@@ -16,9 +16,9 @@
 | Abstract test A.10 | /conf/core/process-list-success | ProcessList.testProcessListSuccess (CHECKED)
 | Abstract test A.11 | /conf/core/pl-links | ProcessList.testPlLinks (CHECKED)
 | Abstract test A.12 | /conf/core/pl-limit-response | ProcessList.testPlLimitResponse (CHECKED)
-| Abstract test A.13 | /conf/core/process | Process.testProcess
-| Abstract test A.14 | /conf/core/process-success | Process.testProcessSuccess
-| Abstract test A.15 | /conf/core/process-exception-no-such-process | Process.testProcessExceptionNoSuchProcess
+| Abstract test A.13 | /conf/core/process | Process.testProcess (CHECKED)
+| Abstract test A.14 | /conf/core/process-success | Process.testProcessSuccess (CHECKED)
+| Abstract test A.15 | /conf/core/process-exception-no-such-process | Process.testProcessExceptionNoSuchProcess (CHECKED)
 | Abstract test A.16 | /conf/core/job-creation-op | Jobs.testJobCreationOp
 | Abstract test A.17 | /conf/core/job-creation-auto-execution-mode | Jobs.testJobCreationAutoExecutionMode
 | Abstract test A.18 | /conf/core/job-creation-default-execution-mode | Jobs.testJobCreationDefaultExecutionMode
@@ -52,8 +52,8 @@
 | Abstract test A.46 | /conf/core/job-results-exception-results-not-ready | Jobs.testJobResultsExceptionResultsNotReady
 | Abstract test A.47 | /conf/core/job-results-failed | Jobs.testJobResultsFailed
 | | OGC Process Description | 
-| Abstract test A.48 | /conf/ogc-process-description/json-encoding | OGCProcessDescription.testOGCProcessDescriptionJSON
-| Abstract test A.49 | /conf/ogc-process-description/inputs-def | OGCProcessDescription.testOGCProcessDescriptionInputsDef
+| Abstract test A.48 | /conf/ogc-process-description/json-encoding | OGCProcessDescription.testOGCProcessDescriptionJSON (CHECKED)
+| Abstract test A.49 | /conf/ogc-process-description/inputs-def | OGCProcessDescription.testOGCProcessDescriptionInputsDef (CHECKED)
 | Abstract test A.50 | /conf/ogc-process-description/input-def | OGCProcessDescription.testOGCProcessDescriptionInputDef
 | Abstract test A.51 | /conf/ogc-process-description/input-mixed-type | OGCProcessDescription.testOGCProcessDescriptionMixedType
 | Abstract test A.52 | /conf/ogc-process-description/outputs-def | OGCProcessDescription.testOGCProcessDescriptionOutputDef
