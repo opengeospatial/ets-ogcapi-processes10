@@ -24,7 +24,9 @@ import org.openapi4j.parser.model.v3.Operation;
 import org.openapi4j.parser.model.v3.Path;
 import org.openapi4j.schema.validator.ValidationData;
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
+import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
 import org.testng.Assert;
+import org.testng.ITestContext;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -50,10 +52,16 @@ public class OGCProcessDescription extends CommonFixture {
     
     private URL getProcessListURL;
     
+    private String echoProcessId;
+    
 	@BeforeClass
-	public void setup() {		
+	public void setup(ITestContext testContext) {		
 		String processListEndpointString = rootUri.toString() + getProcessListPath;		
 		try {
+			echoProcessId = (String) testContext.getSuite().getAttribute( SuiteAttribute.ECHO_PROCESS_ID.getName() );
+			
+			
+			
 			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
 			addServerUnderTest(openApi3);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
@@ -82,8 +90,11 @@ public class OGCProcessDescription extends CommonFixture {
 	public void testOGCProcessDescriptionJSON() {
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+			
+			System.out.println("CHK "+echoProcessId+" 333 "+getProcessListURL.toString());
+			
 			HttpClient client = HttpClientBuilder.create().build();
-			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
+			HttpUriRequest request = new HttpGet(getProcessListURL.toString()+"/echoProcessId");
 			request.setHeader("Accept", "application/json");
 		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
@@ -129,6 +140,9 @@ public class OGCProcessDescription extends CommonFixture {
 	public void testOGCProcessDescriptionInputsDef() {
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+			
+			
+			
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
