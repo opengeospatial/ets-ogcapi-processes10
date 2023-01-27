@@ -53,6 +53,7 @@ public class OGCProcessDescription extends CommonFixture {
     private URL getProcessListURL;
     
     private String echoProcessId;
+    private int processTestLimit = 1;
     
 	@BeforeClass
 	public void setup(ITestContext testContext) {		
@@ -60,8 +61,8 @@ public class OGCProcessDescription extends CommonFixture {
 		try {
 			echoProcessId = (String) testContext.getSuite().getAttribute( SuiteAttribute.ECHO_PROCESS_ID.getName() );
 			
-			
-			
+			processTestLimit = (Integer) testContext.getSuite().getAttribute( SuiteAttribute.PROCESS_TEST_LIMIT.getName() );
+		
 			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
 			addServerUnderTest(openApi3);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
@@ -90,11 +91,11 @@ public class OGCProcessDescription extends CommonFixture {
 	public void testOGCProcessDescriptionJSON() {
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+		
 			
-			System.out.println("CHK "+echoProcessId+" 333 "+getProcessListURL.toString());
-			
+			{
 			HttpClient client = HttpClientBuilder.create().build();
-			HttpUriRequest request = new HttpGet(getProcessListURL.toString()+"/echoProcessId");
+			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
 		    this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
@@ -106,19 +107,57 @@ public class OGCProcessDescription extends CommonFixture {
 			if(processesNode.isArray()) {
 				ArrayNode processesArrayNode = (ArrayNode)processesNode;
 				if(testAllProcesses) {
-					for (JsonNode jsonNode : processesArrayNode) {
+			
+					for (int i=0; i < Math.min(processTestLimit,5); i++) {  //we intentionally limit this to 5
+						
+						JsonNode jsonNode = processesArrayNode.get(i);
 
-						client = HttpClientBuilder.create().build();
-						request = new HttpGet(getProcessListURL.toString());
+					
+						
+						//=========
+					
+							HttpClient client2 = HttpClientBuilder.create().build();
+							HttpUriRequest request2 = new HttpGet(getProcessListURL.toString()+"/"+jsonNode.get("id").textValue());
+							request2.setHeader("Accept", "application/json");
+							  this.reqEntity = request2;
+							HttpResponse httpResponse2 = client2.execute(request2);
+							StringWriter writer2 = new StringWriter();
+							String encoding2 = StandardCharsets.UTF_8.name();
+							IOUtils.copy(httpResponse2.getEntity().getContent(), writer2, encoding2);
+							JsonNode responseNode2 = new ObjectMapper().readTree(writer2.toString());
+							Body body2 = Body.from(responseNode2);
+							Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
+							Response response2 = new DefaultResponse.Builder(httpResponse2.getStatusLine().getStatusCode()).body(body2).header(CONTENT_TYPE, contentType2.getValue())
+									.build();
+							validator.validateResponse(response2, data);
+							Assert.assertTrue(data.isValid(), printResults(data.results()));	
+						
+						//==========
 					}
 				}
+				else {
+				
+					HttpClient client2 = HttpClientBuilder.create().build();
+					HttpUriRequest request2 = new HttpGet(getProcessListURL.toString()+"/"+echoProcessId);
+					request2.setHeader("Accept", "application/json");
+					  this.reqEntity = request2;
+					HttpResponse httpResponse2 = client2.execute(request2);
+					StringWriter writer2 = new StringWriter();
+					String encoding2 = StandardCharsets.UTF_8.name();
+					IOUtils.copy(httpResponse2.getEntity().getContent(), writer2, encoding2);
+					JsonNode responseNode2 = new ObjectMapper().readTree(writer2.toString());
+					Body body2 = Body.from(responseNode2);
+					Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
+					Response response2 = new DefaultResponse.Builder(httpResponse2.getStatusLine().getStatusCode()).body(body2).header(CONTENT_TYPE, contentType2.getValue())
+							.build();
+					validator.validateResponse(response2, data);
+					Assert.assertTrue(data.isValid(), printResults(data.results()));
+				}
 			}
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			}
+			
+			
+			
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
