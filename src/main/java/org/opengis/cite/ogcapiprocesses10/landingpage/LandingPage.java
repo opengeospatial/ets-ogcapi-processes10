@@ -43,7 +43,7 @@ public class LandingPage extends CommonFixture {
     
     //private static String utrlSchema="http://schemas.opengis.net/ogcapi/common/part1/0.1/core/openapi/schemas/landingPage.json";
     //private static String urlSchema="https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/landingPage.yaml";
-    private static String urlSchema="http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/landingPage.yaml";
+    private static String urlSchema="http://localhost:8080/teamengine/spec/ogcapi/processes/part1/1.0.0/openapi/schemas/landingPage.yaml";
 
     /**
      * <pre>
@@ -104,7 +104,7 @@ public class LandingPage extends CommonFixture {
 	// A.2.1.2.2 Validate the landing page for *all supported media types* (only JSON) using the resources and tests identified in Schema and Tests for Landing Pages
 	// /conf/(geojson?)json/content
 	assertTrue( validateResponseAgainstSchema(LandingPage.urlSchema,body),
-		    "The landing page does nto conform to the schema: "+LandingPage.urlSchema);
+		    "The landing page does not conform to the schema: "+LandingPage.urlSchema);
 
 	checkHtmlConfClass(rootUri.toString());
 	

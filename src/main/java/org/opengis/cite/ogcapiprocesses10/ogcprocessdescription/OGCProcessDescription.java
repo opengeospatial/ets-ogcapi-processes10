@@ -56,9 +56,9 @@ public class OGCProcessDescription extends CommonFixture {
     
     private URL getProcessListURL;
     //private static String urlSchema_inputs="http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/inputDescription.yaml";
-    private static String urlSchema_inputs="https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/swagger/inputDescription.yaml";
-    private static String urlSchema_schema="https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/swagger/schema.yaml";
-    private static String urlSchema_outputs="https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/swagger/outputDescription.yaml";
+    private static String urlSchema_inputs="http://localhost:8080/teamengine/spec/ogcapi/processes/part1/1.0.0/openapi/schemas/swagger/inputDescription.yaml";
+    private static String urlSchema_schema="http://localhost:8080/teamengine/spec/ogcapi/processes/part1/1.0.0/openapi/schemas/swagger/schema.yaml";
+    private static String urlSchema_outputs="http://localhost:8080/teamengine/spec/ogcapi/processes/part1/1.0.0/openapi/schemas/swagger/outputDescription.yaml";
     
 	@BeforeClass
 	public void setup() {		
@@ -238,7 +238,7 @@ public class OGCProcessDescription extends CommonFixture {
 						Assert.fail("No schema for this input: "+currentField.getKey()+" from the following process: "+jsonNode.get("id").asText());
 					    else{
 						System.out.println(currentField.getKey());
-						System.out.println(currentField.getValue());
+						System.out.println("+++++++++ testOGCProcessDescriptionInputDef "+currentSchema);
 						assertTrue( validateResponseAgainstSchema(urlSchema_schema,currentSchema.asText()),
 							    "The input identified as " + currentField.getKey() + " from " + jsonNode.get("id").asText() + " process does not conform to the schema: "+urlSchema_schema);
 					    }

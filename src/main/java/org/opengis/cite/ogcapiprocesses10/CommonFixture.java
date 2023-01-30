@@ -164,7 +164,7 @@ public class CommonFixture {
 		System.out.println("no validation errors :-)");
 		return true;
 	    } else {
-		validationResult.forEach(vm -> System.out.println(vm.getMessage()));
+		validationResult.forEach(vm -> System.out.println("Validation error: "+vm.getMessage()));
 		return false;
 	    }
 	} catch (Exception e) {
@@ -172,6 +172,11 @@ public class CommonFixture {
 	    return false;
 	}
     }
+
+    /*
+    protected boolean validateNodeAgainstSchema(String urlSchema,String body){
+	// see https://www.openapi4j.org/schema-validator.html#usage
+    }*/
 
     /**
      * Try to implement testing for A.5. Conformance Class HTML
@@ -328,6 +333,7 @@ public class CommonFixture {
 
 		public Type(String typeDefinition) {
 			this.typeDefinition = typeDefinition;
+			this.contentMediaType = null;
 		}
 		
 		public boolean isBinary() {

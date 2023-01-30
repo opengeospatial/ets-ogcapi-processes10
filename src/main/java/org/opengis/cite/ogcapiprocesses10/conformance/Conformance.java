@@ -43,12 +43,19 @@ public class Conformance extends CommonFixture {
     private List<RequirementClass> requirementClasses;
     //private static String utrlSchema="http://beta.schemas.opengis.net/ogcapi/common/part1/0.1/core/openapi/schemas/conformance.json";
     //private static String urlSchema="https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/confClasses.yaml";
-    private static String urlSchema="http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/confClasses.yaml";
+    private static String urlSchema="http://localhost:8080/teamengine/spec/ogcapi/processes/part1/1.0.0/openapi/schemas/confClasses.yaml";
+    private OpenApi3 openApi3;
+    private static final String OPERATION_ID = "getConformanceClasses";
     
     @DataProvider(name = "conformance")
     public Object[][] conformanceUris( ITestContext testContext ) {
+	/*openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+	addServerUnderTest(openApi3);
+	final Path path1 = openApi3.getPathItemByOperationId(OPERATION_ID);
+	final Operation operation1 = openApi3.getOperationById(OPERATION_ID);
+	validator = new OperationValidator(openApi3, path1, operation1);*/
         OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute( API_MODEL.getName() );
-        URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
+	URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
 
         TestPoint tp = new TestPoint(rootUri.toString(),"/conformance",null);
 

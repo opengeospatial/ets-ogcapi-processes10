@@ -268,6 +268,19 @@ public class Jobs extends CommonFixture {
 		
 		for (Type type : types) {
 			if(type.getTypeDefinition().equals("string")) {
+			    if(type.getContentMediaType()!=null){
+				switch(type.getContentMediaType()){
+				case "text/xml":
+				      inputNode.set("value", new TextNode("<xml></xml>"));
+				      inputsNode.set(input.getId(), inputNode);
+				      break;
+				default:
+				      // What should we do here?
+				      // Should support, image/* and other possible mimeTypes (gml ...)
+				      break;
+				}
+			    }
+			    else
 				inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
 			} else if(input.isBbox()) {
 				inputNode.set("crs", new TextNode("urn:ogc:def:crs:EPSG:6.6:4326"));
@@ -781,7 +794,7 @@ public class Jobs extends CommonFixture {
 
 	/**
 	* <pre>
-	* Abstract Test 22: /conf/core/job-creation-input-ref
+	* Abstract Test 22:
 	* Test Purpose: Validate that input values specified by reference in an execute request are correctly processed.
 	* Requirement: /req/core/job-creation-input-ref
 	* Test Method: 
@@ -883,6 +896,7 @@ public class Jobs extends CommonFixture {
 		executeNode = createExecuteJsonNodeWithWrongInput(echoProcessId);
 		data = new ValidationData<>();
 		try {
+			System.out.println("++++ testJobCreationInputValidation "+executeNode);
 			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -1495,12 +1509,15 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();		
 		try {
+			System.out.println("+++++++++ testJobResults " +executeNode);
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
 			Header locationHeader = httpResponse.getFirstHeader("location");
 			String locationString = locationHeader.getValue();
+			System.out.println("+++++++++ testJobResults " +locationString);
 			httpResponse = sendGetRequest(locationString, "application/json");
+			System.out.println("+++++++++ testJobResults " +httpResponse);
 			httpResponse = getResultResponse(httpResponse);
 			Assert.assertNotNull(httpResponse);
 			validateResponse(httpResponse, getResultValidator, data);
@@ -1512,13 +1529,17 @@ public class Jobs extends CommonFixture {
 	private HttpResponse getResultResponse(HttpResponse httpResponse) throws IOException {
 		JsonNode statusNode = parseResponse(httpResponse);
 		JsonNode linksNode = statusNode.get("links");
+		System.out.println("+++++ getResultResponse "+statusNode);
+		System.out.println("+++++ getResultResponse "+linksNode);
 		Assert.assertNotNull(linksNode);
 		Assert.assertTrue(!linksNode.isMissingNode(), "No links in status document.");
 		if(linksNode instanceof ArrayNode) {
 			ArrayNode linksArrayNode = (ArrayNode)linksNode;
+			if(linksArrayNode.size()==1)
+			    return getResultResponse(httpResponse);
 			for (int i = 0; i < linksArrayNode.size(); i++) {
 				JsonNode linksChildNode = linksArrayNode.get(i);
-				if(linksChildNode.get("rel").asText().equals("results")) {
+				if(linksChildNode.get("rel").asText().equals("http://www.opengis.net/def/rel/ogc/1.0/results")) {
 					String resultsUrl = linksChildNode.get("href").asText();
 					String resultsMimeType = linksChildNode.get("type").asText();
 					return sendGetRequest(resultsUrl, resultsMimeType);
@@ -1709,7 +1730,7 @@ public class Jobs extends CommonFixture {
 
 	/**
 	* <pre>
-	* Abstract Test 40: /conf/core/job-results-async-raw-value-one
+	* Abstract Test 40: 
 	* Test Purpose: Validate that the server responds as expected when asynchronous execution is sc_execution_mode,negotiated, one output is requested, the response type is `raw` and the output transmission is `value`.
 	* Requirement: /req/core/job-results-async-raw-value-one
 	* Test Method: 
@@ -1735,7 +1756,7 @@ public class Jobs extends CommonFixture {
 	    // create job
 	    JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
 	    try {
-		System.out.println(executeNode);
+		System.out.println("++++++ testJobResultsAsyncRawValueOne "+executeNode);
 		HttpResponse httpResponse = sendPostRequestASync(executeNode);
 		System.out.println(httpResponse);
 		int statusCode = httpResponse.getStatusLine().getStatusCode();
@@ -1793,7 +1814,7 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
-			System.out.println(executeNode);
+			System.out.println("+++++ testJobResultsSync "+executeNode);
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
