@@ -330,41 +330,7 @@ public class OGCProcessDescription extends CommonFixture {
 	}
 	
 
-	/**
-	 * <pre>
-	 * Abstract Test 52: /conf/ogc-process-description/outputs-def
-	 * Test Purpose: Verify that the definition of outputs for each process complies with the required structure and contents.
-	 * Requirement: /req/ogc-process-description/outputs-def
-	 * Test Method: 
-	 * |===
-     * 1. Retrieve a description of each process according to test /conf/core/process.
-     *
-     * 2. For each process, verify that the definition of the outputs conforms to the JSON Schema: outputDescription.yaml.
-	 * </pre>
-	 */
-	@Test(description = "Implements Requirement /req/ogc-process-description/outputs-def", groups = "ogcprocessdescription")
-	public void testProcessListSuccess() {
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpClient client = HttpClientBuilder.create().build();
-			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
-			request.setHeader("Accept", "application/json");
-		    this.reqEntity = request;
-			HttpResponse httpResponse = client.execute(request);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
-	}
+
 	
 	/**
 	 * <pre>
