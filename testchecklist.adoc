@@ -54,11 +54,11 @@
 | | OGC Process Description | 
 | Abstract test A.48 | /conf/ogc-process-description/json-encoding | OGCProcessDescription.testOGCProcessDescriptionJSON (CHECKED)
 | Abstract test A.49 | /conf/ogc-process-description/inputs-def | OGCProcessDescription.testOGCProcessDescriptionInputsDef (CHECKED)
-| Abstract test A.50 | /conf/ogc-process-description/input-def | OGCProcessDescription.testOGCProcessDescriptionInputDef
-| Abstract test A.51 | /conf/ogc-process-description/input-mixed-type | OGCProcessDescription.testOGCProcessDescriptionMixedType
-| Abstract test A.52 | /conf/ogc-process-description/outputs-def | OGCProcessDescription.testOGCProcessDescriptionOutputDef
-| Abstract test A.53 | /conf/ogc-process-description/output-def | OGCProcessDescription.testOGCProcessDescriptionOutputDef
-| Abstract test A.54 | /conf/ogc-process-description/output-mixed-type | Not implemented
+| Abstract test A.50 | /conf/ogc-process-description/input-def | OGCProcessDescription.testOGCProcessDescriptionInputDef  (CHECKED)
+| Abstract test A.51 | /conf/ogc-process-description/input-mixed-type | OGCProcessDescription.testOGCProcessDescriptionInputDefinitionOfMixedType  (CHECKED)
+| Abstract test A.52 | /conf/ogc-process-description/outputs-def | OGCProcessDescription.testOGCProcessDescriptionOutputDef  (CHECKED)
+| Abstract test A.53 | /conf/ogc-process-description/output-def | OGCProcessDescription.testOGCProcessDescriptionOutputDef  (CHECKED)
+| Abstract test A.54 | /conf/ogc-process-description/output-mixed-type | OGCProcessDescription.testOGCProcessDescriptionOutputDefinitionOfMixedType   (CHECKED)
 | |JSON | 
 | Abstract test A.55 | /conf/json/definition | 
 | |HTML | 
