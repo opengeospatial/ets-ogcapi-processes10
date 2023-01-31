@@ -177,10 +177,7 @@ public class Jobs extends CommonFixture {
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			JsonNode inputsNode = responseNode.get("inputs");			
 			if(inputsNode instanceof ArrayNode) {
-				ArrayNode inputsArrayNode = (ArrayNode)inputsNode;				
-				for (int i = 0; i < inputsArrayNode.size(); i++) {
-					System.out.println(inputsArrayNode.get(i));
-				}
+				ArrayNode inputsArrayNode = (ArrayNode)inputsNode;
 			} else {
 				Iterator<String> inputNames = inputsNode.fieldNames();				
 				while (inputNames.hasNext()) {
@@ -194,10 +191,6 @@ public class Jobs extends CommonFixture {
 			JsonNode outputsNode = responseNode.get("outputs");			
 			if(outputsNode instanceof ArrayNode) {
 				ArrayNode outputsArrayNode = (ArrayNode)outputsNode;
-				
-				for (int i = 0; i < outputsArrayNode.size(); i++) {
-					System.out.println(outputsArrayNode.get(i));
-				}
 			} else {
 				Iterator<String> outputNames = outputsNode.fieldNames();				
 				while (outputNames.hasNext()) {
@@ -864,6 +857,7 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		ValidationData<Void> data = new ValidationData<>();
 		try {
+			
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -1118,6 +1112,13 @@ public class Jobs extends CommonFixture {
 		return new ObjectMapper().readTree(writer.toString());
 	}
 	
+	private String parseRawResponse(HttpResponse httpResponse) throws IOException {
+		StringWriter writer = new StringWriter();
+		String encoding = StandardCharsets.UTF_8.name();
+		IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		return writer.toString();
+	}	
+	
 	private HttpResponse sendGetRequest(String url, String acceptType) throws IOException {		
 		HttpGet request = new HttpGet(url);
 	    this.reqEntity = request;
@@ -1251,12 +1252,17 @@ public class Jobs extends CommonFixture {
 		// create job
 		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
+		
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+	
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
+	
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
-			JsonNode responseNode = parseResponse(httpResponse);
-			Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+	
+			Assert.assertEquals(parseRawResponse(httpResponse), TEST_STRING_INPUT);
+		
 		} catch (Exception e) {
+		
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
@@ -1724,6 +1730,7 @@ public class Jobs extends CommonFixture {
 		// create job
 		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
+			System.out.println(executeNode.toString());
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
