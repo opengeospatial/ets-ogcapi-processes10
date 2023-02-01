@@ -1497,12 +1497,18 @@ public class Jobs extends CommonFixture {
 		final ValidationData<Void> data = new ValidationData<>();		
 		try {
 		
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);			
+			
+			HttpResponse httpResponse = this.sendPostRequestASync(executeNode);			
 			int statusCode = httpResponse.getStatusLine().getStatusCode();			
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+			
+			
 			Header locationHeader = httpResponse.getFirstHeader("location");				
-			String locationString = locationHeader.getValue();			
-			httpResponse = sendGetRequest(locationString, "application/json");	
+			String locationString = locationHeader.getValue();
+			httpResponse = sendGetRequest(locationString, "application/json");
+			assertTrue(httpResponse.getStatusLine().getStatusCode()==200,
+				    "Expected status code 200 but found "+httpResponse.getStatusLine().getStatusCode());
+			
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			httpResponse.getEntity().writeTo(baos);
 			String responseContentString = baos.toString();	
