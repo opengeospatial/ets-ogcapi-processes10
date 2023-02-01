@@ -1512,7 +1512,6 @@ public class Jobs extends CommonFixture {
 				    "Unable to validate the response document against: "+STATUS_SCHEMA_URL);					
 			
 		} catch (Exception e) {
-			System.out.println("CHK e "+e);
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
@@ -1794,7 +1793,7 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
-			System.out.println("!"+executeNode);
+			System.out.println("testJobResultsSync "+executeNode);
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
