@@ -876,7 +876,7 @@ public class Jobs extends CommonFixture {
 		executeNode = createExecuteJsonNodeWithWrongInput(echoProcessId);
 		data = new ValidationData<>();
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, false);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
@@ -940,8 +940,8 @@ public class Jobs extends CommonFixture {
 			if(checkForFormat(input.getTypes()) != null) {
 				foundTestableInput = true;
 				addInputWithWrongFormat(input, inputsNode);
-			}
-			addInput(input, inputsNode);
+			} else
+			    addInput(input, inputsNode);
 		}
 		if(!foundTestableInput) {
 			throw new SkipException("No input with specified format found, skipping test.");
