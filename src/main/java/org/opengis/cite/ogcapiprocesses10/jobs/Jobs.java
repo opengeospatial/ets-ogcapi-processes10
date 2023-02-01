@@ -1702,6 +1702,41 @@ public class Jobs extends CommonFixture {
 		}
 	}
 
+    private void loopOverStatus(JsonNode responseNode){
+	try{
+	    HttpClient client = HttpClientBuilder.create().build();
+	    ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
+	    boolean hasMonitorOrResultLink=false;
+	    for (JsonNode currentJsonNode : linksArrayNode) {
+		// Fetch result document
+		if(currentJsonNode.get("rel").asText()=="http://www.opengis.net/def/rel/ogc/1.0/results"){
+		    HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
+		    request.setHeader("Accept", "application/json");
+		    HttpResponse httpResponse = client.execute(request);
+		    JsonNode resultNode = parseResponse(httpResponse);
+		    // May be more generic here
+		    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+		    hasMonitorOrResultLink=true;
+		}
+	    }
+	    if(!hasMonitorOrResultLink)
+		for (JsonNode currentJsonNode : linksArrayNode) {
+		    // Fetch status document
+		    if(currentJsonNode.get("rel").asText()=="monitor"){
+			HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
+			request.setHeader("Accept", "application/json");
+			HttpResponse httpResponse = client.execute(request);
+			JsonNode resultNode = parseResponse(httpResponse);
+			loopOverStatus(resultNode);
+			hasMonitorOrResultLink=true;
+		    }
+		}
+	}
+	catch (Exception e) {
+	    Assert.fail(e.getLocalizedMessage());
+	}
+    }
+
 	/**
 	* <pre>
 	* Abstract Test 40: /conf/core/job-results-async-raw-value-one
@@ -1735,7 +1770,11 @@ public class Jobs extends CommonFixture {
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 			JsonNode responseNode = parseResponse(httpResponse);
-			Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+			if(statusCode == 200){
+			    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+			}else{
+			    loopOverStatus(responseNode);
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
