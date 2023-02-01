@@ -5,6 +5,6 @@
   <entry key="iut">http://tb17.geolabs.fr:8114/ogc-api</entry>
 <!--   <entry key="iut">http://geoprocessing.demo.52north.org:8080/javaps/rest/</entry> -->
   <entry key="echoprocessid">echo</entry>
-  <entry key="testallprocesses">on</entry>
+  <!-- entry key="testallprocesses">on</entry-->
   <entry key="processtestlimit">5</entry>
 </properties>
