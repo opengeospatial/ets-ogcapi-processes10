@@ -2,6 +2,7 @@ package org.opengis.cite.ogcapiprocesses10.jobs;
 
 import static org.testng.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
@@ -75,6 +76,7 @@ public class Jobs extends CommonFixture {
 	private static final String TEST_STRING_INPUT = "teststring";
 	private static final Object TYPE_DEFINITION_OBJECT = "object";
 	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
+	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
 	
 	private OpenApi3 openApi3;
 	
@@ -888,27 +890,10 @@ public class Jobs extends CommonFixture {
 			Body body = Body.from(responseNode);
 			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			
-			System.out.println("SC "+statusCode);
-			
 			Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
-		
-			System.out.println("CT "+responseContentType.getValue());
-			
-			
 			Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
-			
-			
-			System.out.println("Body "+body.getContentAsNode(null, null, null));	
 			assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,body.getContentAsNode(null, null, null).toString()),
 				    "Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);			
-			
-			/* OBSOLETE
-			Response response = new DefaultResponse.Builder(statusCode).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-			*/
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1270,6 +1255,7 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-one ", groups = "job")
 	public void testJobCreationSyncRawValueOne() {
 		// create job
+	
 		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
 		
@@ -1510,16 +1496,23 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();		
 		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, "application/json");
-			httpResponse = getResultResponse(httpResponse);
-			Assert.assertNotNull(httpResponse);
-			validateResponse(httpResponse, getResultValidator, data);
+		
+			HttpResponse httpResponse = sendPostRequestASync(executeNode);			
+			int statusCode = httpResponse.getStatusLine().getStatusCode();			
+			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Header locationHeader = httpResponse.getFirstHeader("location");				
+			String locationString = locationHeader.getValue();			
+			httpResponse = sendGetRequest(locationString, "application/json");	
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			httpResponse.getEntity().writeTo(baos);
+			String responseContentString = baos.toString();	
+			baos.close();
+			httpResponse.getEntity().getContent().close();
+			assertTrue(validateResponseAgainstSchema(STATUS_SCHEMA_URL,responseContentString),
+				    "Unable to validate the response document against: "+STATUS_SCHEMA_URL);					
+			
 		} catch (Exception e) {
+			System.out.println("CHK e "+e);
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
@@ -1750,11 +1743,12 @@ public class Jobs extends CommonFixture {
 		// create job
 		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
-			System.out.println(executeNode.toString());
+			System.out.println("testJobResultsAsyncRawValueOne " +executeNode.toString());
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 			JsonNode responseNode = parseResponse(httpResponse);
+			System.out.println("testJobResultsAsyncRawValueOne $"+responseNode+"#"+statusCode);
 			Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
@@ -1800,6 +1794,7 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+			System.out.println("!"+executeNode);
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
@@ -1807,10 +1802,10 @@ public class Jobs extends CommonFixture {
 			boolean foundRelMonitorHeader = false;
 			String statusUrl = "";
 			for (Header header : headers) {
-				String heaerValue = header.getValue();
-				if (heaerValue.contains("rel=monitor")) {
+				String headerValue = header.getValue();
+				if (headerValue.contains("rel=monitor")) {
 					foundRelMonitorHeader = true;
-					statusUrl = heaerValue.split(";")[0];
+					statusUrl = headerValue.split(";")[0];
 					break;
 				}
 			}
