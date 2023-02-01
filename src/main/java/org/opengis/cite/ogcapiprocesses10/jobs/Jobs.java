@@ -1459,7 +1459,7 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 					.build();
 			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1488,7 +1488,7 @@ public class Jobs extends CommonFixture {
 	public void testJobResults() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();		
+		final ValidationData<Void> data = new ValidationData<>();
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
@@ -1513,7 +1513,7 @@ public class Jobs extends CommonFixture {
 			ArrayNode linksArrayNode = (ArrayNode)linksNode;
 			for (int i = 0; i < linksArrayNode.size(); i++) {
 				JsonNode linksChildNode = linksArrayNode.get(i);
-				if(linksChildNode.get("rel").asText().equals("results")) {
+				if(linksChildNode.get("rel").asText().equals("http://www.opengis.net/def/rel/ogc/1.0/results")) {
 					String resultsUrl = linksChildNode.get("href").asText();
 					String resultsMimeType = linksChildNode.get("type").asText();
 					return sendGetRequest(resultsUrl, resultsMimeType);
