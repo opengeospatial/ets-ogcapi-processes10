@@ -1,5 +1,7 @@
 package org.opengis.cite.ogcapiprocesses10.jobs;
 
+import static org.testng.Assert.assertTrue;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
@@ -36,6 +38,7 @@ import org.openapi4j.parser.model.v3.Path;
 import org.openapi4j.schema.validator.ValidationData;
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
+import org.opengis.cite.ogcapiprocesses10.conformance.Conformance;
 import org.opengis.cite.ogcapiprocesses10.util.ExecutionMode;
 import org.opengis.cite.ogcapiprocesses10.util.TestSuiteLogger;
 import org.testng.Assert;
@@ -71,6 +74,7 @@ public class Jobs extends CommonFixture {
 	private static final String RESPONSE_VALUE_RAW = "raw";
 	private static final String TEST_STRING_INPUT = "teststring";
 	private static final Object TYPE_DEFINITION_OBJECT = "object";
+	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
 	
 	private OpenApi3 openApi3;
 	
@@ -884,11 +888,27 @@ public class Jobs extends CommonFixture {
 			Body body = Body.from(responseNode);
 			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertEquals(statusCode, HttpStatus.SC_BAD_REQUEST);
+			
+			System.out.println("SC "+statusCode);
+			
+			Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
+		
+			System.out.println("CT "+responseContentType.getValue());
+			
+			
+			Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
+			
+			
+			System.out.println("Body "+body.getContentAsNode(null, null, null));	
+			assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,body.getContentAsNode(null, null, null).toString()),
+				    "Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);			
+			
+			/* OBSOLETE
 			Response response = new DefaultResponse.Builder(statusCode).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 					.build();
 			executeValidator.validateResponse(response, data);
 			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			*/
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
