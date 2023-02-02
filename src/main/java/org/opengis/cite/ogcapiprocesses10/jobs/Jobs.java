@@ -53,6 +53,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 
 /**
  *
@@ -926,7 +927,7 @@ public class Jobs extends CommonFixture {
 		HttpPost request = new HttpPost(executeEndpoint);
 	    this.reqEntity = request;
 		request.setHeader("Accept", "application/json");
-		request.setHeader("Prefer", "respond-async ");
+		request.setHeader("Prefer", "respond-async");
 		ContentType contentType = ContentType.APPLICATION_JSON;
 		request.setEntity(new StringEntity(executeNode.toString(), contentType));
 		HttpResponse httpResponse = clientBuilder.build().execute(request);
@@ -1400,26 +1401,46 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-results-exception-results-not-ready ", groups = "job")
 	public void testJobResultsExceptionResultsNotReady() {
 		//TODO: check
+		JsonNode statusNode = null;
+		HttpResponse httpResponse = null;
 		final ValidationData<Void> data = new ValidationData<>();
 		//create invalid execute request
-		JsonNode executeNode = createInvalidExecuteJsonNode(echoProcessId);
+		JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+		
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			httpResponse = sendPostRequestASync(executeNode);
+			
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode > 200, "Got unexpected status code: " + statusCode);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			Header locationHeader = httpResponse.getFirstHeader("location");	//location of job			
+			String jobLocationString = locationHeader.getValue();			
+			httpResponse = sendGetRequest(jobLocationString, "application/json");	//Issue an HTTP GET request to the URL ‘/jobs/{jobID}/results’ before the job completes execution.
+			
+			
+			String jobResultsLocationString = jobLocationString + "/results";
+			httpResponse = sendGetRequest(jobResultsLocationString, "application/json");
+			Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 404,"Failed Abstract test A.46 (Step 3). The response to the /jobs/{jobID}/results request did not return a 404 status code.");
+			
+			
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			httpResponse.getEntity().writeTo(baos);
+			String responseContentString = baos.toString();	
+			baos.close();
+			httpResponse.getEntity().getContent().close();
+			ObjectMapper objectMapper =new ObjectMapper();
+		    JsonNode resultsNode = objectMapper.readTree(responseContentString);
+		    
+		    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
+		    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
+		    
+		    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
+				    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
+		    
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
+		
+	
+
 	}
 
 	/**
@@ -1844,6 +1865,29 @@ public class Jobs extends CommonFixture {
 		executeNode.set(RESPONSE_KEY, new TextNode(responseValue));
 		return executeNode;
 	}
+	
+	private JsonNode createExecuteJsonNodeWithPauseInput(String echoProcessId, String responseValue) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		Input inputOne = inputs.get(0);
+		String inputId = inputOne.getId();
+		addInput(inputOne, inputsNode);
+		for (Output output : outputs) {
+			if(output.getId().equals(inputId)) {
+			    addOutput(output, outputsNode);
+			    break;
+			}
+		}
+		
+		inputsNode.set("pause", new IntNode(5));
+		
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		executeNode.set(RESPONSE_KEY, new TextNode(responseValue));
+		return executeNode;
+	}	
 
 	/**
 	* <pre>
@@ -1864,8 +1908,9 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
-			System.out.println("testJobResultsSync "+executeNode);
+		
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+					
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			Header[] headers = httpResponse.getHeaders("Link");
@@ -1873,6 +1918,7 @@ public class Jobs extends CommonFixture {
 			String statusUrl = "";
 			for (Header header : headers) {
 				String headerValue = header.getValue();
+		
 				if (headerValue.contains("rel=monitor")) {
 					foundRelMonitorHeader = true;
 					statusUrl = headerValue.split(";")[0];
@@ -1880,7 +1926,7 @@ public class Jobs extends CommonFixture {
 				}
 			}
 			if(!foundRelMonitorHeader) {
-				throw new SkipException("Did not find Link with value rel=monitor, skipping test.");
+				throw new SkipException("Did not find Link Header with value rel=monitor, skipping test.");
 			}
 			httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
 			validateResponse(httpResponse, getResultValidator, data);

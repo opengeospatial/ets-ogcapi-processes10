@@ -45,6 +45,7 @@
               <li>OpenAPI 3.0</li>
               <li>Job list</li>              
             </ul>
+            <p>NOTE: For Abstract Test A.46 (/conf/core/job-results-exception-results-not-ready), the ETS will automatically add a field called <code>"pause":5</code> into the execution request of the echo process to support Recommendation A.1.</p>
           </div>
           <fieldset style="background:#ccffff">
             <legend style="font-family: sans-serif; color: #000099;

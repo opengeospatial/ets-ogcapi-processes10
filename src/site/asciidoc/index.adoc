@@ -12,3 +12,5 @@ The following conformance classes from v1.0.0 (https://docs.ogc.org/is/18-062r2/
 * HTML
 * OpenAPI 3.0
 * Job list
+
+NOTE: For Abstract Test A.46 (/conf/core/job-results-exception-results-not-ready), the ETS will automatically add a field called `"pause":5` into the execution request of the echo process to support Recommendation A.1.
