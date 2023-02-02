@@ -1929,7 +1929,7 @@ public class Jobs extends CommonFixture {
 				throw new SkipException("Did not find Link Header with value rel=monitor, skipping test.");
 			}
 			httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
-			validateResponse(httpResponse, getResultValidator, data);
+			validateResponse(httpResponse, getStatusValidator, data);
 		} catch (IOException e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
