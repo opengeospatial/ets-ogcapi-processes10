@@ -1722,23 +1722,33 @@ public class Jobs extends CommonFixture {
 
     private void loopOverStatus(JsonNode responseNode){
 	try{
+		System.out.println("CHK 1 "+responseNode.textValue());
 	    HttpClient client = HttpClientBuilder.create().build();
 	    ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
+	    System.out.println("CHK 2");
 	    boolean hasMonitorOrResultLink=false;
 	    for (JsonNode currentJsonNode : linksArrayNode) {
 		// Fetch result document
+	    	System.out.println("CHK 3");
 		if(currentJsonNode.get("rel").asText()=="http://www.opengis.net/def/rel/ogc/1.0/results"){
+			System.out.println("CHK 4");
 		    HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
+		    System.out.println("CHK 5");
 		    request.setHeader("Accept", "application/json");
 		    HttpResponse httpResponse = client.execute(request);
+		    System.out.println("CHK 6");
 		    JsonNode resultNode = parseResponse(httpResponse);
+		    System.out.println("CHK 7");
 		    // May be more generic here
 		    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
 		    hasMonitorOrResultLink=true;
 		}
+		System.out.println("CHK 8");
 	    }
+	    System.out.println("CHK 9");
 	    if(!hasMonitorOrResultLink)
 		for (JsonNode currentJsonNode : linksArrayNode) {
+			System.out.println("CHK 10");
 		    // Fetch status document
 		    if(currentJsonNode.get("rel").asText()=="monitor"){
 			HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
@@ -1749,6 +1759,7 @@ public class Jobs extends CommonFixture {
 			hasMonitorOrResultLink=true;
 		    }
 		}
+	    System.out.println("CHK 11");
 	}
 	catch (Exception e) {
 	    Assert.fail(e.getLocalizedMessage());
@@ -1791,7 +1802,23 @@ public class Jobs extends CommonFixture {
 			if(statusCode == 200){
 			    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
 			}else{
-			    loopOverStatus(responseNode);
+				
+				Header locationHeader = httpResponse.getFirstHeader("location");				
+				String locationString = locationHeader.getValue();			
+				httpResponse = sendGetRequest(locationString, "application/json");	
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				httpResponse.getEntity().writeTo(baos);
+				String responseContentString = baos.toString();	
+				baos.close();
+				httpResponse.getEntity().getContent().close();
+				System.out.println("GHK "+responseContentString);	
+			
+				ObjectMapper objectMapper =new ObjectMapper();
+			    JsonNode statusNode = objectMapper.readTree(responseContentString);
+			    
+			    System.out.println("GHK2 "+statusNode.get("status").textValue());				
+				
+			    loopOverStatus(statusNode);
 			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
