@@ -39,11 +39,11 @@
             <p>The following conformance levels are defined:</p>
             <ul>
               <li>Core</li>
+              <li>OGC Process Description</li>
               <li>JSON</li>
               <li>HTML</li>
               <li>OpenAPI 3.0</li>
-              <li>Job list</li>
-              <li>OGC Process Description</li>
+              <li>Job list</li>              
             </ul>
           </div>
           <fieldset style="background:#ccffff">
