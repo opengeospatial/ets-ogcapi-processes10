@@ -42,15 +42,36 @@ public class Conformance extends CommonFixture {
 
     private List<RequirementClass> requirementClasses;
 
+    private static final String OPERATION_ID_GET_CONFORMANCE_CLASSES = "getConformanceClasses";
+
     private static String urlSchema="http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/confClasses.yaml";
-    
+
+    private OpenApi3 openApi3;
+
+    private OperationValidator getConformanceClassesValidator;
+
+    private String getConformanceClassesPath = "/conformance";
+
+    @BeforeClass
+    public void setup(ITestContext testContext) {
+	String processListEndpointString = rootUri.toString() + getConformanceClassesPath;
+	try {
+	    openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+	    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID_GET_CONFORMANCE_CLASSES);
+	    getConformanceClassesPath=path.toString();
+	    final Operation operation = openApi3.getOperationById(OPERATION_ID_GET_CONFORMANCE_CLASSES);
+	    getConformanceClassesValidator = new OperationValidator(openApi3, path, operation);
+	} catch (MalformedURLException | ResolutionException | ValidationException e) {
+	    Assert.fail("Could set up endpoint: " + getConformanceClassesPath + ". Exception: " + e.getLocalizedMessage());
+	}
+    }
+
     @DataProvider(name = "conformance")
     public Object[][] conformanceUris( ITestContext testContext ) {
         OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute( API_MODEL.getName() );
         URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
 
         TestPoint tp = new TestPoint(rootUri.toString(),"/conformance",null);
-
 
         List<TestPoint> testPoints = new ArrayList<TestPoint>();
         testPoints.add(tp);
@@ -75,7 +96,7 @@ public class Conformance extends CommonFixture {
      */
     @Test(description = "Implements /conf/core/conformance-success (partial)", groups = "A.2.3. Conformance Path /conformance", dataProvider = "conformance")
     public void testValidateConformanceOperationAndResponse( TestPoint testPoint ) {
-        String testPointUri = testPoint.getServerUrl() + testPoint.getPath();
+        String testPointUri = testPoint.getServerUrl() + this.getConformanceClassesPath;
         Response response = init().baseUri( testPointUri ).accept( JSON ).when().request( GET );
         validateConformanceOperationResponse( testPointUri, response );
     }
