@@ -2,7 +2,7 @@
 
 == Scope
 
-This executable test suite is for the OGC API - Processes draft standard.
+This repository holds the source of the Executable Test Suite (ETS) of the https://docs.ogc.org/is/18-062r2/18-062r2.html[OGC API - Processes - Part 1: Core] Standard.
 
 Visit the http://opengeospatial.github.io/ets-ogcapi-processes10/[project documentation website TBD]
 for more information, including the API documentation.

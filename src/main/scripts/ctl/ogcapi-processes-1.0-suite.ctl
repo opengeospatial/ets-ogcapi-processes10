@@ -39,12 +39,13 @@
             <p>The following conformance levels are defined:</p>
             <ul>
               <li>Core</li>
+              <li>OGC Process Description</li>
               <li>JSON</li>
               <li>HTML</li>
               <li>OpenAPI 3.0</li>
-              <li>Job list</li>
-              <li>OGC Process Description</li>
+              <li>Job list</li>              
             </ul>
+            <p>NOTE: For Abstract Test A.46 (/conf/core/job-results-exception-results-not-ready), the ETS will automatically add a field called <code>"pause":5</code> into the execution request of the echo process to support Recommendation A.1.</p>
           </div>
           <fieldset style="background:#ccffff">
             <legend style="font-family: sans-serif; color: #000099;

@@ -1,5 +1,8 @@
 package org.opengis.cite.ogcapiprocesses10.jobs;
 
+import static org.testng.Assert.assertTrue;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
@@ -36,6 +39,7 @@ import org.openapi4j.parser.model.v3.Path;
 import org.openapi4j.schema.validator.ValidationData;
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
+import org.opengis.cite.ogcapiprocesses10.conformance.Conformance;
 import org.opengis.cite.ogcapiprocesses10.util.ExecutionMode;
 import org.opengis.cite.ogcapiprocesses10.util.TestSuiteLogger;
 import org.testng.Assert;
@@ -49,6 +53,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 
 /**
  *
@@ -71,51 +76,53 @@ public class Jobs extends CommonFixture {
 	private static final String RESPONSE_VALUE_RAW = "raw";
 	private static final String TEST_STRING_INPUT = "teststring";
 	private static final Object TYPE_DEFINITION_OBJECT = "object";
-	
+	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
+	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
+
 	private OpenApi3 openApi3;
-	
+
 	private String getJobsListPath = "/jobs";
-	
+
 //	private String getJobPath = "/jobs";
-	
+
 	private String getProcessListPath = "/processes";
-	
+
 	private OperationValidator getJobsValidator;
-	
+
 	private OperationValidator getStatusValidator;
-	
+
 	private OperationValidator getResultValidator;
-	
+
 	private OperationValidator executeValidator;
-    
+
     private URL getJobsListURL;
-    
+
     private URL getProcessesListURL;
-    
+
     private URL getInvalidJobURL;
-    
+
     private URL getInvalidJobResultURL;
-    
+
     private String echoProcessId;
 
 	private String echoProcessPath;
 
 	private List<Input> inputs;
-	
+
 	private List<Output> outputs;
-	
+
 	private ObjectMapper objectMapper = new ObjectMapper();
-	
+
 //	private CloseableHttpClient client;
-	
+
 	private String executeEndpoint;
-	
+
 	private HttpClientBuilder clientBuilder;
-	
+
 	private SupportedExecutionModes supportedExecutionModes;
-	
+
 	enum SupportedExecutionModes {
-		
+
 	    /**
 	     * Only synchronous execution mode is supported.
 	     */
@@ -129,13 +136,13 @@ public class Jobs extends CommonFixture {
 	     */
 	    EITHER;
     }
-	
+
 	@BeforeClass
 	public void setup(ITestContext testContext) {
 		inputs = new ArrayList<Input>();
 		outputs = new ArrayList<Output>();
-		String processListEndpointString = rootUri.toString() + getProcessListPath;		
-		String jobsListEndpointString = rootUri.toString() + getJobsListPath;		
+		String processListEndpointString = rootUri.toString() + getProcessListPath;
+		String jobsListEndpointString = rootUri.toString() + getJobsListPath;
 		try {
 			echoProcessId = (String) testContext.getSuite().getAttribute( SuiteAttribute.ECHO_PROCESS_ID.getName() );
 		    echoProcessPath = getProcessListPath + "/" + echoProcessId;
@@ -163,9 +170,9 @@ public class Jobs extends CommonFixture {
 			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
 		}
 	}
-	
+
 	private void parseEchoProcess() {
-		
+
 		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(rootUri + echoProcessPath);
@@ -175,14 +182,11 @@ public class Jobs extends CommonFixture {
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			JsonNode inputsNode = responseNode.get("inputs");			
+			JsonNode inputsNode = responseNode.get("inputs");
 			if(inputsNode instanceof ArrayNode) {
-				ArrayNode inputsArrayNode = (ArrayNode)inputsNode;				
-				for (int i = 0; i < inputsArrayNode.size(); i++) {
-					System.out.println(inputsArrayNode.get(i));
-				}
+				ArrayNode inputsArrayNode = (ArrayNode)inputsNode;
 			} else {
-				Iterator<String> inputNames = inputsNode.fieldNames();				
+				Iterator<String> inputNames = inputsNode.fieldNames();
 				while (inputNames.hasNext()) {
 					String id = (String) inputNames.next();
 					JsonNode inputNode = inputsNode.get(id);
@@ -191,15 +195,11 @@ public class Jobs extends CommonFixture {
 					inputs.add(input);
 				}
 			}
-			JsonNode outputsNode = responseNode.get("outputs");			
+			JsonNode outputsNode = responseNode.get("outputs");
 			if(outputsNode instanceof ArrayNode) {
 				ArrayNode outputsArrayNode = (ArrayNode)outputsNode;
-				
-				for (int i = 0; i < outputsArrayNode.size(); i++) {
-					System.out.println(outputsArrayNode.get(i));
-				}
 			} else {
-				Iterator<String> outputNames = outputsNode.fieldNames();				
+				Iterator<String> outputNames = outputsNode.fieldNames();
 				while (outputNames.hasNext()) {
 					String id = (String) outputNames.next();
 					JsonNode outputNode = outputsNode.get(id);
@@ -220,7 +220,7 @@ public class Jobs extends CommonFixture {
 							syncSupported = true;
 						} else if(jobControlOptionsArrayChildNode.asText().equals(JOB_CONTROL_OPTIONS_ASYNC)) {
 							aSyncSupported = true;
-						} 
+						}
 					}
 					if(syncSupported && !aSyncSupported) {
 						supportedExecutionModes = SupportedExecutionModes.ONLY_SYNC;
@@ -236,7 +236,7 @@ public class Jobs extends CommonFixture {
 		} catch (IOException e) {
 			Assert.fail("Could not parse echo process.");
 		}
-		
+
 	}
 
 	private ObjectNode createExecuteJsonNode(String echoProcessId) {
@@ -258,13 +258,13 @@ public class Jobs extends CommonFixture {
 	private void addOutput(Output output, ObjectNode outputsNode) {
 		ObjectNode outputNode = objectMapper.createObjectNode();
 		outputNode.set("transmissionMode", new TextNode("value"));
-		outputsNode.set(output.getId(), outputNode);		
+		outputsNode.set(output.getId(), outputNode);
 	}
 
 	private void addInput(Input input, ObjectNode inputsNode) {
 		List<Type> types = input.getTypes();
 		ObjectNode inputNode = objectMapper.createObjectNode();
-		
+
 		for (Type type : types) {
 			if(type.getTypeDefinition().equals("string")) {
 				inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
@@ -286,7 +286,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 17: /conf/core/job-creation-auto-execution-mode
 	* Test Purpose: Validate that the server correctly handles the execution mode for a process.
 	* Requirement: /req/core/job-creation-op
-	* Test Method: 
+	* Test Method:
 	* 1.  Setting the HTTP `Prefer` header to include the `respond-sync` preference, construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request
 	* 2.  For processes that are supposed to execute asynchronously according to the req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode requirement, verify the successful execution according to the ats_core_job-creation-success-async,/conf/core/job-creation-success-async test
 	* 3.  For processes that are supposed to execute synchronously according to the req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode requirement, verify the successful execution according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
@@ -304,13 +304,13 @@ public class Jobs extends CommonFixture {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_SYNC)) {
-				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			}
 			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_ASYNC)) {
-				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);		
+				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
 			}
 			if(supportedExecutionModes.equals(SupportedExecutionModes.EITHER)) {
-				Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);		
+				Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);
 			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
@@ -322,7 +322,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 18: /conf/core/job-creation-default-execution-mode
 	* Test Purpose: Validate that the server correctly handles the default execution mode for a process.
 	* Requirement: /req/core/job-creation-op
-	* Test Method: 
+	* Test Method:
 	* 1.  Without setting the HTTP `Prefer` header, construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request
 	* 2.  For processes that are supposed to execute asynchronously according to the req_core_job-creation-default-execution-mode,/req/core/job-creation-default-execution-mode requirement, verify the successful execution according to the ats_core_job-creation-success-async,/conf/core/job-creation-success-async test
 	* 3.  For processes that are supposed to execute synchronously according to the req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode requirement, verify the successful synchronous execution according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
@@ -338,12 +338,12 @@ public class Jobs extends CommonFixture {
 			//send execute request without prefer header
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_SYNC) || 
+			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_SYNC) ||
 					supportedExecutionModes.equals(SupportedExecutionModes.EITHER)) {
-				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			}
 			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_ASYNC)) {
-				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);		
+				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
 			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
@@ -355,7 +355,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 27: /conf/core/job-creation-default-outputs
 	* Test Purpose: Validate that the server correctly handles the case where no `outputs` parameter is specified on an execute request.
 	* Requirement: /req/core/job-creation-op
-	* Test Method: 
+	* Test Method:
 	* 1.  For each process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to omit the `outputs` parameter
 	* 2.  Verify that each processes executed successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
 	* 3.  Verify that each process includes all the outputs, as defined in the sc_process_description,process description, in the response
@@ -370,7 +370,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -392,7 +392,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 23: /conf/core/job-creation-input-array
 	* Test Purpose: Verify that the server correctly recognizes the encoding of parameter values for input parameters with a maximum cardinality greater than one.
 	* Requirement: /req/core/job-creation-input-array
-	* Test Method: 
+	* Test Method:
 	* 1.  Get a description of each process offered by the server using test /conf/core/process.
 	* 2.  Inspect the description of each process and identify the list of processes that have inputs with a maximum cardinality greater that one.
 	* 3.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the inputs with maximum cardinality  1 according to the requirement req_core_job-creation-input-array,/req/core/job-creation-input-array
@@ -409,7 +409,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -420,7 +420,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 27: /conf/core/job-creation-input-inline-bbox
 	* Test Purpose: Validate that inputs with a bounding box schema encoded in-line in an execute request are correctly processed.
 	* Requirement: /req/core/job-creation-input-inline-bbox
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode values for the identified bounding box inputs in-line in the execute request
 	* 2.  Verify that each process executes successfully according to the ats_job-creation-success,relevant requirement based on the combination of execute parameters
 	* </pre>
@@ -433,7 +433,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -444,7 +444,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 26: /conf/core/job-creation-input-inline-binary
 	* Test Purpose: Validate that binary input values encoded as base-64 string in-line in an execute request are correctly processes.
 	* Requirement: /req/core/job-creation-input-binary
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode binary input values in-line in the execute request according to requirement req_core_job-creation-input-inline-binary,/req/core/job-creation-input-inline-binary
 	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
 	* |===
@@ -459,7 +459,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -470,7 +470,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 25: /conf/core/job-creation-input-inline-mixed
 	* Test Purpose: Validate that inputs of mixed content encoded in-line in an execute request are correctly processed.
 	* Requirement: /req/core/job-creation-input-inline-mixed
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the identified mix-content inputs in-line in the execute request according to requirement req_core_job-creation-input-inline-mixed,/req/core/job-creation-input-inline-mixed
 	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
 	* |===
@@ -485,7 +485,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -496,11 +496,11 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 23: /conf/core/job-creation-input-inline-object
 	* Test Purpose: Validate that inputs with a complex object schema encoded in-line in an execute request are correctly processed.
 	* Requirement: /req/core/job-creation-input-inline-object
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the identified object inputs in-line in the execute request according to requirement req_core_job-creation-input-inline-object,/req/core/job-creation-input-inline-object
 	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
 	* |===
-	* 
+	*
 	* TODO: Check additional content
 	* </pre>
 	*/
@@ -539,7 +539,7 @@ public class Jobs extends CommonFixture {
 				}
 			}
 			if(!inputIsObject) {
-				addInput(input, inputsNode);				
+				addInput(input, inputsNode);
 			}
 		}
 		for (Output output : outputs) {
@@ -572,7 +572,7 @@ public class Jobs extends CommonFixture {
 				}
 			}
 			if(!inputIsObject) {
-				addInput(input, inputsNode);				
+				addInput(input, inputsNode);
 			}
 		}
 		for (Output output : outputs) {
@@ -605,7 +605,7 @@ public class Jobs extends CommonFixture {
 				}
 			}
 			if(!inputIsObject) {
-				addInput(input, inputsNode);				
+				addInput(input, inputsNode);
 			}
 		}
 		for (Output output : outputs) {
@@ -638,7 +638,7 @@ public class Jobs extends CommonFixture {
 				}
 			}
 			if(!inputIsObject) {
-				addInput(input, inputsNode);				
+				addInput(input, inputsNode);
 			}
 		}
 		for (Output output : outputs) {
@@ -671,7 +671,7 @@ public class Jobs extends CommonFixture {
 				}
 			}
 			if(!inputIsObject) {
-				addInput(input, inputsNode);				
+				addInput(input, inputsNode);
 			}
 		}
 		for (Output output : outputs) {
@@ -704,7 +704,7 @@ public class Jobs extends CommonFixture {
 				}
 			}
 			if(!inputIsObject) {
-				addInput(input, inputsNode);				
+				addInput(input, inputsNode);
 			}
 		}
 		for (Output output : outputs) {
@@ -737,7 +737,7 @@ public class Jobs extends CommonFixture {
 				}
 			}
 			if(!inputIsObject) {
-				addInput(input, inputsNode);				
+				addInput(input, inputsNode);
 			}
 		}
 		for (Output output : outputs) {
@@ -749,9 +749,9 @@ public class Jobs extends CommonFixture {
 	}
 
 	private void addObjectInput(Input input, ObjectNode inputsNode) {
-		ObjectNode inputObjectNode = objectMapper.createObjectNode();		
-		inputObjectNode.set("value", new TextNode(TEST_STRING_INPUT));		
-		inputsNode.set(input.getId(), inputObjectNode);		
+		ObjectNode inputObjectNode = objectMapper.createObjectNode();
+		inputObjectNode.set("value", new TextNode(TEST_STRING_INPUT));
+		inputsNode.set(input.getId(), inputObjectNode);
 	}
 
 	/**
@@ -759,7 +759,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 21: /conf/core/job-creation-input-inline
 	* Test Purpose: Validate in-line process input values are validated against the corresponding schema from the process description.
 	* Requirement: /req/core/job-creation-input-inline
-	* Test Method: 
+	* Test Method:
 	* 1.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
 	* |===
 	* TODO: Check additional content
@@ -772,7 +772,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -783,7 +783,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 22: /conf/core/job-creation-input-ref
 	* Test Purpose: Validate that input values specified by reference in an execute request are correctly processed.
 	* Requirement: /req/core/job-creation-input-ref
-	* Test Method: 
+	* Test Method:
 	* 1.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
 	* |===
 	* TODO: Check additional content
@@ -805,7 +805,7 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
 					.build();
 			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -849,7 +849,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test null: /conf/core/job-creation-input-validation
 	* Test Purpose: Verify that the server correctly validates process input values according to the definition obtained from the sc_process_description,process description.
 	* Requirement: /req/core/job-creation-input-validation
-	* Test Method: 
+	* Test Method:
 	* 1.  For each process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode the input values according to the schema from the definition of each input
 	* 2.  Verify that each process executes successfully according to the ats-job-creation-success-sync,relevant requirement based on the combination of execute parameters
 	* 3.  For each process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request taking care to encode some of the input values in violation of the schema from the definition of the selected input
@@ -864,6 +864,7 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		ValidationData<Void> data = new ValidationData<>();
 		try {
+
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
@@ -874,15 +875,15 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
 					.build();
 			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
-		
+
 		executeNode = createExecuteJsonNodeWithWrongInput(echoProcessId);
 		data = new ValidationData<>();
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, false);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
@@ -890,17 +891,16 @@ public class Jobs extends CommonFixture {
 			Body body = Body.from(responseNode);
 			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertEquals(statusCode, HttpStatus.SC_BAD_REQUEST);
-			Response response = new DefaultResponse.Builder(statusCode).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
+			Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
+			assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,body.getContentAsNode(null, null, null).toString()),
+				    "Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
-		
+
 	}
-	
+
 	private HttpResponse sendPostRequestSync(JsonNode executeNode, boolean checkForStatusCode) throws IOException {
 		HttpResponse httpResponse = clientBuilder.build().execute(createPostRequest(executeNode));
 		int statusCode = httpResponse.getStatusLine().getStatusCode();
@@ -913,7 +913,7 @@ public class Jobs extends CommonFixture {
 	private HttpResponse sendPostRequestSync(JsonNode executeNode) throws IOException {
 		return sendPostRequestSync(executeNode, false);
 	}
-	
+
 	private HttpPost createPostRequest(JsonNode executeNode) {
 		HttpPost request = new HttpPost(executeEndpoint);
 	    this.reqEntity = request;
@@ -922,12 +922,12 @@ public class Jobs extends CommonFixture {
 		request.setEntity(new StringEntity(executeNode.toString(), contentType));
 		return request;
 	}
-	
+
 	private HttpResponse sendPostRequestASync(JsonNode executeNode) throws IOException {
 		HttpPost request = new HttpPost(executeEndpoint);
 	    this.reqEntity = request;
 		request.setHeader("Accept", "application/json");
-		request.setHeader("Prefer", "respond-async ");
+		request.setHeader("Prefer", "respond-async");
 		ContentType contentType = ContentType.APPLICATION_JSON;
 		request.setEntity(new StringEntity(executeNode.toString(), contentType));
 		HttpResponse httpResponse = clientBuilder.build().execute(request);
@@ -946,8 +946,8 @@ public class Jobs extends CommonFixture {
 			if(checkForFormat(input.getTypes()) != null) {
 				foundTestableInput = true;
 				addInputWithWrongFormat(input, inputsNode);
-			}
-			addInput(input, inputsNode);
+			} else
+			    addInput(input, inputsNode);
 		}
 		if(!foundTestableInput) {
 			throw new SkipException("No input with specified format found, skipping test.");
@@ -962,7 +962,7 @@ public class Jobs extends CommonFixture {
 
 	private void addInputWithWrongFormat(Input input, ObjectNode inputsNode) {
 		ObjectNode inputNode = objectMapper.createObjectNode();
-		inputNode.set("type", new TextNode("wrong/type_" + UUID.randomUUID()));		
+		inputNode.set("type", new TextNode("wrong/type_" + UUID.randomUUID()));
 		inputsNode.set(input.getId(), inputNode);
 	}
 
@@ -980,7 +980,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 20: /conf/core/job-creation-inputs
 	* Test Purpose: Validate that servers can accept input values both inline and by reference.
 	* Requirement: /req/core/job-creation-inputs
-	* Test Method: 
+	* Test Method:
 
 	* </pre>
 	*/
@@ -991,7 +991,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse =sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1002,9 +1002,9 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 16: /conf/core/job-creation-op
 	* Test Purpose: Validate the creation of a new job.
 	* Requirement: /req/core/job-creation-op
-	* Test Method: 
+	* Test Method:
 	* 1.  Validate the creation of the job according the requirements req_core_job-creation-default-execution-mode,
-	* /req/core/job-creation-default-execution-mode, 
+	* /req/core/job-creation-default-execution-mode,
 	* req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode
 	* </pre>
 	*/
@@ -1012,8 +1012,8 @@ public class Jobs extends CommonFixture {
 	public void testJobCreationOp() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();		
-		try {			
+		final ValidationData<Void> data = new ValidationData<>();
+		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			String executeEndpoint = rootUri + echoProcessPath + "/execution";
 			HttpPost request = new HttpPost(executeEndpoint);
@@ -1040,7 +1040,7 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 					.build();
 			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1051,7 +1051,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 19: /conf/core/job-creation-request
 	* Test Purpose: Validate that the body of a job creation operation complies with the required structure and contents.
 	* Requirement: /req/core/job-creation-request
-	* Test Method: 
+	* Test Method:
 
 	* </pre>
 	*/
@@ -1059,7 +1059,7 @@ public class Jobs extends CommonFixture {
 	public void testJobCreationRequest() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();		
+		final ValidationData<Void> data = new ValidationData<>();
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
@@ -1078,7 +1078,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 34: /conf/core/job-creation-success-async
 	* Test Purpose: Validate the results of a job that has been created using the `async` execution mode.
 	* Requirement: /req/core/job-creation-success-async
-	* Test Method: 
+	* Test Method:
 	* |===
 	* TODO: Check additional content
 	* </pre>
@@ -1100,7 +1100,7 @@ public class Jobs extends CommonFixture {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
-	
+
 	private void validateResponse(HttpResponse httpResponse, OperationValidator validator, ValidationData<Void> data) throws IOException {
 		JsonNode responseNode = parseResponse(httpResponse);
 		Body body = Body.from(responseNode);
@@ -1108,17 +1108,24 @@ public class Jobs extends CommonFixture {
 		Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 				.build();
 		validator.validateResponse(response, data);
-		Assert.assertTrue(data.isValid(), printResults(data.results()));		
+		Assert.assertTrue(data.isValid(), printResults(data.results()));
 	}
-	
+
 	private JsonNode parseResponse(HttpResponse httpResponse) throws IOException {
 		StringWriter writer = new StringWriter();
 		String encoding = StandardCharsets.UTF_8.name();
 		IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 		return new ObjectMapper().readTree(writer.toString());
 	}
-	
-	private HttpResponse sendGetRequest(String url, String acceptType) throws IOException {		
+
+	private String parseRawResponse(HttpResponse httpResponse) throws IOException {
+		StringWriter writer = new StringWriter();
+		String encoding = StandardCharsets.UTF_8.name();
+		IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		return writer.toString();
+	}
+
+	private HttpResponse sendGetRequest(String url, String acceptType) throws IOException {
 		HttpGet request = new HttpGet(url);
 	    this.reqEntity = request;
 	    request.setHeader("Accept", acceptType);
@@ -1130,7 +1137,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 33: /conf/core/job-creation-sync-document
 	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_code,negotiated and the response type is `document`.
 	* Requirement: /req/core/job-creation-sync-document
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution has been sc_execution_mode,negotiated according to tests ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode and the requested response type is `document` (ie `"response": "document"`) according to requirement req_core_job-creation-sync-document,/req /core/job-creation-sync-document
 	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-document,/req/core/job-creation-sync-document
 	* |===
@@ -1143,7 +1150,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1160,14 +1167,14 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 32: /conf/core/job-creation-sync-raw-mixed-multi
 	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_mode,negotiated, the response type is `raw` and the output transmission is a mix of `value` and `reference`.
 	* Requirement: /req/core/job-creation-sync-raw-mixed-multi
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode, that more than one output is requested, that the requested response type is `raw` (ie `"response": "raw"`) and the the transmission mode is a mix of `value` (ie `"transmissionMode": "value"`) and reference (ie `"transmissionMode": "reference"`) according to requirement req_core_job-creation-sync-raw-mixed-multi,/req/core/job-creation-sync-raw-mixed-multi
 	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-raw-mixed-multi,/req/core/job-creation-sync-raw-mixed-multi
 	* 3.  For each output requested with `"transmissionMode": "value"` verify that the body of the corresponding part contains the output value
 	* 4.  For each output requested with `"transmissionMode": "reference"` verify that the body of the corresponding part is empty and the `Content-Location` header is included that points to the output value
 	* |===
-	* 
-	* 
+	*
+	*
 	* TODO: Check additional content
 	* </pre>
 	*/
@@ -1178,7 +1185,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1189,7 +1196,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 31: /conf/core/job-creation-sync-raw-ref
 	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_mode,negotiated, the response type is `raw` and the transmission mode is `ref`.
 	* Requirement: /req/core/job-creation-sync-raw-ref
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and the transmission mode is set to `ref` (ie `"transmissionMode": "ref"`) according to requirement req_core_job-creation-sync-raw-ref,/req/core/job-creation-sync-raw-ref
 	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-raw-ref,/req/core/job-creation-sync-raw-ref
 	* |===
@@ -1203,7 +1210,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1214,7 +1221,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 30: /conf/core/job-creation-sync-raw-value-multi
 	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_mode,negotiated, the response type is `raw` and the output transmission is `value`.
 	* Requirement: /req/core/job-creation-sync-raw-value-multi
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode, that more than one output is requested, that the requested response type is `raw` (ie `"response": "raw"`) and the the transmission mode is set to `value` (ie `"transmissionMode": "value"`) according to requirement req_core_job-creation-sync-raw-value-multi,/req/core/job-creation-sync-raw-value-multi
 	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-raw-value-multi,/req/core/job-creation-sync-raw-value-multi
 	* |===
@@ -1228,7 +1235,7 @@ public class Jobs extends CommonFixture {
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1239,7 +1246,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 28: /conf/core/job-creation-sync-raw-value-one
 	* Test Purpose: Validate that the server responds as expected when synchronous execution is sc_execution_mode,negotiated, a single output value is requested, the response type is `raw` and the output transmission is `value`.
 	* Requirement: /req/core/job-creation-sync-raw-value-one
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode, that only one output is requested, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to `value` (ie `"transmissionMode": "value"`) according to requirement req_core_job-creation-sync-raw-value-one,/req/core/job-creation-sync-raw-value-one
 	* 2.  Verify that each process executes successfully according to requirement req_core_job-creation-sync-raw-value-one,/req/core/job-creation-sync-raw-value-one
 	* |===
@@ -1249,14 +1256,20 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-one ", groups = "job")
 	public void testJobCreationSyncRawValueOne() {
 		// create job
+
 		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
+
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
+
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
-			JsonNode responseNode = parseResponse(httpResponse);
-			Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+
+			Assert.assertEquals(parseRawResponse(httpResponse), TEST_STRING_INPUT);
+
 		} catch (Exception e) {
+
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
@@ -1266,13 +1279,13 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 37: /conf/core/job-exception-no-such-job
 	* Test Purpose: Validate that an invalid job identifier is handled correctly.
 	* Requirement: /req/core/job-exception-no-such-job
-	* Test Method: 
-	* 1.  Validate that the document contains the exception type "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/no-such-job" 
+	* Test Method:
+	* 1.  Validate that the document contains the exception type "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/no-such-job"
 	* 2.  Validate the document for all supported media types using the resources and tests identified in job-exception-no-such-job
 	* |===
-	* 
+	*
 	* An exception response caused by the use of an invalid job identifier may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the response. All supported formats should be exercised.
-	* 
+	*
 	* [[job-exception-no-such-job]]
 	* 3. Schema and Tests for the Job Result for Non-existent Job
 	* [width="90%",cols="3",options="header"]
@@ -1281,7 +1294,7 @@ public class Jobs extends CommonFixture {
 	* |HTML |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_html_content,/conf/html/content
 	* |JSON |link:http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml[exception.yaml] |ats_json_content,/conf/json/content
 	* |===
-	* 
+	*
 	* TODO: Check additional content
 	* </pre>
 	*/
@@ -1301,7 +1314,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 35: /conf/core/job-op
 	* Test Purpose: Validate that the status info of a job can be retrieved.
 	* Requirement: /req/core/job
-	* Test Method: 
+	* Test Method:
 	* 1.  Validate the contents of the returned document using the test ats_core_job-success,/conf/core/job-success
 	* |===
 	* TODO: Check additional content
@@ -1311,7 +1324,7 @@ public class Jobs extends CommonFixture {
 	public void testJobOp() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		try {			
+		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			String executeEndpoint = rootUri + echoProcessPath + "/execution";
 			HttpPost request = new HttpPost(executeEndpoint);
@@ -1321,7 +1334,7 @@ public class Jobs extends CommonFixture {
 			request.setEntity(new StringEntity(executeNode.toString(), contentType));
 			HttpResponse httpResponse = client.execute(request);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);		
+			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1332,13 +1345,13 @@ public class Jobs extends CommonFixture {
 	* Abstract Test null: /conf/core/job-results-no-such-job
 	* Test Purpose: Validate that the job results retrieved using an invalid job identifier complies with the require structure and contents.
 	* Requirement: /req/core/job-results-exception-no-such-job
-	* Test Method: 
-	* 1.  Validate that the document contains the exception type "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/no-such-job" 
+	* Test Method:
+	* 1.  Validate that the document contains the exception type "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/no-such-job"
 	* 2.  Validate the document for all supported media types using the resources and tests identified in job-results-exception-no-such-job
 	* |===
-	* 
+	*
 	* The job results page for a job may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the job results for a non-existent job against that schema.  All supported formats should be exercised.
-	* 
+	*
 	* [[job-results-exception-no-such-job]]
 	* 3. Schema and Tests for the Job Result for Non-existent Job
 	* [width="90%",cols="3",options="header"]
@@ -1366,14 +1379,14 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 46: /conf/core/job-results-exception-results-not-ready
 	* Test Purpose: Validate that the job results retrieved for an incomplete job complies with the require structure and contents.
 	* Requirement: /req/core/job-results-exception-results-not-ready
-	* Test Method: 
+	* Test Method:
 	* 1.  Validate that the document was returned with a 404
-	* 2.  Validate that the document contains the exception `type` "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/result-not-ready" 
+	* 2.  Validate that the document contains the exception `type` "http://wwwopengisnet/def/exceptions/ogcapi-processes-1/10/result-not-ready"
 	* 3.  Validate the document for all supported media types using the resources and tests identified in job-results-exception-results-not-ready
 	* |===
-	* 
+	*
 	* The job results page for a job may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the job results for an incomplete job against that schema.  All supported formats should be exercised.
-	* 
+	*
 	* [[job-results-exception-results-not-ready]]
 	* 4. Schema and Tests for the Job Result for an Incomplete Job
 	* [width="90%",cols="3",options="header"]
@@ -1388,26 +1401,46 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-results-exception-results-not-ready ", groups = "job")
 	public void testJobResultsExceptionResultsNotReady() {
 		//TODO: check
+		JsonNode statusNode = null;
+		HttpResponse httpResponse = null;
 		final ValidationData<Void> data = new ValidationData<>();
 		//create invalid execute request
-		JsonNode executeNode = createInvalidExecuteJsonNode(echoProcessId);
+		JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+		
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			httpResponse = sendPostRequestASync(executeNode);
+			
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode > 200, "Got unexpected status code: " + statusCode);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Header locationHeader = httpResponse.getFirstHeader("location");	//location of job			
+			String jobLocationString = locationHeader.getValue();			
+			httpResponse = sendGetRequest(jobLocationString, "application/json");	//Issue an HTTP GET request to the URL ‘/jobs/{jobID}/results’ before the job completes execution.
+			
+			
+			String jobResultsLocationString = jobLocationString + "/results";
+			httpResponse = sendGetRequest(jobResultsLocationString, "application/json");
+			Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 404,"Failed Abstract test A.46 (Step 3). The response to the /jobs/{jobID}/results request did not return a 404 status code.");
+			
+			
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			httpResponse.getEntity().writeTo(baos);
+			String responseContentString = baos.toString();	
+			baos.close();
+			httpResponse.getEntity().getContent().close();
+			ObjectMapper objectMapper =new ObjectMapper();
+		    JsonNode resultsNode = objectMapper.readTree(responseContentString);
+		    
+		    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
+		    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
+		    
+		    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
+				    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
+		    
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
+		
+	
+
 	}
 
 	/**
@@ -1415,15 +1448,15 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 47: /conf/core/job-results-failed
 	* Test Purpose: Validate that the job results for a failed job complies with the require structure and contents.
 	* Requirement: /req/core/job-results-failed
-	* Test Method: 
+	* Test Method:
 	* 1.  Issue an HTTP GET request to the URL '/jobs/{jobID}/results'
 	* 2.  Validate that the document was returned with a HTTP error code (4XX or 5XX)
 	* 3.  Validate that the document contains an exception `type` that corresponds to the reason the job failed (eg InvalidParameterValue for invalid input data)
 	* 4.  Validate the document for all supported media types using the resources and tests identified in job-results-failed-schema
 	* |===
-	* 
+	*
 	* The job results page for a job may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the job results for a failed job against that schema.  All supported formats should be exercised.
-	* 
+	*
 	* [[job-results-failed-schema]]
 	* 5. Schema and Tests for the Job Result for a Failed Job
 	* [width="90%",cols="3",options="header"]
@@ -1453,7 +1486,7 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 					.build();
 			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1471,7 +1504,7 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 38: /conf/core/job-results
 	* Test Purpose: Validate that the results of a job can be retrieved.
 	* Requirement: /req/core/job-results
-	* Test Method: 
+	* Test Method:
 	* 1.  Validate that the document was returned with a status code 200
 	* 2.  Validate the contents of the returned document using the test ats_job-results-success,/conf/core/job-results-success
 	* |===
@@ -1482,17 +1515,29 @@ public class Jobs extends CommonFixture {
 	public void testJobResults() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();		
+		final ValidationData<Void> data = new ValidationData<>();
 		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
+
+
+			HttpResponse httpResponse = this.sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+
+
 			Header locationHeader = httpResponse.getFirstHeader("location");
 			String locationString = locationHeader.getValue();
 			httpResponse = sendGetRequest(locationString, "application/json");
-			httpResponse = getResultResponse(httpResponse);
-			Assert.assertNotNull(httpResponse);
-			validateResponse(httpResponse, getResultValidator, data);
+			assertTrue(httpResponse.getStatusLine().getStatusCode()==200,
+				    "Expected status code 200 but found "+httpResponse.getStatusLine().getStatusCode());
+
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			httpResponse.getEntity().writeTo(baos);
+			String responseContentString = baos.toString();
+			baos.close();
+			httpResponse.getEntity().getContent().close();
+			assertTrue(validateResponseAgainstSchema(STATUS_SCHEMA_URL,responseContentString),
+				    "Unable to validate the response document against: "+STATUS_SCHEMA_URL);
+
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1507,7 +1552,7 @@ public class Jobs extends CommonFixture {
 			ArrayNode linksArrayNode = (ArrayNode)linksNode;
 			for (int i = 0; i < linksArrayNode.size(); i++) {
 				JsonNode linksChildNode = linksArrayNode.get(i);
-				if(linksChildNode.get("rel").asText().equals("results")) {
+				if(linksChildNode.get("rel").asText().equals("http://www.opengis.net/def/rel/ogc/1.0/results")) {
 					String resultsUrl = linksChildNode.get("href").asText();
 					String resultsMimeType = linksChildNode.get("type").asText();
 					return sendGetRequest(resultsUrl, resultsMimeType);
@@ -1522,14 +1567,14 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 44: /conf/core/job-results-async-document
 	* Test Purpose: Validate that the server responds as expected when the asynchronous execution is sc_execution_mode,negotiated and the response type is `document`.
 	* Requirement: /req/core/job-results-async-document
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that asynchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode and that the requested response type is `document` (ie `"response": "document"`) according to requirement req_core_job-creation-async-document,/req/core/job-creation-async-document
 	* 2.  If the server responds asynchronously periodically retrieve the status of the asynchronously execute job as per test ats_core_job-op,/conf/core/job-op
 	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-document,/req/core/job-results-async-document
 	* |====
-	* 
+	*
 	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed:
-	* 
+	*
 	* [width="90%",cols="2,6a"]
 	* |====
 	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
@@ -1558,16 +1603,16 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 43: /conf/core/job-results-async-raw-mixed-multi
 	* Test Purpose: Validate that the server responds as expected when asynchronous execution is sc_execution_mode,negotiated, more than one output is requested, the response type is `raw` and the output transmission is a mix of `value` and `reference`.
 	* Requirement: /req/core/job-results-async-raw-mixed-multi
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that asynchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to a mix of `value` (ie `"outputTransmission": "value"`) and `reference` (ie `"outputTransmission": "reference"`) according to requirement req_core_job-creation-async-raw-mixed-multi,/req/core/job-creation-async-raw-mixed-multi
 	* 2.  Periodically retrieve the status of the asynchronously execute job as per test ats_core_job-op,/conf/core/job-op
 	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-raw-mixed-multi,/conf/core/job-results-async-raw-mixed-multi
 	* 4.  For each output requested with `"transmissionMode": "value"` verify that the body of the corresponding part contains the output value
 	* 5.  For each output requested with `"transmissionMode": "reference"` verify that the body of the corresponding part is empty and the `Content-Location` header is included that points to the output value
 	* |====
-	* 
+	*
 	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed.
-	* 
+	*
 	* [width="90%",cols="2,6a"]
 	* |====
 	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
@@ -1582,7 +1627,7 @@ public class Jobs extends CommonFixture {
 	public void testJobResultsAsyncRawMixedMulti() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeRawMixedMulti(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();		
+		final ValidationData<Void> data = new ValidationData<>();
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
@@ -1596,7 +1641,7 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 					.build();
 			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1607,14 +1652,14 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 42: /conf/core/job-results-async-raw-ref
 	* Test Purpose: Validate that the server responds as expected when asynchronous execution is ,sc_execution_mode,negotiated, the response type is `raw` and the output transmission is `reference`.
 	* Requirement: /req/core/job-results-async-raw-ref
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to `reference` (ie `"outputTransmission": "reference"`) according to requirement req_core_job-creation-async-raw-ref,/req/core/job-creation-async-raw-ref
 	* 2.  If the server responds asynchronously, periodically retrieve the status of the asynchronously executed job as per test ats_core_job-op,/conf/core/job-op
 	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-raw-ref,/req/core/job-results-async-ref
 	* |====
-	* 
+	*
 	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed.
-	* 
+	*
 	* [width="90%",cols="2,6a"]
 	* |====
 	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
@@ -1629,7 +1674,7 @@ public class Jobs extends CommonFixture {
 	public void testJobResultsAsyncRawRef() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeRawRef(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();		
+		final ValidationData<Void> data = new ValidationData<>();
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
@@ -1643,7 +1688,7 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 					.build();
 			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1654,14 +1699,14 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 41: /conf/core/job-results-async-raw-value-multi
 	* Test Purpose: Validate that the server responds as expected when asynchronous execution is sc_execution_mode,negotiated, more than one output is requested, the response type is `raw` and the output transmission is `value`.
 	* Requirement: /req/core/job-results-async-raw-value-multi
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that asynchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to `value` (ie `"outputTransmission": "value"`) according to requirement req_core_job-creation-async-raw-value-multi,/req/core/job-creation-async-raw-value-multi
 	* 2.  Periodically retrieve the status of the asynchronously execute job as per test ats_core_job-op,/conf/core/job-op
 	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-raw-value-multi,/conf/core/job-results-async-raw-value-multi
 	* |====
-	* 
+	*
 	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed.
-	* 
+	*
 	* [width="90%",cols="2,6a"]
 	* |====
 	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
@@ -1676,7 +1721,7 @@ public class Jobs extends CommonFixture {
 	public void testJobResultsAsyncRawValueMulti() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeRawValueMulti(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();		
+		final ValidationData<Void> data = new ValidationData<>();
 		try {
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
@@ -1690,25 +1735,71 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 					.build();
 			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
+
+    private void loopOverStatus(JsonNode responseNode){
+	try{
+		
+	    HttpClient client = HttpClientBuilder.create().build();
+	    ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
+	  
+	    boolean hasMonitorOrResultLink=false;
+	    for (JsonNode currentJsonNode : linksArrayNode) {
+		// Fetch result document
+	    
+		if(currentJsonNode.get("rel").asText()=="http://www.opengis.net/def/rel/ogc/1.0/results"){
+	
+		    HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
+		
+		    request.setHeader("Accept", "application/json");
+		    HttpResponse httpResponse = client.execute(request);
+		
+		    JsonNode resultNode = parseResponse(httpResponse);
+		 
+		    // May be more generic here
+		    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+		    hasMonitorOrResultLink=true;
+		}
+	
+	    }
+
+	    if(!hasMonitorOrResultLink)
+		for (JsonNode currentJsonNode : linksArrayNode) {
+		
+		    // Fetch status document
+		    if(currentJsonNode.get("rel").asText()=="monitor"){
+			HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
+			request.setHeader("Accept", "application/json");
+			HttpResponse httpResponse = client.execute(request);
+			JsonNode resultNode = parseResponse(httpResponse);
+			loopOverStatus(resultNode);
+			hasMonitorOrResultLink=true;
+		    }
+		}
+	 
+	}
+	catch (Exception e) {
+	    Assert.fail(e.getLocalizedMessage());
+	}
+    }
 
 	/**
 	* <pre>
 	* Abstract Test 40: /conf/core/job-results-async-raw-value-one
 	* Test Purpose: Validate that the server responds as expected when asynchronous execution is sc_execution_mode,negotiated, one output is requested, the response type is `raw` and the output transmission is `value`.
 	* Requirement: /req/core/job-results-async-raw-value-one
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that asynchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-auto-execution-mode,/conf/core/job-creation-auto-execution-mode, that the requested response type is `raw` (ie `"response": "raw"`) and that the output transmission is set to `value` (ie `"outputTransmission": "value"`) according to requirement req_core_job-creation-async-raw-value-one,/req/core/job-creation-async-raw-value-one
 	* 2.  If the server responds asynchronously, periodically retrieve the status of the asynchronously executed job as per test ats_core_job-op,/conf/core/job-op
 	* 3.  When the job status is `successful`, get the results as per test ats_core_job-results-op,/conf/core/job-results and verify that they conform to requirement req_core_job-results-async-raw-value-one,/req/core/job-results-async-raw-value-one
 	* |====
-	* 
+	*
 	* NOTE: In the case where a process supports both `async-execute` and `sync-execute` job control options there is a possibility that the server responds synchronously even though the `Prefer` headers asserts a `respond-async` preference.  In this case, the following additional test should be performed.
-	* 
+	*
 	* [width="90%",cols="2,6a"]
 	* |====
 	* ^|Test Method |. Inspect the headers of the synchronous response and see if a `Link` header is included with `rel=monitor`.
@@ -1724,11 +1815,32 @@ public class Jobs extends CommonFixture {
 		// create job
 		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
+			
 			HttpResponse httpResponse = sendPostRequestASync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 			JsonNode responseNode = parseResponse(httpResponse);
-			Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+			if(statusCode == 200){
+			    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+			}else{
+				
+				Header locationHeader = httpResponse.getFirstHeader("location");				
+				String locationString = locationHeader.getValue();			
+				httpResponse = sendGetRequest(locationString, "application/json");	
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				httpResponse.getEntity().writeTo(baos);
+				String responseContentString = baos.toString();	
+				baos.close();
+				httpResponse.getEntity().getContent().close();
+			
+			
+				ObjectMapper objectMapper =new ObjectMapper();
+			    JsonNode statusNode = objectMapper.readTree(responseContentString);
+			    
+			 			
+				
+			    loopOverStatus(statusNode);
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1753,13 +1865,36 @@ public class Jobs extends CommonFixture {
 		executeNode.set(RESPONSE_KEY, new TextNode(responseValue));
 		return executeNode;
 	}
+	
+	private JsonNode createExecuteJsonNodeWithPauseInput(String echoProcessId, String responseValue) {
+		ObjectNode executeNode = objectMapper.createObjectNode();
+		ObjectNode inputsNode = objectMapper.createObjectNode();
+		ObjectNode outputsNode = objectMapper.createObjectNode();
+		executeNode.set("id", new TextNode(echoProcessId));
+		Input inputOne = inputs.get(0);
+		String inputId = inputOne.getId();
+		addInput(inputOne, inputsNode);
+		for (Output output : outputs) {
+			if(output.getId().equals(inputId)) {
+			    addOutput(output, outputsNode);
+			    break;
+			}
+		}
+		
+		inputsNode.set("pause", new IntNode(5));
+		
+		executeNode.set("inputs", inputsNode);
+		executeNode.set("outputs", outputsNode);
+		executeNode.set(RESPONSE_KEY, new TextNode(responseValue));
+		return executeNode;
+	}	
 
 	/**
 	* <pre>
 	* Abstract Test 39: /conf/core/job-results-sync
 	* Test Purpose: Validate that the server responds as expected when getting results from a job for a process that has been executed synchronously.
 	* Requirement: /req/core/job-results-sync
-	* Test Method: 
+	* Test Method:
 	* 1.  For each identified process construct an execute request according to test ats_core_job-creation-request,/conf/core/job-creation-request ensuring that synchronous execution is sc_execution_mode,negotiated according to test ats_core_job-creation-default-execution-mode,/conf/core/job-creation-default-execution-mode
 	* 2.  Inspect the headers of the response and see if a `Link` header is included with `rel=monitor`
 	* 3.  If the link exists, get the job status as per test ats_core_job-op,/conf/core/job-op and ensure that the job status is set to `successful`
@@ -1773,25 +1908,28 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+		
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+					
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			Header[] headers = httpResponse.getHeaders("Link");
 			boolean foundRelMonitorHeader = false;
 			String statusUrl = "";
 			for (Header header : headers) {
-				String heaerValue = header.getValue();
-				if (heaerValue.contains("rel=monitor")) {
+				String headerValue = header.getValue();
+		
+				if (headerValue.contains("rel=monitor")) {
 					foundRelMonitorHeader = true;
-					statusUrl = heaerValue.split(";")[0];
+					statusUrl = headerValue.split(";")[0];
 					break;
 				}
 			}
 			if(!foundRelMonitorHeader) {
-				throw new SkipException("Did not find Link with value rel=monitor, skipping test.");
+				throw new SkipException("Did not find Link Header with value rel=monitor, skipping test.");
 			}
 			httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
-			validateResponse(httpResponse, getResultValidator, data);
+			validateResponse(httpResponse, getStatusValidator, data);
 		} catch (IOException e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1802,13 +1940,13 @@ public class Jobs extends CommonFixture {
 	* Abstract Test 36: /conf/core/job-success
 	* Test Purpose: Validate that the job status info complies with the require structure and contents.
 	* Requirement: /req/core/job-success
-	* Test Method: 
+	* Test Method:
 	* |===
-	* 
+	*
 	* The status info page for a job may be retrieved in a number of different formats. The following table identifies the applicable schema document for each format and the test to be used to validate the status info against that schema. All supported formats should be exercised.
-	* 
+	*
 	* [[job-status-info-schema]]
-	* 1. Schema and Tests for the Job Status Info 
+	* 1. Schema and Tests for the Job Status Info
 	* [width="90%",cols="3",options="header"]
 	* |===
 	* |Format |Schema Document |Test ID
@@ -1822,8 +1960,8 @@ public class Jobs extends CommonFixture {
 	public void testJobSuccess() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();		
-		try {			
+		final ValidationData<Void> data = new ValidationData<>();
+		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			String executeEndpoint = rootUri + echoProcessPath + "/execution";
 			HttpPost request = new HttpPost(executeEndpoint);
@@ -1849,7 +1987,7 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 					.build();
 			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));			
+			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}

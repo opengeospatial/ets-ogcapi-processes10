@@ -97,16 +97,28 @@ public class LandingPage extends CommonFixture {
 	// A.2.1.2.3.c Validate that the landing page includes a "http://www.opengis.net/def/rel/ogc/1.0/processes" link to the list of processes.
 	for(int i=2;i<required.length;i++){
 	    boolean expectedLinkTypesExists = linkTypes.contains( required[i] );
+	    
+	    if(required[i].equals("http://www.opengis.net/def/rel/ogc/1.0/conformance") && expectedLinkTypesExists==false) {
+	    	expectedLinkTypesExists = linkTypes.contains("conformance");  //This is added because some servers will implement both OGC API - Features and OGC API - Processes
+	    }
+	    
+	    if(required[i].equals("http://www.opengis.net/def/rel/ogc/1.0/processes") && expectedLinkTypesExists==false) {	    	
+	    	expectedLinkTypesExists = linkTypes.contains("processes");  //This is added because Abstract Test 2 says it should be 'processes' even though Requirement 2 says it should be http://www.opengis.net/def/rel/ogc/1.0/processes
+	    	// The issue was reported at https://github.com/opengeospatial/ogcapi-processes/issues/307
+	    }	    
+	    
+	    
 	    assertTrue( expectedLinkTypesExists,
 			"The landing page must include at least links with relation type '"+required[i]+"', but contains "
 			+ String.join( ", ", linkTypes ) );
 	}
+	
 	// A.2.1.2.2 Validate the landing page for *all supported media types* (only JSON) using the resources and tests identified in Schema and Tests for Landing Pages
 	// /conf/(geojson?)json/content
 	assertTrue( validateResponseAgainstSchema(LandingPage.urlSchema,body),
 		    "The landing page does nto conform to the schema: "+LandingPage.urlSchema);
 
-	checkHtmlConfClass(rootUri.toString());
+	//checkHtmlConfClass(rootUri.toString()); // DEACTIVATED because we do not parse HTML content.
 	
     }
 	
