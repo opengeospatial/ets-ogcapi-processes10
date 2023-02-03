@@ -21,36 +21,36 @@
 | Abstract test A.15 | /conf/core/process-exception-no-such-process | Process.testProcessExceptionNoSuchProcess (CHECKED)
 | Abstract test A.16 | /conf/core/job-creation-op | Jobs.testJobCreationOp (CHECKED)
 | Abstract test A.17 | /conf/core/job-creation-auto-execution-mode | Jobs.testJobCreationAutoExecutionMode (CHECKED)
-| Abstract test A.18 | /conf/core/job-creation-default-execution-mode | Jobs.testJobCreationDefaultExecutionMode
-| Abstract test A.19 | /conf/core/job-creation-request | Jobs.testJobCreationRequest
-| Abstract test A.20 | /conf/core/job-creation-inputs | Jobs.testJobCreationInputs
-| Abstract test A.21 | /conf/core/job-creation-input-inline | Jobs.testJobCreationInputInline
-| Abstract test A.22 | /conf/core/job-creation-input-ref | Jobs.testJobCreationInputRef
-| Abstract test A.23 | /conf/core/job-creation-input-array | Jobs.testJobCreationInputArray
-| Abstract test A.24 | /conf/core/job-creation-input-inline-object | Jobs.testJobCreationInputInlineObject
-| Abstract test A.25 | /conf/core/job-creation-input-inline-mixed | Jobs.testJobCreationInputInlineMixed
-| Abstract test A.26 | /conf/core/job-creation-input-inline-binary | Jobs.testJobCreationInputInlineBinary
-| Abstract test A.27 | /conf/core/job-creation-input-inline-bbox | Jobs.testJobCreationInputInlineBbox
-| Abstract test A.28 | /conf/core/job-creation-input-validation | Jobs.testJobCreationInputValidation
-| Abstract test A.29 | /conf/core/job-creation-sync-raw-value-one | Jobs.testJobCreationSyncRawValueOne
-| Abstract test A.30 | /conf/core/job-creation-sync-raw-value-multi | Jobs.testJobCreationSyncRawValueMulti
-| Abstract test A.31 | /conf/core/job-creation-sync-raw-ref | Jobs.testJobCreationSyncRawRef
-| Abstract test A.32 | /conf/core/job-creation-sync-raw-mixed-multi | Jobs.testJobCreationSyncRawMixedMulti
-| Abstract test A.33 | /conf/core/job-creation-sync-document | Jobs.testJobCreationSyncDocument
-| Abstract test A.34 | /conf/core/job-creation-success-async | Jobs.testJobCreationSuccessAsync
-| Abstract test A.35 | /conf/core/job-op | Jobs.testJobOp
-| Abstract test A.36 | /conf/core/job-success | Jobs.testJobSuccess
-| Abstract test A.37 | /conf/core/job-exception-no-such-job | Jobs.testJobExceptionNoSuchJob
-| Abstract test A.38 | /conf/core/job-results | Jobs.testJobResults
-| Abstract test A.39 | /conf/core/job-results-sync | Jobs.testJobResultsSync
+| Abstract test A.18 | /conf/core/job-creation-default-execution-mode | Jobs.testJobCreationDefaultExecutionMode (CHECKED)
+| Abstract test A.19 | /conf/core/job-creation-request | Jobs.testJobCreationRequest (CHECKED)
+| Abstract test A.20 | /conf/core/job-creation-inputs | Jobs.testJobCreationInputs (CHECKED)
+| Abstract test A.21 | /conf/core/job-creation-input-inline | Jobs.testJobCreationInputInline (CHECKED)
+| Abstract test A.22 | /conf/core/job-creation-input-ref | Jobs.testJobCreationInputRef (CHECKED)
+| Abstract test A.23 | /conf/core/job-creation-input-array | Jobs.testJobCreationInputArray (CHECKED)
+| Abstract test A.24 | /conf/core/job-creation-input-inline-object | Jobs.testJobCreationInputInlineObject (CHECKED)
+| Abstract test A.25 | /conf/core/job-creation-input-inline-mixed | Jobs.testJobCreationInputInlineMixed (CHECKED)
+| Abstract test A.26 | /conf/core/job-creation-input-inline-binary | Jobs.testJobCreationInputInlineBinary (CHECKED)
+| Abstract test A.27 | /conf/core/job-creation-input-inline-bbox | Jobs.testJobCreationInputInlineBbox (CHECKED)
+| Abstract test A.28 | /conf/core/job-creation-input-validation | Jobs.testJobCreationInputValidation (CHECKED)
+| Abstract test A.29 | /conf/core/job-creation-sync-raw-value-one | Jobs.testJobCreationSyncRawValueOne (CHECKED)
+| Abstract test A.30 | /conf/core/job-creation-sync-raw-value-multi | Jobs.testJobCreationSyncRawValueMulti (CHECKED)
+| Abstract test A.31 | /conf/core/job-creation-sync-raw-ref | Jobs.testJobCreationSyncRawRef (CHECKED)
+| Abstract test A.32 | /conf/core/job-creation-sync-raw-mixed-multi | Jobs.testJobCreationSyncRawMixedMulti (CHECKED)
+| Abstract test A.33 | /conf/core/job-creation-sync-document | Jobs.testJobCreationSyncDocument (CHECKED)
+| Abstract test A.34 | /conf/core/job-creation-success-async | Jobs.testJobCreationSuccessAsync (CHECKED)
+| Abstract test A.35 | /conf/core/job-op | Jobs.testJobOp (CHECKED)
+| Abstract test A.36 | /conf/core/job-success | Jobs.testJobSuccess (CHECKED)
+| Abstract test A.37 | /conf/core/job-exception-no-such-job | Jobs.testJobExceptionNoSuchJob (CHECKED)
+| Abstract test A.38 | /conf/core/job-results | Jobs.testJobResults (CHECKED)
+| Abstract test A.39 | /conf/core/job-results-sync | Jobs.testJobResultsSync (CHECKED)
 | Abstract test A.40 | /conf/core/job-results-async-raw-value-one | Jobs.testJobResultsAsyncRawValueOne (CHECKED)
-| Abstract test A.41 | /conf/core/job-results-async-raw-value-multi | Jobs.testJobResultsAsyncRawValueMulti
-| Abstract test A.42 | /conf/core/job-results-async-raw-ref | Jobs.testJobResultsAsyncRawRef
-| Abstract test A.43 | /conf/core/job-results-async-raw-mixed-multi | Jobs.testJobResultsAsyncRawMixedMulti
-| Abstract test A.44 | /conf/core/job-results-async-document | Jobs.testJobResultsAsyncDocument
+| Abstract test A.41 | /conf/core/job-results-async-raw-value-multi | Jobs.testJobResultsAsyncRawValueMulti (CHECKED)
+| Abstract test A.42 | /conf/core/job-results-async-raw-ref | Jobs.testJobResultsAsyncRawRef (CHECKED)
+| Abstract test A.43 | /conf/core/job-results-async-raw-mixed-multi | Jobs.testJobResultsAsyncRawMixedMulti (CHECKED)
+| Abstract test A.44 | /conf/core/job-results-async-document | Jobs.testJobResultsAsyncDocument (CHECKED)
 | Abstract test A.45 | /conf/core/job-results-failed | Not implemented
 | Abstract test A.46 | /conf/core/job-results-exception-results-not-ready | Jobs.testJobResultsExceptionResultsNotReady  (CHECKED)
-| Abstract test A.47 | /conf/core/job-results-failed | Jobs.testJobResultsFailed
+| Abstract test A.47 | /conf/core/job-results-failed | Jobs.testJobResultsFailed (CHECKED)
 | | OGC Process Description | 
 | Abstract test A.48 | /conf/ogc-process-description/json-encoding | OGCProcessDescription.testOGCProcessDescriptionJSON (CHECKED)
 | Abstract test A.49 | /conf/ogc-process-description/inputs-def | OGCProcessDescription.testOGCProcessDescriptionInputsDef (CHECKED)
