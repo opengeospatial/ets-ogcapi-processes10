@@ -49,7 +49,13 @@ public class Conformance extends CommonFixture {
         OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute( API_MODEL.getName() );
         URI iut = (URI) testContext.getSuite().getAttribute( IUT.getName() );
 
-        TestPoint tp = new TestPoint(rootUri.toString(),"/conformance",null);
+        TestPoint tp = null;
+        if(rootUri.toString().endsWith("/")) {
+          tp = new TestPoint(rootUri.toString(),"conformance",null);
+        }
+        else {
+        	tp = new TestPoint(rootUri.toString(),"/conformance",null);
+        }
 
 
         List<TestPoint> testPoints = new ArrayList<TestPoint>();
