@@ -1154,7 +1154,6 @@ public class Jobs extends CommonFixture {
 			}
         }
         else {
-			//throw new SkipException(ASYNC_MODE_NOT_SUPPORTED_MESSAGE);
 			//create sync job
 			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 			final ValidationData<Void> data = new ValidationData<>();
@@ -1597,46 +1596,50 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-results-exception-results-not-ready ", groups = "job")
 	public void testJobResultsExceptionResultsNotReady() {
-		//TODO: check
-		JsonNode statusNode = null;
-		HttpResponse httpResponse = null;
-		final ValidationData<Void> data = new ValidationData<>();
-		//create invalid execute request
-		JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+		if(echoProcessSupportsAsync())
+		{
+			JsonNode statusNode = null;
+			HttpResponse httpResponse = null;
+			final ValidationData<Void> data = new ValidationData<>();
+			//create invalid execute request
+			JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+			
+			try {
+				httpResponse = sendPostRequestASync(executeNode);
+				
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Header locationHeader = httpResponse.getFirstHeader("location");	//location of job			
+				String jobLocationString = locationHeader.getValue();			
+				httpResponse = sendGetRequest(jobLocationString, "application/json");	//Issue an HTTP GET request to the URL ‘/jobs/{jobID}/results’ before the job completes execution.
+				
+				
+				String jobResultsLocationString = jobLocationString + "/results";
+				httpResponse = sendGetRequest(jobResultsLocationString, "application/json");
+				Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 404,"Failed Abstract test A.46 (Step 3). The response to the /jobs/{jobID}/results request did not return a 404 status code.");
+				
+				
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				httpResponse.getEntity().writeTo(baos);
+				String responseContentString = baos.toString();	
+				baos.close();
+				httpResponse.getEntity().getContent().close();
+				ObjectMapper objectMapper =new ObjectMapper();
+			    JsonNode resultsNode = objectMapper.readTree(responseContentString);
+			    
+			    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
+			    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
+			    
+			    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
+					    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
+			    
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
 		
-		try {
-			httpResponse = sendPostRequestASync(executeNode);
-			
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Header locationHeader = httpResponse.getFirstHeader("location");	//location of job			
-			String jobLocationString = locationHeader.getValue();			
-			httpResponse = sendGetRequest(jobLocationString, "application/json");	//Issue an HTTP GET request to the URL ‘/jobs/{jobID}/results’ before the job completes execution.
-			
-			
-			String jobResultsLocationString = jobLocationString + "/results";
-			httpResponse = sendGetRequest(jobResultsLocationString, "application/json");
-			Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 404,"Failed Abstract test A.46 (Step 3). The response to the /jobs/{jobID}/results request did not return a 404 status code.");
-			
-			
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			httpResponse.getEntity().writeTo(baos);
-			String responseContentString = baos.toString();	
-			baos.close();
-			httpResponse.getEntity().getContent().close();
-			ObjectMapper objectMapper =new ObjectMapper();
-		    JsonNode resultsNode = objectMapper.readTree(responseContentString);
-		    
-		    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
-		    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
-		    
-		    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
-				    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
-		    
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
-		
-	
+        }
+        else {
+			throw new SkipException("This test is skipped because the server has not declared support for asynchronous execution mode.");
+		}  
 
 	}
 
@@ -1710,34 +1713,55 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-results ", groups = "job")
 	public void testJobResults() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-
-
-			HttpResponse httpResponse = this.sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
-
-
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, "application/json");
-			assertTrue(httpResponse.getStatusLine().getStatusCode()==200,
-				    "Expected status code 200 but found "+httpResponse.getStatusLine().getStatusCode());
-
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			httpResponse.getEntity().writeTo(baos);
-			String responseContentString = baos.toString();
-			baos.close();
-			httpResponse.getEntity().getContent().close();
-			assertTrue(validateResponseAgainstSchema(STATUS_SCHEMA_URL,responseContentString),
-				    "Unable to validate the response document against: "+STATUS_SCHEMA_URL);
-
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+		
+		HttpResponse httpResponse = null;
+		
+		if(echoProcessSupportsAsync())
+		{		
+			//create async job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+	
+	
+				httpResponse = this.sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+	
+	
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				httpResponse = sendGetRequest(locationString, "application/json");
+				assertTrue(httpResponse.getStatusLine().getStatusCode()==200,
+					    "Expected status code 200 but found "+httpResponse.getStatusLine().getStatusCode());
+	
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				httpResponse.getEntity().writeTo(baos);
+				String responseContentString = baos.toString();
+				baos.close();
+				httpResponse.getEntity().getContent().close();
+				assertTrue(validateResponseAgainstSchema(STATUS_SCHEMA_URL,responseContentString),
+					    "Unable to validate the response document against: "+STATUS_SCHEMA_URL);
+	
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+        }
+        else {
+			//create sync job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				httpResponse = sendPostRequestSync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+	
+			}
+			catch(Exception ee)
+			{
+				Assert.fail(ee.getLocalizedMessage());
+			}
+		} 		
 	}
 
 	private HttpResponse getResultResponse(HttpResponse httpResponse) throws IOException {
