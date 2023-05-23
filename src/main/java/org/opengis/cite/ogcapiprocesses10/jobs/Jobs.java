@@ -48,6 +48,8 @@ import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -792,23 +794,62 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-creation-input-ref ", groups = "job")
 	public void testJobCreationInputRef() {
 		//create job
+		
 		JsonNode executeNode = createExecuteJsonNodeWithHref(echoProcessId);
 		ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+	
+		    HttpResponse httpResponse = null;
+		    
+			try {
+				httpResponse = sendPostRequestSync(executeNode);
+			} catch (IOException e2) {
+				Assert.fail(e2.getLocalizedMessage());
+			}
+			
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+			
+			try {
+				IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			} catch (Exception e1) {
+				Assert.fail(e1.getLocalizedMessage());
+			}
+			
+			String responsePayload = writer.toString();
+			
+			if(!responsePayload.contains("Content-Type: multipart/related")) {
+				JsonNode responseNode = null;
+				
+				try {
+					responseNode = new ObjectMapper().readTree(responsePayload);
+				} catch (Exception e) {
+					Assert.fail(e.getLocalizedMessage());
+				}
+				
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
+						.build();
+				executeValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));
+		   }
+		   else if(responsePayload.contains("Content-Type: multipart/related")){
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);	
+				if(responseContentType.getValue().startsWith("multipart/related")) {
+					validateMultipartResponse(responsePayload);						
+				}
+				else {
+					throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
+				}
+			}
+			
+
+		
+
+				
+			
+			
+
 	}
 
 	private JsonNode createExecuteJsonNodeWithHref(String echoProcessId2) throws SkipException {
