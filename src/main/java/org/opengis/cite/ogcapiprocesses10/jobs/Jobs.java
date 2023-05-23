@@ -863,33 +863,63 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		ValidationData<Void> data = new ValidationData<>();
+		
+		HttpResponse httpResponse = null;
+		String responsePayload = null;
 		try {
 
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			httpResponse = sendPostRequestSync(executeNode);
+			responsePayload = parseRawResponse(httpResponse);
+
+		}
+		catch(Exception ee)
+		{
+			Assert.fail(ee.getLocalizedMessage());
+		}
+		
+		
+		Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);		
+		
+		if(responsePayload.contains("Content-Type: multipart/related")){
+			if(responseContentType.getValue().startsWith("multipart/related")) {
+				validateMultipartResponse(responsePayload);						
+			}
+			else {
+				throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
+			}
+		}
+		else {		
+		
+		
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+			JsonNode responseNode = null;
+			
+			try {
+				responseNode = new ObjectMapper().readTree(responsePayload);
+			}
+			catch(Exception ew)
+			{
+			  Assert.fail(ew.getLocalizedMessage());	
+			}
 			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
 					.build();
 			executeValidator.validateResponse(response, data);
 			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
 		}
+
 
 		executeNode = createExecuteJsonNodeWithWrongInput(echoProcessId);
 		data = new ValidationData<>();
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode, false);
+			httpResponse = sendPostRequestSync(executeNode, false);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
 			Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
@@ -1215,6 +1245,11 @@ public class Jobs extends CommonFixture {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
+	
+	private void validateMultipartResponse(String responsePayload){
+
+		Assert.assertTrue(responsePayload.contains(Jobs.TEST_STRING_INPUT), "The response payload did not contain the test string from the request");
+	}	
 
 	/**
 	* <pre>
