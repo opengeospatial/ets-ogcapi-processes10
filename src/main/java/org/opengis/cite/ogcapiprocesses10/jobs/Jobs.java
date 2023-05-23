@@ -172,6 +172,37 @@ public class Jobs extends CommonFixture {
 			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
 		}
 	}
+	
+	private boolean echoProcessSupportsAsync()
+	{
+		boolean supportsAsync = false;
+		try {
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpUriRequest request = new HttpGet(rootUri + echoProcessPath);
+		request.setHeader("Accept", "application/json");
+		HttpResponse httpResponse = client.execute(request);
+		StringWriter writer = new StringWriter();
+		String encoding = StandardCharsets.UTF_8.name();
+		IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+		JsonNode inputsNode = responseNode.get("jobControlOptions");
+		
+		if(inputsNode instanceof ArrayNode) {
+			ArrayNode inputsArrayNode = (ArrayNode)inputsNode;
+			
+			for(int i = 0 ; i < inputsArrayNode.size(); i++)
+			{
+				if(inputsArrayNode.get(i).asText().equals("async-execute")) supportsAsync = true;
+			}
+			
+		} 
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		return supportsAsync;
+	}	
 
 	private void parseEchoProcess() {
 
@@ -1131,17 +1162,55 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
+		HttpResponse httpResponse = null;
+		String responsePayload = null;
 		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, "application/json");
-			validateResponse(httpResponse, getStatusValidator, data);
+			if(echoProcessSupportsAsync())
+			{			
+				httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				httpResponse = sendGetRequest(locationString, "application/json");
+			
+			}
+			else {
+				
+				httpResponse = sendPostRequestSync(executeNode);
+		
+			}
+			
+			responsePayload = parseRawResponse(httpResponse);
+
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
+		
+		
+		if(responsePayload.contains("Content-Type: multipart/related")){
+			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			if(responseContentType.getValue().startsWith("multipart/related")) {
+				validateMultipartResponse(responsePayload);						
+			}
+			else {
+				throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
+			}
+		}
+		else {
+			try {
+				JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+						.build();
+				getStatusValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));				
+			} catch (IOException e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+		}
+		
 	}
 
 	/**
@@ -1181,6 +1250,8 @@ public class Jobs extends CommonFixture {
 		validator.validateResponse(response, data);
 		Assert.assertTrue(data.isValid(), printResults(data.results()));
 	}
+	
+
 
 	private JsonNode parseResponse(HttpResponse httpResponse) throws IOException {
 		StringWriter writer = new StringWriter();
@@ -1664,14 +1735,20 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-results-async-document ", groups = "job")
 	public void testJobResultsAsyncDocument() {
 		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_DOCUMENT);
-		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+		if(echoProcessSupportsAsync())
+		{		
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_DOCUMENT);
+			try {
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
 		}
+		else {
+			throw new SkipException("This test is skipped because the server has not declared support for asynchronous execution mode.");
+		}		
 	}
 
 	/**
