@@ -75,16 +75,23 @@ public class LandingPage extends CommonFixture {
     @Test(description = "Implements Abstract Test 2: /conf/core/landingpage-success", groups = "A.2.1. Landing Page /")
     public void testLandingPageValidation() {
 
+        Response request = init().baseUri( rootUri.toString() ).accept( JSON ).when().request( GET, "/" );
+        TestSuiteLogger.log(Level.INFO, rootUri.toString());
+        request.then().statusCode( 200 );
+        response = request.jsonPath();    	
+    	
         List<Object> links = response.getList( "links" );
-
+        
         Set<String> linkTypes = collectLinkTypes( links );
-
+        
+        
 	String required[] = {
 	    "service-desc",
 	    "service-doc",
 	    "http://www.opengis.net/def/rel/ogc/1.0/conformance",
 	    "http://www.opengis.net/def/rel/ogc/1.0/processes"
 	};
+	
 	boolean isValid[] = {
 	    linkTypes.contains( required[0] ),
 	    linkTypes.contains( required[1] ),
@@ -95,8 +102,11 @@ public class LandingPage extends CommonFixture {
 		    + String.join( ", ", linkTypes ) );
 	// A.2.1.2.3.b Validate that the landing page includes a "http://www.opengis.net/def/rel/ogc/1.0/conformance" link to the conformance class declaration.
 	// A.2.1.2.3.c Validate that the landing page includes a "http://www.opengis.net/def/rel/ogc/1.0/processes" link to the list of processes.
+	
 	for(int i=2;i<required.length;i++){
+		
 	    boolean expectedLinkTypesExists = linkTypes.contains( required[i] );
+	    
 	    
 	    if(required[i].equals("http://www.opengis.net/def/rel/ogc/1.0/conformance") && expectedLinkTypesExists==false) {
 	    	expectedLinkTypesExists = linkTypes.contains("conformance");  //This is added because some servers will implement both OGC API - Features and OGC API - Processes
@@ -112,11 +122,13 @@ public class LandingPage extends CommonFixture {
 			"The landing page must include at least links with relation type '"+required[i]+"', but contains "
 			+ String.join( ", ", linkTypes ) );
 	}
+
 	
 	// A.2.1.2.2 Validate the landing page for *all supported media types* (only JSON) using the resources and tests identified in Schema and Tests for Landing Pages
 	// /conf/(geojson?)json/content
 	assertTrue( validateResponseAgainstSchema(LandingPage.urlSchema,body),
 		    "The landing page does nto conform to the schema: "+LandingPage.urlSchema);
+
 
 	//checkHtmlConfClass(rootUri.toString()); // DEACTIVATED because we do not parse HTML content.
 	
