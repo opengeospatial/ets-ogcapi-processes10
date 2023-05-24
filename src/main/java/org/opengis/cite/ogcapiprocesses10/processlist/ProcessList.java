@@ -1,10 +1,13 @@
 package org.opengis.cite.ogcapiprocesses10.processlist;
 
+import static org.testng.Assert.assertTrue;
+
 import java.io.FileWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -15,6 +18,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.openapi4j.core.exception.ResolutionException;
 import org.openapi4j.core.validation.ValidationException;
+import org.openapi4j.core.validation.ValidationResults.ValidationItem;
 import org.openapi4j.operation.validator.model.Request;
 import org.openapi4j.operation.validator.model.Response;
 import org.openapi4j.operation.validator.model.impl.Body;
@@ -26,6 +30,7 @@ import org.openapi4j.parser.model.v3.Operation;
 import org.openapi4j.parser.model.v3.Path;
 import org.openapi4j.schema.validator.ValidationData;
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
+import org.opengis.cite.ogcapiprocesses10.conformance.Conformance;
 import org.opengis.cite.ogcapiprocesses10.util.PathSettingRequest;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
@@ -53,6 +58,8 @@ public class ProcessList extends CommonFixture {
     
     private URL getProcessListURL;
     
+    private static String urlSchema="https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/processList.yaml";    
+    
 	@BeforeClass
 	public void setup() {		
 		String processListEndpointString = rootUri.toString() + getProcessListPath;		
@@ -65,7 +72,7 @@ public class ProcessList extends CommonFixture {
 		    getProcessListURL = new URL(processListEndpointString);
 		} catch (MalformedURLException | ResolutionException | ValidationException e) {	
 			
-			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
+			Assert.fail("Could not set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
 		}
 	}
 
@@ -180,16 +187,25 @@ public class ProcessList extends CommonFixture {
 	 */
 	@Test(description = "Implements Requirement /req/core/process-list ", groups = "processlist")
 	public void testProcessList() {		
-	    final ValidationData<Void> data = new ValidationData<>();
-	    try {
-			Request request = new PathSettingRequest(rootUri.toString(), getProcessListPath, Request.Method.GET);	
-		    this.reqEntity = new HttpGet(rootUri.toString() + getProcessListPath);		
-			validator.validatePath(request, data);			
+		final ValidationData<Void> data = new ValidationData<>();
+		try { 
+		
+			HttpClient client = HttpClientBuilder.create().build();				
+			HttpUriRequest request = new HttpGet(getProcessListURL.toString());			
+			request.setHeader("Accept", "application/json");		
+		    this.reqEntity = request;	    
+			HttpResponse httpResponse = client.execute(request);			
+			StringWriter writer = new StringWriter();			
+			String encoding = StandardCharsets.UTF_8.name();		
+			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);		
+			String responsePayload = writer.toString();		
+			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);		
+			ArrayNode arrayNode = (ArrayNode) responseNode.get("processes");	
+			Assert.assertTrue(arrayNode.size()>0,"No processes listed at "+getProcessListURL.toString());
+
 		} catch (Exception e) {
-			e.printStackTrace();			
-			Assert.fail("Could not validate path: " + getProcessListPath + "\n" + printResults(data.results()));		
-		}	  
-		Assert.assertTrue(data.isValid(), printResults(data.results()));
+			Assert.fail("ProcessList.testProcessList(): An exception occured when trying to retrieve the processes list from "+getProcessListURL.toString());
+		}
 	}
 
 	/**
@@ -216,7 +232,7 @@ public class ProcessList extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/process-list-success ", groups = "processlist")
 	public void testProcessListSuccess() {
 		final ValidationData<Void> data = new ValidationData<>();
-		try {
+		try { 
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getProcessListURL.toString());
 			request.setHeader("Accept", "application/json");
@@ -225,15 +241,19 @@ public class ProcessList extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+			String responsePayload = writer.toString();
+			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
 			Body body = Body.from(responseNode);
 			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
 					.build();
-			validator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			validator.validateResponse(response, data);			
+			
+			assertTrue( validateResponseAgainstSchema(ProcessList.urlSchema,responsePayload),
+				    "The response document failed validation against: "+ProcessList.urlSchema+ " ");	
+	
 		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+			Assert.fail("ProcessList.testProcessListSuccess(): An exception occured when trying to retrieve the processes list from "+getProcessListURL.toString());
 		}
 	}
 }

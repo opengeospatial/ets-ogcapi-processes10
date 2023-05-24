@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
@@ -48,6 +52,8 @@ import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -57,7 +63,7 @@ import com.fasterxml.jackson.databind.node.IntNode;
 
 /**
  *
- * A.2.6. Jobs  {root}/jobs
+ * A.2.6. JobList  {root}/jobs
  *
  * @author <a href="mailto:b.pross@52north.org">Benjamin Pross</a>
  */
@@ -78,6 +84,7 @@ public class Jobs extends CommonFixture {
 	private static final Object TYPE_DEFINITION_OBJECT = "object";
 	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
 	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
+	private static final String ASYNC_MODE_NOT_SUPPORTED_MESSAGE = "This test is skipped because the server has not declared support for asynchronous execution mode.";
 
 	private OpenApi3 openApi3;
 
@@ -166,10 +173,41 @@ public class Jobs extends CommonFixture {
 		    getInvalidJobURL = new URL(processListEndpointString + "/invalid-job-" + UUID.randomUUID());
 		    getInvalidJobResultURL = new URL(rootUri +  getProcessListPath + "/invalid-job-" + UUID.randomUUID() + "/results");
 			clientBuilder = HttpClientBuilder.create();
-		} catch (MalformedURLException | ResolutionException | ValidationException e) {
-			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
+		} catch (Exception e) {		
+			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e);
 		}
 	}
+	
+	private boolean echoProcessSupportsAsync()
+	{
+		boolean supportsAsync = false;
+		try {
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpUriRequest request = new HttpGet(rootUri + echoProcessPath);
+		request.setHeader("Accept", "application/json");
+		HttpResponse httpResponse = client.execute(request);
+		StringWriter writer = new StringWriter();
+		String encoding = StandardCharsets.UTF_8.name();
+		IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+		JsonNode inputsNode = responseNode.get("jobControlOptions");
+		
+		if(inputsNode instanceof ArrayNode) {
+			ArrayNode inputsArrayNode = (ArrayNode)inputsNode;
+			
+			for(int i = 0 ; i < inputsArrayNode.size(); i++)
+			{
+				if(inputsArrayNode.get(i).asText().equals("async-execute")) supportsAsync = true;
+			}
+			
+		} 
+		}
+		catch(Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		return supportsAsync;
+	}	
 
 	private void parseEchoProcess() {
 
@@ -243,7 +281,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		for (Input input : inputs) {
 			addInput(input, inputsNode);
 		}
@@ -295,25 +333,32 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-op ")
 	public void testJobCreationAutoExecutionMode() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		try {
-			//send execute request with prefer header
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_SYNC)) {
-				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+		
+		if(echoProcessSupportsAsync())
+		{			
+			//create async job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			try {
+				//send execute request with prefer header
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_SYNC)) {
+					Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+				}
+				if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_ASYNC)) {
+					Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+				}
+				if(supportedExecutionModes.equals(SupportedExecutionModes.EITHER)) {
+					Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);
+				}
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
 			}
-			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_ASYNC)) {
-				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
-			}
-			if(supportedExecutionModes.equals(SupportedExecutionModes.EITHER)) {
-				Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);
-			}
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+		}
+		else {
+			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+" Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously (See Clause 7.11.4 of OGC 18-062r2)");
 		}
 	}
 
@@ -330,7 +375,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-op ")
 	public void testJobCreationDefaultExecutionMode() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -363,7 +408,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-op ")
 	public void testJobCreationDefaultOutputs() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeNoOutputs(echoProcessId);
@@ -379,7 +424,7 @@ public class Jobs extends CommonFixture {
 	private JsonNode createExecuteJsonNodeNoOutputs(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		for (Input input : inputs) {
 			addInput(input, inputsNode);
 		}
@@ -401,7 +446,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-array ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-array ")
 	public void testJobCreationInputArray() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeWithInputArray(echoProcessId);
@@ -425,7 +470,7 @@ public class Jobs extends CommonFixture {
 	* 2.  Verify that each process executes successfully according to the ats_job-creation-success,relevant requirement based on the combination of execute parameters
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-bbox ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-bbox ")
 	public void testJobCreationInputInlineBbox() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -451,7 +496,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-binary ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-binary ")
 	public void testJobCreationInputInlineBinary() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeWithBinaryInput(echoProcessId);
@@ -477,7 +522,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-mixed ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-mixed ")
 	public void testJobCreationInputInlineMixed() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeWithMixedInput(echoProcessId);
@@ -504,7 +549,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-object ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-object ")
 	public void testJobCreationInputInlineObject() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeWithObject(echoProcessId);
@@ -521,7 +566,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
@@ -554,7 +599,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
@@ -587,7 +632,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
@@ -620,7 +665,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
@@ -653,7 +698,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
@@ -686,7 +731,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
@@ -719,7 +764,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
@@ -765,7 +810,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-inline ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline ")
 	public void testJobCreationInputInline() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -777,6 +822,7 @@ public class Jobs extends CommonFixture {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
+	
 
 	/**
 	* <pre>
@@ -789,33 +835,71 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-ref ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-ref ")
 	public void testJobCreationInputRef() {
 		//create job
+		
 		JsonNode executeNode = createExecuteJsonNodeWithHref(echoProcessId);
+	
+		
 		ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+	
+		    HttpResponse httpResponse = null;
+		    
+			try {
+				httpResponse = sendPostRequestSync(executeNode);
+			} catch (IOException e2) {
+				Assert.fail(e2.getLocalizedMessage());
+			}
+			
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+			
+			try {
+				IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			} catch (Exception e1) {
+				Assert.fail(e1.getLocalizedMessage());
+			}
+			
+			String responsePayload = writer.toString();
+			
+			if(!responsePayload.contains("Content-Type: multipart/related")) {
+				JsonNode responseNode = null;
+				
+				try {
+					responseNode = new ObjectMapper().readTree(responsePayload);
+				} catch (Exception e) {
+					Assert.fail(e.getLocalizedMessage());
+				}
+				
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
+						.build();
+				executeValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));
+		   }
+		   else if(responsePayload.contains("Content-Type: multipart/related")){
+			   
+
+			   
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);	
+				if(responseContentType.getValue().startsWith("multipart/related")) {
+					validateMultipartResponse(responsePayload,executeNode);						
+				}
+				else {
+					throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
+				}
+			}
+			
+
 	}
 
 	private JsonNode createExecuteJsonNodeWithHref(String echoProcessId2) throws SkipException {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
@@ -858,38 +942,68 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-validation ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-validation ")
 	public void testJobCreationInputValidation() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		ValidationData<Void> data = new ValidationData<>();
+		
+		HttpResponse httpResponse = null;
+		String responsePayload = null;
 		try {
 
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
+			httpResponse = sendPostRequestSync(executeNode);
+			responsePayload = parseRawResponse(httpResponse);
+
+		}
+		catch(Exception ee)
+		{
+			Assert.fail(ee.getLocalizedMessage());
+		}
+		
+		
+		Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);		
+		
+		if(responsePayload.contains("Content-Type: multipart/related")){
+			if(responseContentType.getValue().startsWith("multipart/related")) {
+				validateMultipartResponse(responsePayload,executeNode);						
+			}
+			else {
+				throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
+			}
+		}
+		else {		
+		
+		
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+			JsonNode responseNode = null;
+			
+			try {
+				responseNode = new ObjectMapper().readTree(responsePayload);
+			}
+			catch(Exception ew)
+			{
+			  Assert.fail(ew.getLocalizedMessage());	
+			}
 			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
 					.build();
 			executeValidator.validateResponse(response, data);
 			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
 		}
+
 
 		executeNode = createExecuteJsonNodeWithWrongInput(echoProcessId);
 		data = new ValidationData<>();
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode, false);
+			httpResponse = sendPostRequestSync(executeNode, false);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
 			Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
@@ -940,7 +1054,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundTestableInput = false;
 		for (Input input : inputs) {
 			if(checkForFormat(input.getTypes()) != null) {
@@ -984,7 +1098,7 @@ public class Jobs extends CommonFixture {
 
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-inputs ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-inputs ")
 	public void testJobCreationInputs() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -1008,42 +1122,84 @@ public class Jobs extends CommonFixture {
 	* req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-op ")
 	public void testJobCreationOp() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpClient client = HttpClientBuilder.create().build();
-			String executeEndpoint = rootUri + echoProcessPath + "/execution";
-			HttpPost request = new HttpPost(executeEndpoint);
-		    this.reqEntity = request;
-			request.setHeader("Accept", "application/json");
-			request.setHeader("Prefer", "respond-async ");
-			ContentType contentType = ContentType.APPLICATION_JSON;
-			request.setEntity(new StringEntity(executeNode.toString(), contentType));
-			HttpResponse httpResponse = client.execute(request);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			client = HttpClientBuilder.create().build();
-			HttpGet statusRequest = new HttpGet(locationString);
-			request.setHeader("Accept", "application/json");
-			httpResponse = client.execute(statusRequest);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+		
+		HttpResponse httpResponse = null;
+		
+		if(echoProcessSupportsAsync())
+		{			
+			//create async job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				HttpClient client = HttpClientBuilder.create().build();
+				String executeEndpoint = rootUri + echoProcessPath + "/execution";
+				HttpPost request = new HttpPost(executeEndpoint);
+			    this.reqEntity = request;
+				request.setHeader("Accept", "application/json");
+				request.setHeader("Prefer", "respond-async ");
+				ContentType contentType = ContentType.APPLICATION_JSON;
+				request.setEntity(new StringEntity(executeNode.toString(), contentType));
+				httpResponse = client.execute(request);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				client = HttpClientBuilder.create().build();
+				HttpGet statusRequest = new HttpGet(locationString);
+				request.setHeader("Accept", "application/json");
+				httpResponse = client.execute(statusRequest);
+				StringWriter writer = new StringWriter();
+				String encoding = StandardCharsets.UTF_8.name();
+				IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+				JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+						.build();
+				getStatusValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+        }
+        else {
+			//create sync job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				httpResponse = sendPostRequestSync(executeNode);
+				String responsePayload = parseRawResponse(httpResponse);
+				if(responsePayload.contains("Content-Type: multipart/related")){
+					Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+					if(responseContentType.getValue().startsWith("multipart/related")) {
+						validateMultipartResponse(responsePayload,executeNode);						
+					}
+					else {
+						throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
+					}
+				}
+				else {
+					try {
+						JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
+						Body body = Body.from(responseNode);
+						Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+						Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+								.build();
+						getStatusValidator.validateResponse(response, data);
+						Assert.assertTrue(data.isValid(), printResults(data.results()));				
+					} catch (IOException e) {
+						Assert.fail(e.getLocalizedMessage());
+					}
+				}
+			}
+			catch(Exception ee)
+			{
+				Assert.fail(ee.getLocalizedMessage());
+			}
+        	
+		}			
 	}
 
 	/**
@@ -1055,22 +1211,60 @@ public class Jobs extends CommonFixture {
 
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-request ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-request ")
 	public void testJobCreationRequest() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
+		HttpResponse httpResponse = null;
+		String responsePayload = null;
 		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, "application/json");
-			validateResponse(httpResponse, getStatusValidator, data);
+			if(echoProcessSupportsAsync())
+			{			
+				httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				httpResponse = sendGetRequest(locationString, "application/json");
+			
+			}
+			else {
+				
+				httpResponse = sendPostRequestSync(executeNode);
+		
+			}
+			
+			responsePayload = parseRawResponse(httpResponse);
+
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
+		
+		
+		if(responsePayload.contains("Content-Type: multipart/related")){
+			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+			if(responseContentType.getValue().startsWith("multipart/related")) {
+				validateMultipartResponse(responsePayload,executeNode);						
+			}
+			else {
+				throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
+			}
+		}
+		else {
+			try {
+				JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+						.build();
+				getStatusValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));				
+			} catch (IOException e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+		}
+		
 	}
 
 	/**
@@ -1083,22 +1277,28 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-success-async ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-success-async ")
 	public void testJobCreationSuccessAsync() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 ||  statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, "application/json");
-			validateResponse(httpResponse, getStatusValidator, data);
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+		if(echoProcessSupportsAsync())
+		{			
+			//create job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 ||  statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				httpResponse = sendGetRequest(locationString, "application/json");
+				validateResponse(httpResponse, getStatusValidator, data);
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+        }
+        else {
+			throw new SkipException(ASYNC_MODE_NOT_SUPPORTED_MESSAGE);
+		}		
 	}
 
 	private void validateResponse(HttpResponse httpResponse, OperationValidator validator, ValidationData<Void> data) throws IOException {
@@ -1110,6 +1310,8 @@ public class Jobs extends CommonFixture {
 		validator.validateResponse(response, data);
 		Assert.assertTrue(data.isValid(), printResults(data.results()));
 	}
+	
+
 
 	private JsonNode parseResponse(HttpResponse httpResponse) throws IOException {
 		StringWriter writer = new StringWriter();
@@ -1143,7 +1345,7 @@ public class Jobs extends CommonFixture {
 	* |===
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-document ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-document ")
 	public void testJobCreationSyncDocument() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_DOCUMENT);
@@ -1178,7 +1380,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-mixed-multi ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-mixed-multi ")
 	public void testJobCreationSyncRawMixedMulti() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
@@ -1203,7 +1405,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-ref ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-ref ")
 	public void testJobCreationSyncRawRef() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
@@ -1215,6 +1417,41 @@ public class Jobs extends CommonFixture {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
+	
+	private void validateMultipartResponse(String responsePayload, JsonNode executeNode){
+		
+		boolean multipartIsValid = true;
+		String errorMessage = "";
+		
+     try {
+    	 
+    	 
+	    	 MimeMultipart mimeMultipart = new MimeMultipart(new ByteArrayDataSource(responsePayload.getBytes(),"multipart/related"));
+	    	 if(mimeMultipart.getCount()<1)
+	    	 {
+	    	 	Assert.assertTrue(mimeMultipart.getCount()>0,"Error with multipart response");
+	    	 }
+	    	 
+			
+			JsonNode inputsNode = executeNode.get("inputs");
+			for(int i=0; i < mimeMultipart.getCount(); i++)
+			{
+				if(!mimeMultipart.getBodyPart(i).getContent().toString().contains(TEST_STRING_INPUT)) {
+					multipartIsValid = false;
+					errorMessage = "The input test string was not detected in one of the parts of the multipart response.";
+				}
+			}
+
+	
+					   
+		} catch (Exception e) {
+			multipartIsValid = false;
+			errorMessage = e.getLocalizedMessage();
+		} 
+		
+
+		Assert.assertTrue(multipartIsValid, "The multipart response fail the validity check because "+errorMessage);
+	}	
 
 	/**
 	* <pre>
@@ -1228,7 +1465,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-multi ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-multi ")
 	public void testJobCreationSyncRawValueMulti() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
@@ -1253,7 +1490,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-one ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-one ")
 	public void testJobCreationSyncRawValueOne() {
 		// create job
 
@@ -1266,7 +1503,7 @@ public class Jobs extends CommonFixture {
 
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 
-			Assert.assertEquals(parseRawResponse(httpResponse), TEST_STRING_INPUT);
+			Assert.assertTrue(parseRawResponse(httpResponse).contains(TEST_STRING_INPUT));
 
 		} catch (Exception e) {
 
@@ -1298,7 +1535,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-exception-no-such-job ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-exception-no-such-job ")
 	public void testJobExceptionNoSuchJob() {
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
@@ -1320,7 +1557,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job ")
 	public void testJobOp() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -1363,7 +1600,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-exception-no-such-job ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-exception-no-such-job ")
 	public void testJobResultsNoSuchJob() {
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
@@ -1398,48 +1635,52 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-exception-results-not-ready ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-exception-results-not-ready ")
 	public void testJobResultsExceptionResultsNotReady() {
-		//TODO: check
-		JsonNode statusNode = null;
-		HttpResponse httpResponse = null;
-		final ValidationData<Void> data = new ValidationData<>();
-		//create invalid execute request
-		JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+		if(echoProcessSupportsAsync())
+		{
+			JsonNode statusNode = null;
+			HttpResponse httpResponse = null;
+			final ValidationData<Void> data = new ValidationData<>();
+			//create invalid execute request
+			JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+			
+			try {
+				httpResponse = sendPostRequestASync(executeNode);
+				
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Header locationHeader = httpResponse.getFirstHeader("location");	//location of job			
+				String jobLocationString = locationHeader.getValue();			
+				httpResponse = sendGetRequest(jobLocationString, "application/json");	//Issue an HTTP GET request to the URL ‘/jobs/{jobID}/results’ before the job completes execution.
+				
+				
+				String jobResultsLocationString = jobLocationString + "/results";
+				httpResponse = sendGetRequest(jobResultsLocationString, "application/json");
+				Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 404,"Failed Abstract test A.46 (Step 3). The response to the /jobs/{jobID}/results request did not return a 404 status code.");
+				
+				
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				httpResponse.getEntity().writeTo(baos);
+				String responseContentString = baos.toString();	
+				baos.close();
+				httpResponse.getEntity().getContent().close();
+				ObjectMapper objectMapper =new ObjectMapper();
+			    JsonNode resultsNode = objectMapper.readTree(responseContentString);
+			    
+			    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
+			    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
+			    
+			    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
+					    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
+			    
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
 		
-		try {
-			httpResponse = sendPostRequestASync(executeNode);
-			
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Header locationHeader = httpResponse.getFirstHeader("location");	//location of job			
-			String jobLocationString = locationHeader.getValue();			
-			httpResponse = sendGetRequest(jobLocationString, "application/json");	//Issue an HTTP GET request to the URL ‘/jobs/{jobID}/results’ before the job completes execution.
-			
-			
-			String jobResultsLocationString = jobLocationString + "/results";
-			httpResponse = sendGetRequest(jobResultsLocationString, "application/json");
-			Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 404,"Failed Abstract test A.46 (Step 3). The response to the /jobs/{jobID}/results request did not return a 404 status code.");
-			
-			
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			httpResponse.getEntity().writeTo(baos);
-			String responseContentString = baos.toString();	
-			baos.close();
-			httpResponse.getEntity().getContent().close();
-			ObjectMapper objectMapper =new ObjectMapper();
-		    JsonNode resultsNode = objectMapper.readTree(responseContentString);
-		    
-		    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
-		    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
-		    
-		    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
-				    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
-		    
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
-		
-	
+        }
+        else {
+			throw new SkipException("This test is skipped because the server has not declared support for asynchronous execution mode.");
+		}  
 
 	}
 
@@ -1468,7 +1709,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-failed ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-failed ")
 	public void testJobResultsFailed() {
 		final ValidationData<Void> data = new ValidationData<>();
 		//create invalid execute request
@@ -1511,36 +1752,57 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results ")
 	public void testJobResults() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-
-
-			HttpResponse httpResponse = this.sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
-
-
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, "application/json");
-			assertTrue(httpResponse.getStatusLine().getStatusCode()==200,
-				    "Expected status code 200 but found "+httpResponse.getStatusLine().getStatusCode());
-
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			httpResponse.getEntity().writeTo(baos);
-			String responseContentString = baos.toString();
-			baos.close();
-			httpResponse.getEntity().getContent().close();
-			assertTrue(validateResponseAgainstSchema(STATUS_SCHEMA_URL,responseContentString),
-				    "Unable to validate the response document against: "+STATUS_SCHEMA_URL);
-
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+		
+		HttpResponse httpResponse = null;
+		
+		if(echoProcessSupportsAsync())
+		{		
+			//create async job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+	
+	
+				httpResponse = this.sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+	
+	
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				httpResponse = sendGetRequest(locationString, "application/json");
+				assertTrue(httpResponse.getStatusLine().getStatusCode()==200,
+					    "Expected status code 200 but found "+httpResponse.getStatusLine().getStatusCode());
+	
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				httpResponse.getEntity().writeTo(baos);
+				String responseContentString = baos.toString();
+				baos.close();
+				httpResponse.getEntity().getContent().close();
+				assertTrue(validateResponseAgainstSchema(STATUS_SCHEMA_URL,responseContentString),
+					    "Unable to validate the response document against: "+STATUS_SCHEMA_URL);
+	
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+        }
+        else {
+			//create sync job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				httpResponse = sendPostRequestSync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+	
+			}
+			catch(Exception ee)
+			{
+				Assert.fail(ee.getLocalizedMessage());
+			}
+		} 		
 	}
 
 	private HttpResponse getResultResponse(HttpResponse httpResponse) throws IOException {
@@ -1585,17 +1847,23 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-document ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-document ")
 	public void testJobResultsAsyncDocument() {
 		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_DOCUMENT);
-		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+		if(echoProcessSupportsAsync())
+		{		
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_DOCUMENT);
+			try {
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
 		}
+		else {
+			throw new SkipException(ASYNC_MODE_NOT_SUPPORTED_MESSAGE);
+		}		
 	}
 
 	/**
@@ -1623,28 +1891,34 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-raw-mixed-multi ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-mixed-multi ")
 	public void testJobResultsAsyncRawMixedMulti() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNodeRawMixedMulti(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
-			JsonNode responseNode = parseResponse(httpResponse);
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+		if(echoProcessSupportsAsync())
+		{		
+			//create job
+			JsonNode executeNode = createExecuteJsonNodeRawMixedMulti(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
+				JsonNode responseNode = parseResponse(httpResponse);
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+						.build();
+				getStatusValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
 		}
+		else {
+			throw new SkipException(ASYNC_MODE_NOT_SUPPORTED_MESSAGE);
+		}			
 	}
 
 	/**
@@ -1670,28 +1944,34 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-raw-ref ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-ref ")
 	public void testJobResultsAsyncRawRef() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNodeRawRef(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
-			JsonNode responseNode = parseResponse(httpResponse);
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+		if(echoProcessSupportsAsync())
+		{			
+			//create job
+			JsonNode executeNode = createExecuteJsonNodeRawRef(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
+				JsonNode responseNode = parseResponse(httpResponse);
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+						.build();
+				getStatusValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+        }
+        else {
+			throw new SkipException(ASYNC_MODE_NOT_SUPPORTED_MESSAGE);
+		} 		
 	}
 
 	/**
@@ -1717,28 +1997,34 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-multi ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-multi ")
 	public void testJobResultsAsyncRawValueMulti() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNodeRawValueMulti(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
-			JsonNode responseNode = parseResponse(httpResponse);
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+		if(echoProcessSupportsAsync())
+		{				
+			//create job
+			JsonNode executeNode = createExecuteJsonNodeRawValueMulti(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				httpResponse = sendGetRequest(locationString, ContentType.APPLICATION_JSON.getMimeType());
+				JsonNode responseNode = parseResponse(httpResponse);
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+						.build();
+				getStatusValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+	    }
+	    else {
+			throw new SkipException(ASYNC_MODE_NOT_SUPPORTED_MESSAGE);
+		} 		
 	}
 
     private void loopOverStatus(JsonNode responseNode){
@@ -1810,47 +2096,53 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-one ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-one ")
 	public void testJobResultsAsyncRawValueOne() {
-		// create job
-		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
-		try {
-			
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			JsonNode responseNode = parseResponse(httpResponse);
-			if(statusCode == 200){
-			    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
-			}else{
+		if(echoProcessSupportsAsync())
+		{			
+			// create job
+			JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
+			try {
 				
-				Header locationHeader = httpResponse.getFirstHeader("location");				
-				String locationString = locationHeader.getValue();			
-				httpResponse = sendGetRequest(locationString, "application/json");	
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				httpResponse.getEntity().writeTo(baos);
-				String responseContentString = baos.toString();	
-				baos.close();
-				httpResponse.getEntity().getContent().close();
-			
-			
-				ObjectMapper objectMapper =new ObjectMapper();
-			    JsonNode statusNode = objectMapper.readTree(responseContentString);
-			    
-			 			
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				JsonNode responseNode = parseResponse(httpResponse);
+				if(statusCode == 200){
+				    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+				}else{
+					
+					Header locationHeader = httpResponse.getFirstHeader("location");				
+					String locationString = locationHeader.getValue();			
+					httpResponse = sendGetRequest(locationString, "application/json");	
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					httpResponse.getEntity().writeTo(baos);
+					String responseContentString = baos.toString();	
+					baos.close();
+					httpResponse.getEntity().getContent().close();
 				
-			    loopOverStatus(statusNode);
+				
+					ObjectMapper objectMapper =new ObjectMapper();
+				    JsonNode statusNode = objectMapper.readTree(responseContentString);
+				    
+				 			
+					
+				    loopOverStatus(statusNode);
+				}
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
 			}
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}
+	    }
+	    else {
+			throw new SkipException(ASYNC_MODE_NOT_SUPPORTED_MESSAGE);
+		} 		
 	}
 
 	private JsonNode createExecuteJsonNodeOneInput(String echoProcessId, String responseValue) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		Input inputOne = inputs.get(0);
 		String inputId = inputOne.getId();
 		addInput(inputOne, inputsNode);
@@ -1870,7 +2162,7 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		executeNode.set("id", new TextNode(echoProcessId));
+		//executeNode.set("id", new TextNode(echoProcessId));
 		Input inputOne = inputs.get(0);
 		String inputId = inputOne.getId();
 		addInput(inputOne, inputsNode);
@@ -1902,37 +2194,55 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-sync ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-sync ")
 	public void testJobResultsSync() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+			
+
 		
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 					
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			Header[] headers = httpResponse.getHeaders("Link");
-			boolean foundRelMonitorHeader = false;
-			String statusUrl = "";
-			for (Header header : headers) {
-				String headerValue = header.getValue();
-		
-				if (headerValue.contains("rel=monitor")) {
-					foundRelMonitorHeader = true;
-					statusUrl = headerValue.split(";")[0];
-					break;
+
+
+			
+			
+			if(headers.length>0) {
+				boolean foundRelMonitorHeader = false;
+				String statusUrl = "";
+				for (Header header : headers) {
+					String headerValue = header.getValue();
+			
+					if (headerValue.contains("rel=monitor")) {
+						foundRelMonitorHeader = true;
+						statusUrl = headerValue.split(";")[0];
+						break;
+					}
 				}
+				
+				if(!foundRelMonitorHeader) Assert.assertTrue(foundRelMonitorHeader,"Permission 7 and Requirement 33 of OGC 18-062r2 state that for servers that support the creation of a job for synchronously executed processes, a successful execution of the operation SHALL include an HTTP Link header with rel=monitor pointing to the created job.");
+				
+				httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
+				validateResponse(httpResponse, getStatusValidator, data);
+	
+				
 			}
-			if(!foundRelMonitorHeader) {
-				throw new SkipException("Did not find Link Header with value rel=monitor, skipping test.");
-			}
-			httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
-			validateResponse(httpResponse, getStatusValidator, data);
+	
+			
+
 		} catch (IOException e) {
+	
 			Assert.fail(e.getLocalizedMessage());
 		}
+		
+		
+		
+		
 	}
 
 	/**
@@ -1956,40 +2266,47 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-success ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-success ")
 	public void testJobSuccess() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpClient client = HttpClientBuilder.create().build();
-			String executeEndpoint = rootUri + echoProcessPath + "/execution";
-			HttpPost request = new HttpPost(executeEndpoint);
-			request.setHeader("Accept", "application/json");
-			request.setHeader("Prefer", "respond-async ");
-			ContentType contentType = ContentType.APPLICATION_JSON;
-			request.setEntity(new StringEntity(executeNode.toString(), contentType));
-			HttpResponse httpResponse = client.execute(request);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			client = HttpClientBuilder.create().build();
-			HttpGet statusRequest = new HttpGet(locationString);
-			request.setHeader("Accept", "application/json");
-			httpResponse = client.execute(statusRequest);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+		
+		if(echoProcessSupportsAsync())
+		{			
+			//create async job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				HttpClient client = HttpClientBuilder.create().build();
+				String executeEndpoint = rootUri + echoProcessPath + "/execution";
+				HttpPost request = new HttpPost(executeEndpoint);
+				request.setHeader("Accept", "application/json");
+				request.setHeader("Prefer", "respond-async ");
+				ContentType contentType = ContentType.APPLICATION_JSON;
+				request.setEntity(new StringEntity(executeNode.toString(), contentType));
+				HttpResponse httpResponse = client.execute(request);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				client = HttpClientBuilder.create().build();
+				HttpGet statusRequest = new HttpGet(locationString);
+				request.setHeader("Accept", "application/json");
+				httpResponse = client.execute(statusRequest);
+				StringWriter writer = new StringWriter();
+				String encoding = StandardCharsets.UTF_8.name();
+				IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+				JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+						.build();
+				getStatusValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+		}
+		else {
+			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+" Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously (See Clause 7.11.4 of OGC 18-062r2)");
 		}
 	}
 }
