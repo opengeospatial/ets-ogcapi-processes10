@@ -822,6 +822,7 @@ public class Jobs extends CommonFixture {
 			Assert.fail(e.getLocalizedMessage());
 		}
 	}
+	
 
 	/**
 	* <pre>
@@ -839,6 +840,8 @@ public class Jobs extends CommonFixture {
 		//create job
 		
 		JsonNode executeNode = createExecuteJsonNodeWithHref(echoProcessId);
+	
+		
 		ValidationData<Void> data = new ValidationData<>();
 	
 		    HttpResponse httpResponse = null;
@@ -888,12 +891,6 @@ public class Jobs extends CommonFixture {
 					throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
 				}
 			}
-			
-
-		
-
-				
-			
 			
 
 	}
@@ -2209,25 +2206,34 @@ public class Jobs extends CommonFixture {
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			Header[] headers = httpResponse.getHeaders("Link");
-			boolean foundRelMonitorHeader = false;
-			String statusUrl = "";
-			for (Header header : headers) {
-				String headerValue = header.getValue();
-		
-				if (headerValue.contains("rel=monitor")) {
-					foundRelMonitorHeader = true;
-					statusUrl = headerValue.split(";")[0];
-					break;
+			
+			if(headers.length>0) {
+				boolean foundRelMonitorHeader = false;
+				String statusUrl = "";
+				for (Header header : headers) {
+					String headerValue = header.getValue();
+			
+					if (headerValue.contains("rel=monitor")) {
+						foundRelMonitorHeader = true;
+						statusUrl = headerValue.split(";")[0];
+						break;
+					}
 				}
+				
+				if(!foundRelMonitorHeader) Assert.assertTrue(foundRelMonitorHeader,"Permission 7 and Requirement 33 of OGC 18-062r2 state that for servers that support the creation of a job for synchronously executed processes, a successful execution of the operation SHALL include an HTTP Link header with rel=monitor pointing to the created job.");
+				
+				httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
+				validateResponse(httpResponse, getStatusValidator, data);
 			}
-			if(!foundRelMonitorHeader) {
-				throw new SkipException("Did not find Link Header with value rel=monitor, skipping test.");
-			}
-			httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
-			validateResponse(httpResponse, getStatusValidator, data);
+			
+
 		} catch (IOException e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
+		
+		
+		
+		
 	}
 
 	/**
