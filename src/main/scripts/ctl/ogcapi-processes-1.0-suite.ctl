@@ -19,7 +19,7 @@
 
   <ctl:suite name="tns:ets-${ets-code}-${version}">
     <ctl:title>OGC API - Processes Conformance Test Suite</ctl:title>
-    <ctl:description>Checks OGC API - processes implementations for conformance.</ctl:description>
+    <ctl:description>Checks OGC API - Processes implementations for conformance.</ctl:description>
     <ctl:starting-test>tns:Main</ctl:starting-test>
   </ctl:suite>
 
@@ -33,7 +33,7 @@
             <p>The implementation under test (IUT) is checked against the following specifications:</p>
             <ul>
               <li>
-                <a href="https://docs.ogc.org/is/18-062r2/18-062r2.html" target="_blank">OGC API - processes - Part 1: Core</a>
+                <a href="https://docs.ogc.org/is/18-062r2/18-062r2.html" target="_blank">OGC API - Processes - Part 1: Core, v1.0.0</a>
               </li>
             </ul>
             <p>The following conformance levels are defined:</p>

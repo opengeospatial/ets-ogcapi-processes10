@@ -29,5 +29,11 @@
       <package name="org.opengis.cite.ogcapiprocesses10.ogcprocessdescription" />
     </packages>
   </test>  
+  
+  <test name="Job List">
+    <packages>
+      <package name="org.opengis.cite.ogcapiprocesses10.joblist" />
+    </packages>
+  </test>   
 
 </suite>

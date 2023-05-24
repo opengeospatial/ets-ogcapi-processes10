@@ -72,7 +72,7 @@ public class ProcessList extends CommonFixture {
 		    getProcessListURL = new URL(processListEndpointString);
 		} catch (MalformedURLException | ResolutionException | ValidationException e) {	
 			
-			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
+			Assert.fail("Could not set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
 		}
 	}
 

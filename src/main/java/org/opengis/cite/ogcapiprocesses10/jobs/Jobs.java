@@ -63,7 +63,7 @@ import com.fasterxml.jackson.databind.node.IntNode;
 
 /**
  *
- * A.2.6. Jobs  {root}/jobs
+ * A.2.6. JobList  {root}/jobs
  *
  * @author <a href="mailto:b.pross@52north.org">Benjamin Pross</a>
  */
