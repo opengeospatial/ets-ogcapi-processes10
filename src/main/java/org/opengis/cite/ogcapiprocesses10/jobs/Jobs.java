@@ -331,23 +331,30 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
 	public void testJobCreationAutoExecutionMode() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		try {
-			//send execute request with prefer header
-			HttpResponse httpResponse = sendPostRequestASync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_SYNC)) {
-				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+		
+		if(echoProcessSupportsAsync())
+		{			
+			//create async job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			try {
+				//send execute request with prefer header
+				HttpResponse httpResponse = sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_SYNC)) {
+					Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+				}
+				if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_ASYNC)) {
+					Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+				}
+				if(supportedExecutionModes.equals(SupportedExecutionModes.EITHER)) {
+					Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);
+				}
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
 			}
-			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_ASYNC)) {
-				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
-			}
-			if(supportedExecutionModes.equals(SupportedExecutionModes.EITHER)) {
-				Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);
-			}
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+		}
+		else {
+			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+" Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously. (Clause 7.11.4 of OGC 18-062r2)");
 		}
 	}
 
@@ -2247,7 +2254,7 @@ public class Jobs extends CommonFixture {
 			}
 		}
 		else {
-			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+". Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously. (Clause 7.11.4 of OGC 18-062r2)");
+			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+" Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously. (Clause 7.11.4 of OGC 18-062r2)");
 		}
 	}
 }
