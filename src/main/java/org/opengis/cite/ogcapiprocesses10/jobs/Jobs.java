@@ -2201,7 +2201,7 @@ public class Jobs extends CommonFixture {
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
 			
-			System.out.println("CHHK 1");
+
 		
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 					
@@ -2209,7 +2209,7 @@ public class Jobs extends CommonFixture {
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			Header[] headers = httpResponse.getHeaders("Link");
 
-			System.out.println("CHHK 2");
+
 			
 			
 			if(headers.length>0) {
@@ -2229,14 +2229,14 @@ public class Jobs extends CommonFixture {
 				
 				httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
 				validateResponse(httpResponse, getStatusValidator, data);
-				System.out.println("CHHK 3");
+	
 				
 			}
-			System.out.println("CHHK 4");
+	
 			
 
 		} catch (IOException e) {
-			System.out.println("CHHK "+e.getLocalizedMessage());
+	
 			Assert.fail(e.getLocalizedMessage());
 		}
 		
