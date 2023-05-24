@@ -1,5 +1,15 @@
 = Release Notes OGC API - Processes - Part 1: Core
 
+== 0.5 (2023-05)
+
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/11[#1] 'null' or empty reason given for certain test failures bugSomething isn't working
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/37[#37] multipart/related ambiguity; useless code needed for sync processes returning single output
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/40[#40] Test failure on async execution returning 200 response (sync, or sync & async process)
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/59[#59] Extraneous id included in execution request
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/61[#61] Test for single output is actually requesting none
+
+
+
 
 == 0.4 (2023-02)
 
