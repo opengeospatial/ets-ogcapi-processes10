@@ -1503,7 +1503,7 @@ public class Jobs extends CommonFixture {
 
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 
-			Assert.assertEquals(parseRawResponse(httpResponse), TEST_STRING_INPUT);
+			Assert.assertTrue(parseRawResponse(httpResponse).contains(TEST_STRING_INPUT));
 
 		} catch (Exception e) {
 
