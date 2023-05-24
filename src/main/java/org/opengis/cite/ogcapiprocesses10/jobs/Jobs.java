@@ -2209,38 +2209,45 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-success ", groups = "job")
 	public void testJobSuccess() {
-		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
-		final ValidationData<Void> data = new ValidationData<>();
-		try {
-			HttpClient client = HttpClientBuilder.create().build();
-			String executeEndpoint = rootUri + echoProcessPath + "/execution";
-			HttpPost request = new HttpPost(executeEndpoint);
-			request.setHeader("Accept", "application/json");
-			request.setHeader("Prefer", "respond-async ");
-			ContentType contentType = ContentType.APPLICATION_JSON;
-			request.setEntity(new StringEntity(executeNode.toString(), contentType));
-			HttpResponse httpResponse = client.execute(request);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
-			Header locationHeader = httpResponse.getFirstHeader("location");
-			String locationString = locationHeader.getValue();
-			client = HttpClientBuilder.create().build();
-			HttpGet statusRequest = new HttpGet(locationString);
-			request.setHeader("Accept", "application/json");
-			httpResponse = client.execute(statusRequest);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			getStatusValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
+		
+		if(echoProcessSupportsAsync())
+		{			
+			//create async job
+			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+			final ValidationData<Void> data = new ValidationData<>();
+			try {
+				HttpClient client = HttpClientBuilder.create().build();
+				String executeEndpoint = rootUri + echoProcessPath + "/execution";
+				HttpPost request = new HttpPost(executeEndpoint);
+				request.setHeader("Accept", "application/json");
+				request.setHeader("Prefer", "respond-async ");
+				ContentType contentType = ContentType.APPLICATION_JSON;
+				request.setEntity(new StringEntity(executeNode.toString(), contentType));
+				HttpResponse httpResponse = client.execute(request);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
+				Header locationHeader = httpResponse.getFirstHeader("location");
+				String locationString = locationHeader.getValue();
+				client = HttpClientBuilder.create().build();
+				HttpGet statusRequest = new HttpGet(locationString);
+				request.setHeader("Accept", "application/json");
+				httpResponse = client.execute(statusRequest);
+				StringWriter writer = new StringWriter();
+				String encoding = StandardCharsets.UTF_8.name();
+				IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+				JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
+				Body body = Body.from(responseNode);
+				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+						.build();
+				getStatusValidator.validateResponse(response, data);
+				Assert.assertTrue(data.isValid(), printResults(data.results()));
+			} catch (Exception e) {
+				Assert.fail(e.getLocalizedMessage());
+			}
+		}
+		else {
+			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+". Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously. (Clause 7.11.4 of OGC 18-062r2)");
 		}
 	}
 }
