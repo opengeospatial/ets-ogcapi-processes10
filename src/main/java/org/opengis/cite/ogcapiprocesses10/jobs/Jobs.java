@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
@@ -873,9 +877,12 @@ public class Jobs extends CommonFixture {
 				Assert.assertTrue(data.isValid(), printResults(data.results()));
 		   }
 		   else if(responsePayload.contains("Content-Type: multipart/related")){
+			   
+
+			   
 				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);	
 				if(responseContentType.getValue().startsWith("multipart/related")) {
-					validateMultipartResponse(responsePayload);						
+					validateMultipartResponse(responsePayload,executeNode);						
 				}
 				else {
 					throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
@@ -962,7 +969,7 @@ public class Jobs extends CommonFixture {
 		
 		if(responsePayload.contains("Content-Type: multipart/related")){
 			if(responseContentType.getValue().startsWith("multipart/related")) {
-				validateMultipartResponse(responsePayload);						
+				validateMultipartResponse(responsePayload,executeNode);						
 			}
 			else {
 				throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
@@ -1170,7 +1177,7 @@ public class Jobs extends CommonFixture {
 				if(responsePayload.contains("Content-Type: multipart/related")){
 					Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 					if(responseContentType.getValue().startsWith("multipart/related")) {
-						validateMultipartResponse(responsePayload);						
+						validateMultipartResponse(responsePayload,executeNode);						
 					}
 					else {
 						throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
@@ -1241,7 +1248,7 @@ public class Jobs extends CommonFixture {
 		if(responsePayload.contains("Content-Type: multipart/related")){
 			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			if(responseContentType.getValue().startsWith("multipart/related")) {
-				validateMultipartResponse(responsePayload);						
+				validateMultipartResponse(responsePayload,executeNode);						
 			}
 			else {
 				throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
@@ -1414,9 +1421,39 @@ public class Jobs extends CommonFixture {
 		}
 	}
 	
-	private void validateMultipartResponse(String responsePayload){
+	private void validateMultipartResponse(String responsePayload, JsonNode executeNode){
+		
+		boolean multipartIsValid = true;
+		String errorMessage = "";
+		
+     try {
+    	 
+    	 
+	    	 MimeMultipart mimeMultipart = new MimeMultipart(new ByteArrayDataSource(responsePayload.getBytes(),"multipart/related"));
+	    	 if(mimeMultipart.getCount()<1)
+	    	 {
+	    	 	Assert.assertTrue(mimeMultipart.getCount()>0,"Error with multipart response");
+	    	 }
+	    	 
+			
+			JsonNode inputsNode = executeNode.get("inputs");
+			for(int i=0; i < mimeMultipart.getCount(); i++)
+			{
+				if(!mimeMultipart.getBodyPart(i).getContent().toString().contains(TEST_STRING_INPUT)) {
+					multipartIsValid = false;
+					errorMessage = "The input test string was not detected in one of the parts of the multipart response.";
+				}
+			}
 
-		Assert.assertTrue(responsePayload.contains(Jobs.TEST_STRING_INPUT), "The response payload did not contain the test string from the request");
+	
+					   
+		} catch (Exception e) {
+			multipartIsValid = false;
+			errorMessage = e.getLocalizedMessage();
+		} 
+		
+
+		Assert.assertTrue(multipartIsValid, "The multipart response fail the validity check because "+errorMessage);
 	}	
 
 	/**
