@@ -354,7 +354,7 @@ public class Jobs extends CommonFixture {
 			}
 		}
 		else {
-			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+" Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously. (Clause 7.11.4 of OGC 18-062r2)");
+			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+" Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously (See Clause 7.11.4 of OGC 18-062r2)");
 		}
 	}
 
@@ -2254,7 +2254,7 @@ public class Jobs extends CommonFixture {
 			}
 		}
 		else {
-			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+" Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously. (Clause 7.11.4 of OGC 18-062r2)");
+			throw new SkipException(Jobs.ASYNC_MODE_NOT_SUPPORTED_MESSAGE+" Also note that the specification does not mandate that servers create a job as a result of executing a process synchronously (See Clause 7.11.4 of OGC 18-062r2)");
 		}
 	}
 }
