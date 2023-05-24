@@ -173,8 +173,8 @@ public class Jobs extends CommonFixture {
 		    getInvalidJobURL = new URL(processListEndpointString + "/invalid-job-" + UUID.randomUUID());
 		    getInvalidJobResultURL = new URL(rootUri +  getProcessListPath + "/invalid-job-" + UUID.randomUUID() + "/results");
 			clientBuilder = HttpClientBuilder.create();
-		} catch (MalformedURLException | ResolutionException | ValidationException e) {
-			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e.getLocalizedMessage());
+		} catch (Exception e) {		
+			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e);
 		}
 	}
 	
@@ -333,7 +333,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-op ")
 	public void testJobCreationAutoExecutionMode() {
 		
 		if(echoProcessSupportsAsync())
@@ -375,7 +375,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-op ")
 	public void testJobCreationDefaultExecutionMode() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -408,7 +408,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-op ")
 	public void testJobCreationDefaultOutputs() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeNoOutputs(echoProcessId);
@@ -446,7 +446,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-array ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-array ")
 	public void testJobCreationInputArray() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeWithInputArray(echoProcessId);
@@ -470,7 +470,7 @@ public class Jobs extends CommonFixture {
 	* 2.  Verify that each process executes successfully according to the ats_job-creation-success,relevant requirement based on the combination of execute parameters
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-bbox ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-bbox ")
 	public void testJobCreationInputInlineBbox() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -496,7 +496,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-binary ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-binary ")
 	public void testJobCreationInputInlineBinary() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeWithBinaryInput(echoProcessId);
@@ -522,7 +522,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-mixed ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-mixed ")
 	public void testJobCreationInputInlineMixed() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeWithMixedInput(echoProcessId);
@@ -549,7 +549,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-object ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-object ")
 	public void testJobCreationInputInlineObject() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNodeWithObject(echoProcessId);
@@ -810,7 +810,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-inline ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-inline ")
 	public void testJobCreationInputInline() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -835,7 +835,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-ref ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-ref ")
 	public void testJobCreationInputRef() {
 		//create job
 		
@@ -942,7 +942,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-input-validation ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-input-validation ")
 	public void testJobCreationInputValidation() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -1098,7 +1098,7 @@ public class Jobs extends CommonFixture {
 
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-inputs ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-inputs ")
 	public void testJobCreationInputs() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -1122,7 +1122,7 @@ public class Jobs extends CommonFixture {
 	* req_core_job-creation-auto-execution-mode,/req/core/job-creation-auto-execution-mode
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-op ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-op ")
 	public void testJobCreationOp() {
 		
 		HttpResponse httpResponse = null;
@@ -1211,7 +1211,7 @@ public class Jobs extends CommonFixture {
 
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-request ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-request ")
 	public void testJobCreationRequest() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -1277,7 +1277,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-success-async ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-success-async ")
 	public void testJobCreationSuccessAsync() {
 		if(echoProcessSupportsAsync())
 		{			
@@ -1345,7 +1345,7 @@ public class Jobs extends CommonFixture {
 	* |===
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-document ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-document ")
 	public void testJobCreationSyncDocument() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_DOCUMENT);
@@ -1380,7 +1380,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-mixed-multi ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-mixed-multi ")
 	public void testJobCreationSyncRawMixedMulti() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
@@ -1405,7 +1405,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-ref ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-ref ")
 	public void testJobCreationSyncRawRef() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
@@ -1465,7 +1465,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-multi ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-multi ")
 	public void testJobCreationSyncRawValueMulti() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
@@ -1490,7 +1490,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-one ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-creation-sync-raw-value-one ")
 	public void testJobCreationSyncRawValueOne() {
 		// create job
 
@@ -1535,7 +1535,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-exception-no-such-job ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-exception-no-such-job ")
 	public void testJobExceptionNoSuchJob() {
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
@@ -1557,7 +1557,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job ")
 	public void testJobOp() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
@@ -1600,7 +1600,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-exception-no-such-job ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-exception-no-such-job ")
 	public void testJobResultsNoSuchJob() {
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
@@ -1635,7 +1635,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-exception-results-not-ready ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-exception-results-not-ready ")
 	public void testJobResultsExceptionResultsNotReady() {
 		if(echoProcessSupportsAsync())
 		{
@@ -1709,7 +1709,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-failed ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-failed ")
 	public void testJobResultsFailed() {
 		final ValidationData<Void> data = new ValidationData<>();
 		//create invalid execute request
@@ -1752,7 +1752,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results ")
 	public void testJobResults() {
 		
 		HttpResponse httpResponse = null;
@@ -1847,7 +1847,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-document ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-document ")
 	public void testJobResultsAsyncDocument() {
 		//create job
 		if(echoProcessSupportsAsync())
@@ -1891,7 +1891,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-raw-mixed-multi ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-mixed-multi ")
 	public void testJobResultsAsyncRawMixedMulti() {
 		if(echoProcessSupportsAsync())
 		{		
@@ -1944,7 +1944,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-raw-ref ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-ref ")
 	public void testJobResultsAsyncRawRef() {
 		if(echoProcessSupportsAsync())
 		{			
@@ -1997,7 +1997,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-multi ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-multi ")
 	public void testJobResultsAsyncRawValueMulti() {
 		if(echoProcessSupportsAsync())
 		{				
@@ -2096,7 +2096,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-one ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-async-raw-value-one ")
 	public void testJobResultsAsyncRawValueOne() {
 		if(echoProcessSupportsAsync())
 		{			
@@ -2194,18 +2194,23 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-results-sync ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-results-sync ")
 	public void testJobResultsSync() {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 		final ValidationData<Void> data = new ValidationData<>();
 		try {
+			
+			System.out.println("CHHK 1");
 		
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 					
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			Header[] headers = httpResponse.getHeaders("Link");
+
+			System.out.println("CHHK 2");
+			
 			
 			if(headers.length>0) {
 				boolean foundRelMonitorHeader = false;
@@ -2224,10 +2229,14 @@ public class Jobs extends CommonFixture {
 				
 				httpResponse = sendGetRequest(statusUrl, ContentType.APPLICATION_JSON.getMimeType());
 				validateResponse(httpResponse, getStatusValidator, data);
+				System.out.println("CHHK 3");
+				
 			}
+			System.out.println("CHHK 4");
 			
 
 		} catch (IOException e) {
+			System.out.println("CHHK "+e.getLocalizedMessage());
 			Assert.fail(e.getLocalizedMessage());
 		}
 		
@@ -2257,7 +2266,7 @@ public class Jobs extends CommonFixture {
 	* TODO: Check additional content
 	* </pre>
 	*/
-	@Test(description = "Implements Requirement /req/core/job-success ", groups = "job")
+	@Test(description = "Implements Requirement /req/core/job-success ")
 	public void testJobSuccess() {
 		
 		if(echoProcessSupportsAsync())
