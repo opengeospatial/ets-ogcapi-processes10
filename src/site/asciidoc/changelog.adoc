@@ -7,9 +7,7 @@
 - https://github.com/opengeospatial/ets-ogcapi-processes10/issues/40[#40] Test failure on async execution returning 200 response (sync, or sync & async process)
 - https://github.com/opengeospatial/ets-ogcapi-processes10/issues/59[#59] Extraneous id included in execution request
 - https://github.com/opengeospatial/ets-ogcapi-processes10/issues/61[#61] Test for single output is actually requesting none
-
-
-
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/65[#65] Update TEAM Engine dependencies to v5.6.1
 
 == 0.4 (2023-02)
 
