@@ -1,5 +1,9 @@
 = Release Notes OGC API - Processes - Part 1: Core
 
+== 1.0 (2023-06)
+
+- https://github.com/opengeospatial/ets-ogcapi-processes10/pull/67[#67] Set status of test suite to Final
+
 == 0.5 (2023-05)
 
 - https://github.com/opengeospatial/ets-ogcapi-processes10/issues/11[#1] 'null' or empty reason given for certain test failures bugSomething isn't working
