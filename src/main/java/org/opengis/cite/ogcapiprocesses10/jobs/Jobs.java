@@ -1681,12 +1681,22 @@ public class Jobs extends CommonFixture {
 				httpResponse.getEntity().getContent().close();
 				ObjectMapper objectMapper =new ObjectMapper();
 			    JsonNode resultsNode = objectMapper.readTree(responseContentString);
+				JsonNode typeNode = resultsNode.get("type");
+				if (typeNode != null) {
+					String typeValue = typeNode.textValue();
+					System.out.println("Actual Type Value: " + typeValue);
+				}
+				
 			    
 			    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
 			    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
 			    
 			    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
-					    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
+					    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);	
+				
+				boolean isSchemaValid = validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL, responseContentString);
+				System.out.println("Schema Validation Result: " + isSchemaValid);
+
 			    
 			} catch (Exception e) {
 				System.out.println("Checking error: An exception occurred: " + e.getMessage());
