@@ -86,7 +86,7 @@ public class JobList extends CommonFixture {
 	public void setup() {		
 		String jobListEndpointString = rootUri.toString() + getJobListPath;		
 		try {		
-			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+			openApi3 = new OpenApi3Parser().parse(specURL, false);
 			addServerUnderTest(openApi3);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
 		    final Operation operation = openApi3.getOperationById(OPERATION_ID);

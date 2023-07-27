@@ -155,7 +155,7 @@ public class Jobs extends CommonFixture {
 		    echoProcessPath = getProcessListPath + "/" + echoProcessId;
 			executeEndpoint = rootUri + echoProcessPath + "/execution";
 		    parseEchoProcess();
-			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+			openApi3 = new OpenApi3Parser().parse(specURL, false);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID_GET_JOBS);
 		    final Operation operation = openApi3.getOperationById(OPERATION_ID_GET_JOBS);
 		    getJobsValidator = new OperationValidator(openApi3, path, operation);

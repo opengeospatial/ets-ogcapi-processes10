@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -55,7 +56,7 @@ public class CommonFixture {
 
     protected ResponseLoggingFilter responseLoggingFilter;
     
-    protected URI specURI;
+    protected URL specURL;
 
     protected URI rootUri;
     
@@ -87,12 +88,7 @@ public class CommonFixture {
         initLogging();
         rootUri = (URI) testContext.getSuite().getAttribute( SuiteAttribute.IUT.getName() );
         limit = (Integer) testContext.getSuite().getAttribute( SuiteAttribute.PROCESS_TEST_LIMIT.getName() );
-        testAllProcesses = (Boolean) testContext.getSuite().getAttribute( SuiteAttribute.TEST_ALL_PROCESSES.getName() );
-        try {
-			specURI = new URI("https://developer.ogc.org/api/processes/openapi.yaml");
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
+        specURL = getClass().getResource("/org/opengis/cite/ogcapiprocesses10/openapi/api-processes10.yaml");
     }
 
     @BeforeMethod
