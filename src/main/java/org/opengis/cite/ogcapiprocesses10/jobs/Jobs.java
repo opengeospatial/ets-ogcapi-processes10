@@ -171,7 +171,7 @@ public class Jobs extends CommonFixture {
 		    getJobsListURL = new URL(jobsListEndpointString);
 		    getProcessesListURL = new URL(processListEndpointString);
 		    getInvalidJobURL = new URL(processListEndpointString + "/invalid-job-" + UUID.randomUUID());
-		    getInvalidJobResultURL = new URL(rootUri +  getProcessListPath + "/invalid-job-" + UUID.randomUUID() + "/results");
+		    getInvalidJobResultURL = new URL(jobsListEndpointString + "/invalid-job-" + UUID.randomUUID() + "/results");
 			clientBuilder = HttpClientBuilder.create();
 		} catch (Exception e) {		
 			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e);
