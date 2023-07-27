@@ -83,6 +83,7 @@ public class Conformance extends CommonFixture {
     public void testValidateConformanceOperationAndResponse( TestPoint testPoint ) {
         String testPointUri = testPoint.getServerUrl() + testPoint.getPath();
         Response response = init().baseUri( testPointUri ).accept( JSON ).when().request( GET );
+        this.rspEntity = response.getBody().asInputStream();
         validateConformanceOperationResponse( testPointUri, response );
     }
 

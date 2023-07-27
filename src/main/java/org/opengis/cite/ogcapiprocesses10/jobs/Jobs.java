@@ -862,6 +862,7 @@ public class Jobs extends CommonFixture {
 			}
 			
 			String responsePayload = writer.toString();
+			this.rspEntity = responsePayload;
 			
 			if(!responsePayload.contains("Content-Type: multipart/related")) {
 				JsonNode responseNode = null;
@@ -954,6 +955,7 @@ public class Jobs extends CommonFixture {
 
 			httpResponse = sendPostRequestSync(executeNode);
 			responsePayload = parseRawResponse(httpResponse);
+			this.rspEntity = responsePayload;
 
 		}
 		catch(Exception ee)
@@ -1001,6 +1003,7 @@ public class Jobs extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			this.rspEntity = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			Body body = Body.from(responseNode);
 			responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
@@ -1317,6 +1320,7 @@ public class Jobs extends CommonFixture {
 		StringWriter writer = new StringWriter();
 		String encoding = StandardCharsets.UTF_8.name();
 		IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		this.rspEntity = writer.toString();
 		return new ObjectMapper().readTree(writer.toString());
 	}
 
@@ -1422,6 +1426,7 @@ public class Jobs extends CommonFixture {
 		
 		boolean multipartIsValid = true;
 		String errorMessage = "";
+		this.rspEntity = responsePayload;
 		
      try {
     	 
