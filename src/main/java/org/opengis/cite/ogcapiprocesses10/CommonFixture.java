@@ -5,6 +5,8 @@ import static io.restassured.http.ContentType.HTML;
 import static io.restassured.http.Method.GET;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,12 +15,17 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import org.apache.http.HttpRequest;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.openapi4j.core.validation.ValidationResults;
 import org.openapi4j.core.validation.ValidationResults.ValidationItem;
 import org.openapi4j.parser.model.v3.OpenApi3;
 import org.openapi4j.parser.model.v3.Server;
+import org.opengis.cite.ogcapiprocesses10.util.JsonUtils;
+import org.opengis.cite.ogcapiprocesses10.util.TestSuiteLogger;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
@@ -65,6 +72,8 @@ public class CommonFixture {
     
     /** A String representing the request. */
     protected HttpRequest reqEntity;
+    /** An Object representing the content of the response message. */
+    protected Object rspEntity;
     
     protected final String CONTENT_TYPE = "Content-Type";
     
@@ -74,7 +83,13 @@ public class CommonFixture {
     
     protected final String CONTENT_ENCODING_PROPERTY_KEY = "contentEncoding";
     
+    private static final int MAX_RSP_ATTR_LENGTH = 4096;
+    
     private static final String REQ_ATTR = "request";
+    
+    private static final String REQ_POST_ATTR = "post-request";
+    
+    private static final String RSP_ATTR = "response";
 
     /**
      * Initializes the common test fixture with a client component for interacting with HTTP endpoints.
@@ -459,6 +474,41 @@ public class CommonFixture {
         }
         if (null != this.reqEntity) {
             result.setAttribute(REQ_ATTR, this.reqEntity.toString());
+        }
+        if (null != this.reqEntity) {
+            String request = "";
+            if (this.reqEntity instanceof HttpGet) {
+                request = this.reqEntity.toString();
+            } else {
+                // https://github.com/opengeospatial/ets-ogcapi-processes10/issues/51
+                try {
+                    HttpPost postRequest = (HttpPost)this.reqEntity;
+                    result.setAttribute(REQ_POST_ATTR, postRequest.toString());
+                    request = JsonUtils.inputStreamToString(postRequest.getEntity().getContent());
+                    // we have to add a "<" at the start, because this is used by TEAM Engine EarlReporter 
+                    // to differentiate between GET and POST. 
+                    request = "<!-- non XML body -->\n" + request;
+                } catch (Exception e) {
+                    TestSuiteLogger.log(Level.WARNING, "Could not get POST endpoint URI.", e);
+                }
+            }
+            result.setAttribute(REQ_ATTR, request);
+        }
+        if (null != this.rspEntity) {
+            StringBuilder response = new StringBuilder();
+            if (this.rspEntity instanceof InputStream) {
+                try {
+                    response = response.append(JsonUtils.inputStreamToString((InputStream) rspEntity));
+                } catch (IOException e) {
+                    TestSuiteLogger.log(Level.WARNING, "Could not write response to String.", e);
+                }
+            } else if(rspEntity instanceof String) {
+                response = response.append((String)rspEntity);
+            }
+            if (response.length() > MAX_RSP_ATTR_LENGTH) {
+                response.delete(MAX_RSP_ATTR_LENGTH, response.length());
+            }
+            result.setAttribute(RSP_ATTR, response.toString());
         }
     }
 
