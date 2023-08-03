@@ -80,6 +80,13 @@
                 <input type="number" id="processTestLimit" name="processTestLimit" value="3"/>
               </div>
             </p>
+            <p>
+              <h4 style="margin-bottom: 0.5em">Use local OpenAPI schema</h4>
+              <div>
+                <label for="useLocalSchema">Use OpenAPI schema included in ETS instead of remote schema.</label>
+                <input type="checkBox" id="useLocalSchema" name="useLocalSchema" />
+              </div>
+            </p>
           </fieldset>
           <p>
             <input class="form-button" type="submit" value="Start" />
@@ -101,6 +108,9 @@
           </entry>
           <entry key="processtestlimit">
               <xsl:value-of select="$form-data/values/value[@key='processTestLimit']" />
+          </entry>
+          <entry key="uselocalschema">
+              <xsl:value-of select="$form-data/values/value[@key='useLocalSchema']" />
           </entry>
         </properties>
       </xsl:variable>

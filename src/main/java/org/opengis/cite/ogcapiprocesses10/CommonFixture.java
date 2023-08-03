@@ -6,6 +6,7 @@ import static io.restassured.http.Method.GET;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -88,7 +89,16 @@ public class CommonFixture {
         initLogging();
         rootUri = (URI) testContext.getSuite().getAttribute( SuiteAttribute.IUT.getName() );
         limit = (Integer) testContext.getSuite().getAttribute( SuiteAttribute.PROCESS_TEST_LIMIT.getName() );
-        specURL = getClass().getResource("/org/opengis/cite/ogcapiprocesses10/openapi/api-processes10.yaml");
+        boolean useLocalSchema = (boolean) testContext.getSuite().getAttribute( SuiteAttribute.USE_LOCAL_SCHEMA.getName() );
+        if(useLocalSchema) {
+            specURL = getClass().getResource("/org/opengis/cite/ogcapiprocesses10/openapi/api-processes10.yaml");
+        } else {
+            try {
+                specURL = new URI("https://developer.ogc.org/api/processes/openapi.yaml").toURL();
+            } catch (MalformedURLException | URISyntaxException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @BeforeMethod

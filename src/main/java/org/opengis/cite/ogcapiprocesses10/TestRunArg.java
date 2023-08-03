@@ -24,6 +24,11 @@ public enum TestRunArg {
 	 * Limit of processes to be tested against the OGC Process Description Conformance Class.
 	 */
 	PROCESSTESTLIMIT,
+        
+        /**
+         * Use local OpenAPI schema.
+         */
+        USELOCALSCHEMA,
     
     /**
      * Boolean indicating whether all processes should be tested against the OGC Process Description Conformance Class.
