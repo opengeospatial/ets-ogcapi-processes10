@@ -2036,18 +2036,16 @@ public class Jobs extends CommonFixture {
 	    boolean hasMonitorOrResultLink=false;
 	    for (JsonNode currentJsonNode : linksArrayNode) {
 		// Fetch result document
-	    
-		if(currentJsonNode.get("rel").asText()=="http://www.opengis.net/def/rel/ogc/1.0/results"){
+	        if(currentJsonNode.get("rel").asText().equals("http://www.opengis.net/def/rel/ogc/1.0/results")){
 	
 		    HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
 		
-		    request.setHeader("Accept", "application/json");
 		    HttpResponse httpResponse = client.execute(request);
 		
-		    JsonNode resultNode = parseResponse(httpResponse);
+		    String resultString = parseRawResponse(httpResponse);
 		 
 		    // May be more generic here
-		    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+		    Assert.assertTrue(resultString.contains(TEST_STRING_INPUT), "Response does not contain " + TEST_STRING_INPUT + "\n" + resultString);
 		    hasMonitorOrResultLink=true;
 		}
 	
@@ -2066,6 +2064,9 @@ public class Jobs extends CommonFixture {
 			hasMonitorOrResultLink=true;
 		    }
 		}
+	        // if the code gets to this position, no result or monitor link were found
+	        // imho we need to throw an exception
+	        throw new AssertionError("No result (rel='http://www.opengis.net/def/rel/ogc/1.0/results') or monitor (rel='monitor') links were found in response.");
 	 
 	}
 	catch (Exception e) {
