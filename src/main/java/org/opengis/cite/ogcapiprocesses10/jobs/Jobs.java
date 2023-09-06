@@ -82,6 +82,8 @@ public class Jobs extends CommonFixture {
 	private static final String RESPONSE_VALUE_RAW = "raw";
 	private static final String TEST_STRING_INPUT = "teststring";
 	private static final Object TYPE_DEFINITION_OBJECT = "object";
+	private static final Object TYPE_DEFINITION_STRING = "string";
+	private static final Object CONTENT_ENCODING_BINARY = "binary";
 	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
 	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
 	private static final String ASYNC_MODE_NOT_SUPPORTED_MESSAGE = "This test is skipped because the server has not declared support for asynchronous execution mode.";
@@ -633,23 +635,25 @@ public class Jobs extends CommonFixture {
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
 		//executeNode.set("id", new TextNode(echoProcessId));
-		boolean foundObjectInput = false;
+		boolean foundBinaryInput = false;
 		for (Input input : inputs) {
-			boolean inputIsObject = false;
+			boolean inputIsBinary = false;
 			List<Type> types = input.getTypes();
-			if(foundObjectInput) {
+			if(foundBinaryInput) {
 				addInput(input, inputsNode);
 				continue;
 			}
 			for (Type type : types) {
-				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
-					addObjectInput(input, inputsNode);
-					foundObjectInput = true;
-					inputIsObject = true;
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_STRING)) {
+				    if(type.getContentEncoding() != null && type.getContentEncoding().equals(CONTENT_ENCODING_BINARY)) {
+					addBinaryInput(input, inputsNode);
+					foundBinaryInput = true;
+					inputIsBinary = true;
 					continue;
+				    }
 				}
 			}
-			if(!inputIsObject) {
+			if(!inputIsBinary) {
 				addInput(input, inputsNode);
 			}
 		}
@@ -661,7 +665,13 @@ public class Jobs extends CommonFixture {
 		return executeNode;
 	}
 
-	private JsonNode createExecuteJsonNodeWithMixedInput(String echoProcessId) {
+	private void addBinaryInput(Input input,
+            ObjectNode inputsNode) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private JsonNode createExecuteJsonNodeWithMixedInput(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
@@ -874,7 +884,7 @@ public class Jobs extends CommonFixture {
 				
 				Body body = Body.from(responseNode);
 				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "*/*")
 						.build();
 				executeValidator.validateResponse(response, data);
 				Assert.assertTrue(data.isValid(), printResults(data.results()));
@@ -987,7 +997,7 @@ public class Jobs extends CommonFixture {
 			  Assert.fail(ew.getLocalizedMessage());	
 			}
 			Body body = Body.from(responseNode);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
+			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "*/*")
 					.build();
 			executeValidator.validateResponse(response, data);
 			Assert.assertTrue(data.isValid(), printResults(data.results()));
