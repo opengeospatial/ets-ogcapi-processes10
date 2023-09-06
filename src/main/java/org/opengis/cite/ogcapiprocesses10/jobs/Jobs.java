@@ -85,6 +85,7 @@ public class Jobs extends CommonFixture {
 	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
 	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
 	private static final String ASYNC_MODE_NOT_SUPPORTED_MESSAGE = "This test is skipped because the server has not declared support for asynchronous execution mode.";
+    private static final CharSequence ISSUE_54_MESSAGE_TEXT = "More than 1 schema is valid.";
 
 	private OpenApi3 openApi3;
 
@@ -877,7 +878,10 @@ public class Jobs extends CommonFixture {
 				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
 						.build();
 				executeValidator.validateResponse(response, data);
-				Assert.assertTrue(data.isValid(), printResults(data.results()));
+                                // https://github.com/opengeospatial/ets-ogcapi-processes10/issues/54
+                                if (!checkForIssue54(data)) {
+                                    Assert.assertTrue(data.isValid(), printResults(data.results()));
+                                }
 		   }
 		   else if(responsePayload.contains("Content-Type: multipart/related")){
 			   
@@ -990,7 +994,10 @@ public class Jobs extends CommonFixture {
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
 					.build();
 			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+                        // https://github.com/opengeospatial/ets-ogcapi-processes10/issues/54
+                        if (!checkForIssue54(data)) {
+                            Assert.assertTrue(data.isValid(), printResults(data.results()));
+                        }
 		}
 
 
@@ -1015,7 +1022,25 @@ public class Jobs extends CommonFixture {
 
 	}
 
-	private HttpResponse sendPostRequestSync(JsonNode executeNode, boolean checkForStatusCode) throws IOException {
+        private boolean checkForIssue54(ValidationData<Void> data) {
+            try {
+                // Validity of schemas needs to be checked by OAPIP SWG.
+                // See https://github.com/opengeospatial/ogcapi-processes/issues/350
+                // Validation results containing message "More than 1 schema is
+                // valid." will not be regarded as errors until
+                // ogcapi-processes/issues/350 is fixed/closed.
+                if (data.results() != null && data.results().items().size() > 0) {
+                    if (data.results().items().get(0).message().contains(ISSUE_54_MESSAGE_TEXT)) {
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                return false;
+            }
+            return false;
+    }
+
+    private HttpResponse sendPostRequestSync(JsonNode executeNode, boolean checkForStatusCode) throws IOException {
 		HttpResponse httpResponse = clientBuilder.build().execute(createPostRequest(executeNode));
 		int statusCode = httpResponse.getStatusLine().getStatusCode();
 		if(checkForStatusCode) {
