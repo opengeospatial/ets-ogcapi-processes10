@@ -473,7 +473,7 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-bbox ")
 	public void testJobCreationInputInlineBbox() {
 		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+		JsonNode executeNode = createExecuteJsonNodeWithBBox(echoProcessId);
 		TestSuiteLogger.log(Level.INFO, executeNode.toString());
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
@@ -562,7 +562,40 @@ public class Jobs extends CommonFixture {
 		}
 	}
 
-	private JsonNode createExecuteJsonNodeWithObject(String echoProcessId) {
+        private JsonNode createExecuteJsonNodeWithBBox(String echoProcessId) {
+                ObjectNode executeNode = objectMapper.createObjectNode();
+                ObjectNode inputsNode = objectMapper.createObjectNode();
+                ObjectNode outputsNode = objectMapper.createObjectNode();
+                for (Input input : inputs) {
+                        if(input.isBbox()) {
+                            addBBoxInput(input, inputsNode);
+                        }
+                }
+                for (Output output : outputs) {
+                        if(output.isBbox()) {
+                        addOutput(output, outputsNode);
+                        }
+                }
+                executeNode.set("inputs", inputsNode);
+                executeNode.set("outputs", outputsNode);
+                return executeNode;
+        }
+
+	private void addBBoxInput(Input input,
+                ObjectNode inputsNode) {
+            ObjectNode inputObjectNode = objectMapper.createObjectNode();
+            ArrayNode bboxArrayNode = objectMapper.createArrayNode();
+            bboxArrayNode.add(51.9);
+            bboxArrayNode.add(7);
+            bboxArrayNode.add(52);
+            bboxArrayNode.add(7.1);
+            inputObjectNode.set("bbox", bboxArrayNode);
+            inputObjectNode.set("crs", new TextNode("http://www.opengis.net/def/crs/OGC/1.3/CRS84"));
+            inputsNode.set(input.getId(), inputObjectNode);
+            
+        }
+
+    private JsonNode createExecuteJsonNodeWithObject(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();

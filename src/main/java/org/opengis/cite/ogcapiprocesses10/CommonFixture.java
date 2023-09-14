@@ -286,13 +286,36 @@ public class CommonFixture {
 			}						
 		    }
 		}
+	    }else {
+	            if(checkAllOfForBbox(schemaNode)) {
+                        input.setBbox(true);
+	            }
 	    }
 	}		
 	return input;
     }
 	
+    private boolean checkAllOfForBbox(JsonNode schemaNode) {
+        JsonNode allOfNode = schemaNode.get("allOf");
+        if(allOfNode != null) {
+            if(allOfNode instanceof ArrayNode) {
+                for (JsonNode jsonNode : allOfNode) {
+                    JsonNode formatNode = jsonNode.get("format");
+                    String format  = formatNode.asText();
+                    if(format.equals("ogc-bbox")) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     protected Output createOutput(JsonNode schemaNode, String id) {
 		Output output = new Output(id);
+		if(checkAllOfForBbox(schemaNode)) {
+		    output.setBbox(true);
+		}
 		return output;
 	}
 	
@@ -411,12 +434,21 @@ public class CommonFixture {
 		
 		private String id;
 		private List<Type> types;
+		private boolean bbox;
 		
 		public Output(String id) {
 			this.id = id;
 		}
 
-		public String getId() {
+		public void setBbox(boolean b) {
+		    bbox = true;
+                }
+		
+		public boolean isBbox() {
+		    return bbox;
+		}
+
+        public String getId() {
 			return id;
 		}
 
