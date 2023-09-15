@@ -235,6 +235,15 @@ public class CommonFixture {
 			type.setBinary(true);
 		    }
 		}				
+	    } else if (typeDefinition.equals("array")) {
+	        JsonNode itemsNode = schemaNode.get("items");
+	        if(itemsNode != null) {
+	            JsonNode itemsTypeNode = itemsNode.get("type");
+	            if(itemsTypeNode != null) {
+	                Type itemsType = new Type(itemsTypeNode.asText());
+	                input.addType(itemsType);
+	            }
+	        }
 	    }
 	    input.addType(type);
 	}else {
@@ -313,9 +322,18 @@ public class CommonFixture {
 
     protected Output createOutput(JsonNode schemaNode, String id) {
 		Output output = new Output(id);
-		if(checkAllOfForBbox(schemaNode)) {
-		    output.setBbox(true);
-		}
+	        JsonNode typeNode = schemaNode.get("type");
+	        if(typeNode != null) {
+	            String typeDefinition = typeNode.asText();
+	            if (typeDefinition.equals("array")) {
+                        Type itemsType = new Type(typeDefinition);
+                        output.addType(itemsType);
+	            }
+	        } else {
+	                if(checkAllOfForBbox(schemaNode)) {
+	                    output.setBbox(true);
+	                }	            
+	        }
 		return output;
 	}
 	
@@ -438,9 +456,14 @@ public class CommonFixture {
 		
 		public Output(String id) {
 			this.id = id;
+			this.types = new ArrayList<CommonFixture.Type>();
 		}
 
-		public void setBbox(boolean b) {
+		public void addType(Type itemsType) {
+                    types.add(itemsType);            
+              }
+
+        public void setBbox(boolean b) {
 		    bbox = true;
                 }
 		

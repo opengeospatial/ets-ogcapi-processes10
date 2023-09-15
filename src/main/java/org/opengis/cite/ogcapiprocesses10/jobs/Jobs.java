@@ -5,22 +5,20 @@ import static org.testng.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 
-import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
-import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -30,8 +28,6 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.openapi4j.core.exception.ResolutionException;
-import org.openapi4j.core.validation.ValidationException;
 import org.openapi4j.operation.validator.model.Response;
 import org.openapi4j.operation.validator.model.impl.Body;
 import org.openapi4j.operation.validator.model.impl.DefaultResponse;
@@ -43,8 +39,6 @@ import org.openapi4j.parser.model.v3.Path;
 import org.openapi4j.schema.validator.ValidationData;
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
-import org.opengis.cite.ogcapiprocesses10.conformance.Conformance;
-import org.opengis.cite.ogcapiprocesses10.util.ExecutionMode;
 import org.opengis.cite.ogcapiprocesses10.util.TestSuiteLogger;
 import org.testng.Assert;
 import org.testng.ITestContext;
@@ -52,14 +46,12 @@ import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.databind.node.IntNode;
 
 /**
  *
@@ -85,6 +77,7 @@ public class Jobs extends CommonFixture {
 	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
 	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
 	private static final String ASYNC_MODE_NOT_SUPPORTED_MESSAGE = "This test is skipped because the server has not declared support for asynchronous execution mode.";
+    private static final Object TYPE_DEFINITION_ARRAY = "array";
 
 	private OpenApi3 openApi3;
 
@@ -566,8 +559,10 @@ public class Jobs extends CommonFixture {
                 ObjectNode executeNode = objectMapper.createObjectNode();
                 ObjectNode inputsNode = objectMapper.createObjectNode();
                 ObjectNode outputsNode = objectMapper.createObjectNode();
+                boolean foundBBoxInput = false;
                 for (Input input : inputs) {
                         if(input.isBbox()) {
+                            foundBBoxInput = true;
                             addBBoxInput(input, inputsNode);
                         }
                 }
@@ -575,6 +570,9 @@ public class Jobs extends CommonFixture {
                         if(output.isBbox()) {
                         addOutput(output, outputsNode);
                         }
+                }
+                if(!foundBBoxInput) {
+                    throw new SkipException("No input of type bounding box found.");
                 }
                 executeNode.set("inputs", inputsNode);
                 executeNode.set("outputs", outputsNode);
@@ -632,36 +630,94 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		//executeNode.set("id", new TextNode(echoProcessId));
-		boolean foundObjectInput = false;
+                boolean foundArrayInput = false;
 		for (Input input : inputs) {
-			boolean inputIsObject = false;
+                    if(foundArrayInput) {
+                        break;
+                    }
 			List<Type> types = input.getTypes();
-			if(foundObjectInput) {
-				addInput(input, inputsNode);
-				continue;
-			}
 			for (Type type : types) {
-				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
-					addObjectInput(input, inputsNode);
-					foundObjectInput = true;
-					inputIsObject = true;
-					continue;
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_ARRAY)) {
+					addArrayInput(input, inputsNode);
+					foundArrayInput = true;
+					break;
 				}
 			}
-			if(!inputIsObject) {
-				addInput(input, inputsNode);
-			}
 		}
+		boolean foundArrayOutput = false;
 		for (Output output : outputs) {
-			addOutput(output, outputsNode);
+		    if(foundArrayOutput) {
+		        break;
+		    }
+                    List<Type> types = output.getTypes();
+                    if(types == null) {
+                        continue;
+                    }
+                    for (Type type : types) {
+                            if(type.getTypeDefinition().equals(TYPE_DEFINITION_ARRAY)) {
+                                    addOutput(output, outputsNode);
+                                    foundArrayOutput = true;
+                                    break;
+                            }
+                    }
+                }
+		if(!foundArrayInput) {
+		    throw new SkipException("No input of type array found.");
 		}
 		executeNode.set("inputs", inputsNode);
 		executeNode.set("outputs", outputsNode);
 		return executeNode;
 	}
 
-	private JsonNode createExecuteJsonNodeWithBinaryInput(String echoProcessId) {
+        private void addArrayInput(Input input,
+                ObjectNode inputsNode) {
+            Optional<Type> firstItemType = input.getTypes().stream().filter(p -> p != null)
+                    .filter(p -> !p.getTypeDefinition().equals("array")).findFirst();
+            try {
+                String itemType = firstItemType.get().getTypeDefinition();
+                ArrayNode arrayNode = objectMapper.createArrayNode();
+                switch (itemType) {
+                case "integer":
+                    arrayNode.add(1);
+                    arrayNode.add(2);
+                    arrayNode.add(3);
+                    break;
+                case "double":
+                    arrayNode.add(1.1);
+                    arrayNode.add(2.2);
+                    arrayNode.add(3.3);
+                    break;
+                case "float":
+                    arrayNode.add(1.1f);
+                    arrayNode.add(2.2f);
+                    arrayNode.add(3.3f);
+                    break;
+                case "string":
+                    arrayNode.add("test1");
+                    arrayNode.add("test2");
+                    arrayNode.add("test3");
+                    break;
+                default:
+                    break;
+                }
+//                ObjectNode inputObjectNode = objectMapper.createObjectNode();
+//                inputObjectNode.set("value", arrayNode);
+                inputsNode.set(input.getId(), arrayNode);
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
+
+    private void checkInput(Input input) {
+        Optional<Type> firstItemType = input.getTypes()
+                .stream()
+                .filter(p -> p != null)
+                .filter(p -> !p.getTypeDefinition().equals("array"))
+                .findFirst();
+        System.out.println(firstItemType.get());
+    }
+
+    private JsonNode createExecuteJsonNodeWithBinaryInput(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
