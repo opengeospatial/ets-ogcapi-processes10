@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -589,8 +590,7 @@ public class Jobs extends CommonFixture {
             bboxArrayNode.add(7.1);
             inputObjectNode.set("bbox", bboxArrayNode);
             inputObjectNode.set("crs", new TextNode("http://www.opengis.net/def/crs/OGC/1.3/CRS84"));
-            inputsNode.set(input.getId(), inputObjectNode);
-            
+            inputsNode.set(input.getId(), inputObjectNode);            
         }
 
     private JsonNode createExecuteJsonNodeWithObject(String echoProcessId) {
@@ -700,28 +700,16 @@ public class Jobs extends CommonFixture {
                 default:
                     break;
                 }
-//                ObjectNode inputObjectNode = objectMapper.createObjectNode();
-//                inputObjectNode.set("value", arrayNode);
                 inputsNode.set(input.getId(), arrayNode);
             } catch (Exception e) {
-                // TODO: handle exception
+                throw new NoSuchElementException(String.format("No item type for array input \"%s\" specified.", input.getId()));
             }
         }
-
-    private void checkInput(Input input) {
-        Optional<Type> firstItemType = input.getTypes()
-                .stream()
-                .filter(p -> p != null)
-                .filter(p -> !p.getTypeDefinition().equals("array"))
-                .findFirst();
-        System.out.println(firstItemType.get());
-    }
 
     private JsonNode createExecuteJsonNodeWithBinaryInput(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		//executeNode.set("id", new TextNode(echoProcessId));
 		boolean foundObjectInput = false;
 		for (Input input : inputs) {
 			boolean inputIsObject = false;
