@@ -1046,7 +1046,20 @@ public class Jobs extends CommonFixture {
 		request.setEntity(new StringEntity(executeNode.toString(), contentType));
 		HttpResponse httpResponse = clientBuilder.build().execute(request);
 		int statusCode = httpResponse.getStatusLine().getStatusCode();
-		Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+		//https://github.com/opengeospatial/ets-ogcapi-processes10/issues/52
+		//Allow also 200 responses, if process supports both sync and async execution
+		switch(supportedExecutionModes) {
+        case EITHER:
+            Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);
+            break;
+        case ONLY_ASYNC:
+            Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+            break;
+        case ONLY_SYNC:
+            break;
+        default:
+            break;
+		}
 		return httpResponse;
 	}
 
@@ -1765,11 +1778,7 @@ public class Jobs extends CommonFixture {
 			try {
 	
 	
-				httpResponse = this.sendPostRequestASync(executeNode);
-				int statusCode = httpResponse.getStatusLine().getStatusCode();
-				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
-	
-	
+				httpResponse = this.sendPostRequestASync(executeNode);	
 				Header locationHeader = httpResponse.getFirstHeader("location");
 				String locationString = locationHeader.getValue();
 				httpResponse = sendGetRequest(locationString, "application/json");
