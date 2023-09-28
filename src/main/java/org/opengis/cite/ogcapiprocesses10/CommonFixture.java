@@ -231,6 +231,7 @@ public class CommonFixture {
 		JsonNode formatNode = schemaNode.get("format");
 		if(formatNode != null) {
 		    String format  = formatNode.asText();
+		    input.setFormat(format);
 		    if(format.equals("byte")) {
 			type.setBinary(true);
 		    }
@@ -303,6 +304,7 @@ public class CommonFixture {
 		private String contentMediaType;
 		private String contentSchema;
 		private boolean isBinary;
+		private String format;
 
 		public Type(String typeDefinition) {
 			this.typeDefinition = typeDefinition;
@@ -354,13 +356,18 @@ public class CommonFixture {
 			builder.append("\tIs binary: " + isBinary + "\n");
 			return builder.toString();
 		}
+
+        public String getFormat() {
+            return format;
+        }
 	}
 
 	public class Input {
 		
-		private String id;
-		private List<Type> types;
-		private boolean isBbox;
+		protected String id;
+		protected List<Type> types;
+		protected boolean isBbox;
+		protected String format;
 		
 		public Input(String id, List<Type> types, boolean isBbox) {
 			this.id = id;
@@ -396,7 +403,15 @@ public class CommonFixture {
 			return types.add(type);
 		}
 
-		@Override
+		public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
+        }
+
+        @Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("Id: " + id + "\n");

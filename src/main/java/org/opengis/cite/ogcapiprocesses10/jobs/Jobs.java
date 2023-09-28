@@ -305,7 +305,9 @@ public class Jobs extends CommonFixture {
 
 		for (Type type : types) {
 			if(type.getTypeDefinition().equals("string")) {
-				inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
+			        if(input.getFormat() == null) {
+	                           inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
+			        }
 			} else if(input.isBbox()) {
 				inputNode.set("crs", new TextNode("urn:ogc:def:crs:EPSG:6.6:4326"));
 				ArrayNode arrayNode = objectMapper.createArrayNode();
