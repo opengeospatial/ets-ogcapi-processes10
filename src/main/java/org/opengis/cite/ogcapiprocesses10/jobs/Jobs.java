@@ -1643,7 +1643,12 @@ public class Jobs extends CommonFixture {
 			HttpResponse httpResponse = null;
 			final ValidationData<Void> data = new ValidationData<>();
 			//create invalid execute request
-			JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+			JsonNode executeNode;
+            try {
+                executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+            } catch (SkipException e) {
+                throw e;
+            }
 			
 			try {
 				httpResponse = sendPostRequestASync(executeNode);
@@ -2173,7 +2178,11 @@ public class Jobs extends CommonFixture {
 			}
 		}
 		
-		inputsNode.set("pause", new IntNode(5));
+		if(inputs.stream().anyMatch(p -> p.getId().equals("pause") )) {	                
+	                inputsNode.set("pause", new IntNode(5));		    
+		} else  {
+		    throw new SkipException("No input with id pause found.");
+		}
 		
 		executeNode.set("inputs", inputsNode);
 		executeNode.set("outputs", outputsNode);
