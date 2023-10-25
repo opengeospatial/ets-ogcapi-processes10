@@ -289,6 +289,9 @@ public class Jobs extends CommonFixture {
 			addOutput(output, outputsNode);
 		}
 		executeNode.set("inputs", inputsNode);
+		if(inputsNode.isEmpty()) {
+		    throw new SkipException("No supported input found. Only string input without format is supported.");
+		}
 		executeNode.set("outputs", outputsNode);
 		return executeNode;
 	}
