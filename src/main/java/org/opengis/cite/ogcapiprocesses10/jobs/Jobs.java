@@ -874,7 +874,7 @@ public class Jobs extends CommonFixture {
 				
 				Body body = Body.from(responseNode);
 				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "*/*")
+				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
 						.build();
 				executeValidator.validateResponse(response, data);
 				Assert.assertTrue(data.isValid(), printResults(data.results()));
@@ -987,7 +987,7 @@ public class Jobs extends CommonFixture {
 			  Assert.fail(ew.getLocalizedMessage());	
 			}
 			Body body = Body.from(responseNode);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "*/*")
+			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
 					.build();
 			executeValidator.validateResponse(response, data);
 			Assert.assertTrue(data.isValid(), printResults(data.results()));
