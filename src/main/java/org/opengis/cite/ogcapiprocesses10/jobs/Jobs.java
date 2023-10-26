@@ -2,8 +2,12 @@ package org.opengis.cite.ogcapiprocesses10.jobs;
 
 import static org.testng.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -18,6 +22,7 @@ import java.util.logging.Level;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -706,28 +711,50 @@ public class Jobs extends CommonFixture {
             }
         }
 
+        private void addBinaryInput(Input input, ObjectNode inputsNode) {
+                List<Type> types = input.getTypes();
+                ObjectNode inputNode = objectMapper.createObjectNode();
+                byte[] inputFileAsByteArray = null;
+                try {
+                    URL fileUrl = getClass().getClassLoader().getResource("org/opengis/cite/testdata/testgeotiff.tiff");
+                    File inputFile = new File(fileUrl.getFile());
+                    InputStream in = new FileInputStream(inputFile);
+                    inputFileAsByteArray = new byte[(int)inputFile.length()];
+                    in.read(inputFileAsByteArray);
+                    in.close();
+                } catch (IOException e) {
+                    return;
+                }
+                String base64EncodedString = Base64.encodeBase64String(inputFileAsByteArray);
+                
+                inputNode.set("value", new TextNode(base64EncodedString));
+                                
+                ObjectNode formatNode = objectMapper.createObjectNode();
+                
+                for (Type type : types) {
+                        if(type.getTypeDefinition().equals("string")) {
+                                if(type.getContentMediaType() != null && type.getContentMediaType().contains("tiff"))
+                                formatNode.set("mediaType", new TextNode(type.getContentMediaType()));
+                        }
+                }
+                formatNode.set("encoding", new TextNode("base64"));
+                
+                inputNode.set("format", formatNode);
+                
+                inputsNode.set(input.getId(), inputNode);
+        }
+
     private JsonNode createExecuteJsonNodeWithBinaryInput(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		boolean foundObjectInput = false;
 		for (Input input : inputs) {
-			boolean inputIsObject = false;
 			List<Type> types = input.getTypes();
-			if(foundObjectInput) {
-				addInput(input, inputsNode);
-				continue;
-			}
 			for (Type type : types) {
-				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
-					addObjectInput(input, inputsNode);
-					foundObjectInput = true;
-					inputIsObject = true;
+				if(type.isBinary()) {
+					addBinaryInput(input, inputsNode);
 					continue;
 				}
-			}
-			if(!inputIsObject) {
-				addInput(input, inputsNode);
 			}
 		}
 		for (Output output : outputs) {

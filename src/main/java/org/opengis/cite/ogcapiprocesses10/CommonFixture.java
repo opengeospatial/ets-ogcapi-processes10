@@ -234,7 +234,23 @@ public class CommonFixture {
 		    if(format.equals("byte")) {
 			type.setBinary(true);
 		    }
-		}				
+		}
+                JsonNode contentMediaTypeNode = schemaNode.get(CONTENT_MEDIA_TYPE_PROPERTY_KEY);
+                if(contentMediaTypeNode != null && !contentMediaTypeNode.isMissingNode()) {
+                    type.setContentMediaType(contentMediaTypeNode.asText());
+                }
+                JsonNode contentEncodingNode = schemaNode.get(CONTENT_ENCODING_PROPERTY_KEY);
+                if(contentEncodingNode != null && !contentEncodingNode.isMissingNode()) {
+                    String contentEncodingNodeText = contentEncodingNode.asText();
+                    if(contentEncodingNodeText.equals("binary")) {
+                        type.setBinary(true);
+                    }
+                    type.setContentEncoding(contentEncodingNodeText);
+                }
+                JsonNode contentSchemaNode = schemaNode.get(CONTENT_SCHEMA_PROPERTY_KEY);
+                if(contentSchemaNode != null && !contentSchemaNode.isMissingNode()) {
+                    type.setContentSchema(contentSchemaNode.asText());
+                }
 	    } else if (typeDefinition.equals("array")) {
 	        JsonNode itemsNode = schemaNode.get("items");
 	        if(itemsNode != null) {
@@ -284,7 +300,11 @@ public class CommonFixture {
 				}
 				JsonNode contentEncodingNode = oneOfChildNode.get(CONTENT_ENCODING_PROPERTY_KEY);
 				if(contentEncodingNode != null && !contentEncodingNode.isMissingNode()) {
-				    type.setContentEncoding(contentEncodingNode.asText());
+                                    String contentEncodingNodeText = contentEncodingNode.asText();
+                                    if(contentEncodingNodeText.equals("binary")) {
+                                        type.setBinary(true);
+                                    }
+				    type.setContentEncoding(contentEncodingNodeText);
 				}
 				JsonNode contentSchemaNode = oneOfChildNode.get(CONTENT_SCHEMA_PROPERTY_KEY);
 				if(contentSchemaNode != null && !contentSchemaNode.isMissingNode()) {
