@@ -864,20 +864,26 @@ public class Jobs extends CommonFixture {
 			String responsePayload = writer.toString();
 			
 			if(!responsePayload.contains("Content-Type: multipart/related")) {
-				JsonNode responseNode = null;
 				
-				try {
-					responseNode = new ObjectMapper().readTree(responsePayload);
-				} catch (Exception e) {
-					Assert.fail(e.getLocalizedMessage());
-				}
-				
-				Body body = Body.from(responseNode);
-				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
-						.build();
-				executeValidator.validateResponse(response, data);
-				Assert.assertTrue(data.isValid(), printResults(data.results()));
+				try {				
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				switch (statusCode) {
+                                case 200:                            
+                                    validateResponse(httpResponse, executeValidator, data);
+                                    break;
+                                case 201:
+                                    Header locationHeader = httpResponse.getFirstHeader("location");
+                                    String locationString = locationHeader.getValue();
+                                    httpResponse = sendGetRequest(locationString, "application/json");
+                                    validateResponse(httpResponse, getStatusValidator, data);
+                                    break;
+                                default:
+                                    Assert.fail("Got unexpected status code: " + statusCode);
+                                    break;
+                                }
+                                } catch (Exception e) {
+                                    Assert.fail(e.getLocalizedMessage());
+                            }
 		   }
 		   else if(responsePayload.contains("Content-Type: multipart/related")){
 			   
@@ -972,25 +978,33 @@ public class Jobs extends CommonFixture {
 				throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
 			}
 		}
-		else {		
-		
-		
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			JsonNode responseNode = null;
-			
+		else {
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			try {
-				responseNode = new ObjectMapper().readTree(responsePayload);
-			}
-			catch(Exception ew)
-			{
-			  Assert.fail(ew.getLocalizedMessage());	
-			}
-			Body body = Body.from(responseNode);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+	                        switch (statusCode) {
+	                        case 200:
+	                            validateResponse(httpResponse, executeValidator, data);
+	                            break;
+	                        case 201:                            
+	                            Header locationHeader = httpResponse.getFirstHeader("location");
+	                            String locationString = locationHeader.getValue();
+	                            httpResponse = sendGetRequest(locationString, "application/json");
+	                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	                            httpResponse.getEntity().writeTo(baos);
+	                            String responseContentString = baos.toString();
+	                            baos.close();
+	                            httpResponse.getEntity().getContent().close();
+	                            ObjectMapper objectMapper =new ObjectMapper();
+	                            JsonNode statusNode = objectMapper.readTree(responseContentString);
+	                            loopOverStatus(statusNode);
+	                            break;
+	                        default:
+	                            Assert.fail("Got unexpected status code: " + statusCode);
+	                            break;
+	                        }
+                        } catch (Exception e) {
+                            Assert.fail(e.getMessage());
+                        }
 		}
 
 
@@ -1005,10 +1019,24 @@ public class Jobs extends CommonFixture {
 			Body body = Body.from(responseNode);
 			responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
-			Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
-			assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,body.getContentAsNode(null, null, null).toString()),
-				    "Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);
+			if(statusCode == 201) {
+                            Header locationHeader = httpResponse.getFirstHeader("location");
+                            String locationString = locationHeader.getValue();
+                            httpResponse = sendGetRequest(locationString, "application/json");
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            httpResponse.getEntity().writeTo(baos);
+                            String responseContentString = baos.toString();
+                            baos.close();
+                            httpResponse.getEntity().getContent().close();
+                            ObjectMapper objectMapper =new ObjectMapper();
+                            JsonNode statusNode = objectMapper.readTree(responseContentString);
+                            assertTrue(loopOverStatusReturnsFailed(statusNode));
+			} else {
+	                        Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
+	                        Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
+	                        assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,body.getContentAsNode(null, null, null).toString()),
+	                                    "Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -2026,6 +2054,65 @@ public class Jobs extends CommonFixture {
 			throw new SkipException(ASYNC_MODE_NOT_SUPPORTED_MESSAGE);
 		} 		
 	}
+
+	    private boolean loopOverStatusReturnsFailed(JsonNode responseNode){
+	        try{
+	                
+	            HttpClient client = HttpClientBuilder.create().build();
+	            ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
+//	          
+	            boolean hasMonitorOrResultLink=false;
+	            
+	            JsonNode statusNode = responseNode.get("status");
+	            
+	            if(statusNode != null) {
+	                String statusNodeText = statusNode.asText();
+	                if(statusNodeText.equals("failed")) {
+	                    return true;
+	                } else if(statusNodeText.equals("successful")) {
+	                    return false;
+	                }
+	            }
+	            
+//	            for (JsonNode currentJsonNode : linksArrayNode) {
+//	                // Fetch result document
+//	            
+//	                if(currentJsonNode.get("rel").asText()=="http://www.opengis.net/def/rel/ogc/1.0/results"){
+//	        
+//	                    HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
+//	                
+//	                    request.setHeader("Accept", "application/json");
+//	                    HttpResponse httpResponse = client.execute(request);
+//	                
+//	                    JsonNode resultNode = parseResponse(httpResponse);
+//	                 
+//	                    // May be more generic here
+//	                    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+//	                    hasMonitorOrResultLink=true;
+//	                }
+//	        
+//	            }
+
+	            if(!hasMonitorOrResultLink)
+	                for (JsonNode currentJsonNode : linksArrayNode) {
+	                
+	                    // Fetch status document
+	                    if(currentJsonNode.get("rel").asText()=="monitor"){
+	                        HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
+	                        request.setHeader("Accept", "application/json");
+	                        HttpResponse httpResponse = client.execute(request);
+	                        JsonNode resultNode = parseResponse(httpResponse);
+	                        loopOverStatus(resultNode);
+	                        hasMonitorOrResultLink=true;
+	                    }
+	                }
+	         
+	        }
+	        catch (Exception e) {
+	            Assert.fail(e.getLocalizedMessage());
+	        }
+	        return false;
+	    }
 
     private void loopOverStatus(JsonNode responseNode){
 	try{
