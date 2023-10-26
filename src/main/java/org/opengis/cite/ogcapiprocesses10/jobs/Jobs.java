@@ -2060,7 +2060,7 @@ public class Jobs extends CommonFixture {
 	                
 	            HttpClient client = HttpClientBuilder.create().build();
 	            ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
-//	          
+	            
 	            boolean hasMonitorOrResultLink=false;
 	            
 	            JsonNode statusNode = responseNode.get("status");
@@ -2073,25 +2073,6 @@ public class Jobs extends CommonFixture {
 	                    return false;
 	                }
 	            }
-	            
-//	            for (JsonNode currentJsonNode : linksArrayNode) {
-//	                // Fetch result document
-//	            
-//	                if(currentJsonNode.get("rel").asText()=="http://www.opengis.net/def/rel/ogc/1.0/results"){
-//	        
-//	                    HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
-//	                
-//	                    request.setHeader("Accept", "application/json");
-//	                    HttpResponse httpResponse = client.execute(request);
-//	                
-//	                    JsonNode resultNode = parseResponse(httpResponse);
-//	                 
-//	                    // May be more generic here
-//	                    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
-//	                    hasMonitorOrResultLink=true;
-//	                }
-//	        
-//	            }
 
 	            if(!hasMonitorOrResultLink)
 	                for (JsonNode currentJsonNode : linksArrayNode) {
