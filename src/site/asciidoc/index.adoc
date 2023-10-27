@@ -13,6 +13,6 @@ The following conformance classes from v1.0.0 (https://docs.ogc.org/is/18-062r2/
 * OpenAPI 3.0
 * Job list
 
-NOTE: 
+Preconditions:
 * For Abstract Test A.46 (/conf/core/job-results-exception-results-not-ready), the ETS will automatically add a field called `"pause":5` into the execution request of the echo process to support Recommendation A.1.
-* Several test of process execution rely on the tested process offering a plain string input. Plain string meaning `"type": "string"` and **no** format. For those tests, other input types will not be used to create an execute JSON request.
+* Several test of process execution rely on the tested process offering a plain string input. Plain string meaning `"type": "string"` and **no** format or content MIME-type. For those tests, other input types will not be used to create an execute JSON request. If no plain string input is available, the respective tests will fail.

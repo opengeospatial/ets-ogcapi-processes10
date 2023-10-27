@@ -290,7 +290,7 @@ public class Jobs extends CommonFixture {
 		}
 		executeNode.set("inputs", inputsNode);
 		if(inputsNode.isEmpty()) {
-		    throw new SkipException("No supported input found. Only string input without format is supported.");
+		    throw new AssertionError("No supported input found. Only plain string input is supported.");
 		}
 		executeNode.set("outputs", outputsNode);
 		return executeNode;
@@ -308,7 +308,7 @@ public class Jobs extends CommonFixture {
 
 		for (Type type : types) {
 			if(type.getTypeDefinition().equals("string")) {
-			        if(input.getFormat() == null) {
+			        if(input.getFormat() == null && type.getContentMediaType() == null) {
 	                           inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
 			        }
 			} else if(input.isBbox()) {
