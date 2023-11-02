@@ -83,6 +83,7 @@ public class Jobs extends CommonFixture {
 	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
 	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
 	private static final String ASYNC_MODE_NOT_SUPPORTED_MESSAGE = "This test is skipped because the server has not declared support for asynchronous execution mode.";
+	private static final String GEOTIFF_URL = "https://raw.githubusercontent.com/opengeospatial/ets-ogcapi-processes10/master/src/main/resources/org/opengis/cite/testdata/testgeotiff.tiff";
     private static final Object TYPE_DEFINITION_ARRAY = "array";
 
 	private OpenApi3 openApi3;
@@ -1000,39 +1001,48 @@ public class Jobs extends CommonFixture {
 	}
 
 	private JsonNode createExecuteJsonNodeWithHref(String echoProcessId2) throws SkipException {
-		ObjectNode executeNode = objectMapper.createObjectNode();
-		ObjectNode inputsNode = objectMapper.createObjectNode();
-		ObjectNode outputsNode = objectMapper.createObjectNode();
-		//executeNode.set("id", new TextNode(echoProcessId));
-		boolean foundObjectInput = false;
-		for (Input input : inputs) {
-			boolean inputIsObject = false;
-			List<Type> types = input.getTypes();
-			if (foundObjectInput) {
-				addInput(input, inputsNode);
-				continue;
-			}
-			for (Type type : types) {
-				if (type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
-					addObjectInput(input, inputsNode);
-					foundObjectInput = true;
-					inputIsObject = true;
-					continue;
-				}
-			}
-			if (!inputIsObject) {
-				addInput(input, inputsNode);
-			}
-		}
-		for (Output output : outputs) {
-			addOutput(output, outputsNode);
-		}
-		executeNode.set("inputs", inputsNode);
-		executeNode.set("outputs", outputsNode);
-		return executeNode;
+            ObjectNode executeNode = objectMapper.createObjectNode();
+            ObjectNode inputsNode = objectMapper.createObjectNode();
+            ObjectNode outputsNode = objectMapper.createObjectNode();
+            for (Input input : inputs) {
+                    List<Type> types = input.getTypes();
+                    for (Type type : types) {
+                            if(type.isBinary()) {
+                                    addHrefInput(input, inputsNode);
+                                    continue;
+                            }
+                    }
+            }
+            for (Output output : outputs) {
+                    addOutput(output, outputsNode);
+            }
+            executeNode.set("inputs", inputsNode);
+            executeNode.set("outputs", outputsNode);
+            return executeNode;
 	}
 
-	/**
+	private void addHrefInput(Input input,
+            ObjectNode inputsNode) {
+            List<Type> types = input.getTypes();
+            ObjectNode inputNode = objectMapper.createObjectNode();
+            inputNode.set("href", new TextNode(GEOTIFF_URL));
+                            
+            ObjectNode formatNode = objectMapper.createObjectNode();
+            
+            for (Type type : types) {
+                    if(type.getTypeDefinition().equals("string")) {
+                            if(type.getContentMediaType() != null && type.getContentMediaType().contains("tiff"))
+                            formatNode.set("mediaType", new TextNode(type.getContentMediaType()));
+                    }
+            }
+            
+            inputNode.set("format", formatNode);
+            
+            inputsNode.set(input.getId(), inputNode);
+        
+        }
+
+    /**
 	* <pre>
 	* Abstract Test null: /conf/core/job-creation-input-validation
 	* Test Purpose: Verify that the server correctly validates process input values according to the definition obtained from the sc_process_description,process description.
