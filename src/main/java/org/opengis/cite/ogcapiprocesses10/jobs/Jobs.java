@@ -1431,7 +1431,13 @@ public class Jobs extends CommonFixture {
 	private void validateResponse(HttpResponse httpResponse, OperationValidator validator, ValidationData<Void> data) throws IOException {
 		JsonNode responseNode = parseResponse(httpResponse);
 		Body body = Body.from(responseNode);
+	        //https://github.com/opengeospatial/ets-ogcapi-processes10/issues/14
+	        //Treat Content-Type application/problem+json as application/json for now
 		Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+                String responseContentTypeValue = responseContentType.getValue();
+                if(responseContentTypeValue.equals("application/problem+json")) {
+                    responseContentTypeValue = "application/json";
+                }
 		Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
 				.build();
 		validator.validateResponse(response, data);
@@ -1836,13 +1842,7 @@ public class Jobs extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			validateResponse(httpResponse, executeValidator, data);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
