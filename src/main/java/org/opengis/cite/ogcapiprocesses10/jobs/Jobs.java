@@ -388,7 +388,7 @@ public class Jobs extends CommonFixture {
 				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			}
 			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_ASYNC)) {
-				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
@@ -1046,7 +1046,20 @@ public class Jobs extends CommonFixture {
 		request.setEntity(new StringEntity(executeNode.toString(), contentType));
 		HttpResponse httpResponse = clientBuilder.build().execute(request);
 		int statusCode = httpResponse.getStatusLine().getStatusCode();
-		Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+		//https://github.com/opengeospatial/ets-ogcapi-processes10/issues/52
+		//Allow also 200 responses if process supports both sync and async execution
+		switch(supportedExecutionModes) {
+        case EITHER:
+            Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);
+            break;
+        case ONLY_ASYNC:
+            Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+            break;
+        case ONLY_SYNC:
+            break;
+        default:
+            break;
+		}
 		return httpResponse;
 	}
 
@@ -1350,9 +1363,7 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_DOCUMENT);
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			sendPostRequestSync(executeNode, true);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1385,9 +1396,7 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			 sendPostRequestSync(executeNode, true);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1410,9 +1419,7 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1470,9 +1477,7 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1497,11 +1502,7 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
 
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
 
 			Assert.assertTrue(parseRawResponse(httpResponse).contains(TEST_STRING_INPUT));
 
@@ -1765,11 +1766,7 @@ public class Jobs extends CommonFixture {
 			try {
 	
 	
-				httpResponse = this.sendPostRequestASync(executeNode);
-				int statusCode = httpResponse.getStatusLine().getStatusCode();
-				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
-	
-	
+				httpResponse = this.sendPostRequestASync(executeNode);	
 				Header locationHeader = httpResponse.getFirstHeader("location");
 				String locationString = locationHeader.getValue();
 				httpResponse = sendGetRequest(locationString, "application/json");
@@ -1793,9 +1790,7 @@ public class Jobs extends CommonFixture {
 			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 			final ValidationData<Void> data = new ValidationData<>();
 			try {
-				httpResponse = sendPostRequestSync(executeNode);
-				int statusCode = httpResponse.getStatusLine().getStatusCode();
-				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+				httpResponse = sendPostRequestSync(executeNode, true);
 	
 			}
 			catch(Exception ee)
@@ -2203,14 +2198,8 @@ public class Jobs extends CommonFixture {
 			
 
 		
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-					
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
-			Header[] headers = httpResponse.getHeaders("Link");
-
-
-			
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
+			Header[] headers = httpResponse.getHeaders("Link");			
 			
 			if(headers.length>0) {
 				boolean foundRelMonitorHeader = false;
