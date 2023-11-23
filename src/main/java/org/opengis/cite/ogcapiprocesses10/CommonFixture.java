@@ -310,9 +310,18 @@ public class CommonFixture {
 				if(contentSchemaNode != null && !contentSchemaNode.isMissingNode()) {
 				    type.setContentSchema(contentSchemaNode.asText());
 				}
-			    }
+			    } else if (typeDefinition.equals("array")) {
+		                JsonNode itemsNode = oneOfChildNode.get("items");
+		                if(itemsNode != null) {
+		                    JsonNode itemsTypeNode = itemsNode.get("type");
+		                    if(itemsTypeNode != null) {
+		                        Type itemsType = new Type(itemsTypeNode.asText());
+		                        input.addType(itemsType);
+		                    }
+		                }
+		            }
 			    input.addType(type);							
-			}						
+			}
 		    }
 		}
 	    }else {
