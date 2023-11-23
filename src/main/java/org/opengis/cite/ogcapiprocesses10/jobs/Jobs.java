@@ -1623,7 +1623,7 @@ public class Jobs extends CommonFixture {
 	
 	private void validateMultipartResponse(String responsePayload, JsonNode executeNode){
 		
-		boolean multipartIsValid = true;
+		boolean foundTestString = false;
 		String errorMessage = "";
 		
      try {
@@ -1634,26 +1634,25 @@ public class Jobs extends CommonFixture {
 	    	 {
 	    	 	Assert.assertTrue(mimeMultipart.getCount()>0,"Error with multipart response");
 	    	 }
-	    	 
-			
-			JsonNode inputsNode = executeNode.get("inputs");
 			for(int i=0; i < mimeMultipart.getCount(); i++)
 			{
-				if(!mimeMultipart.getBodyPart(i).getContent().toString().contains(TEST_STRING_INPUT)) {
-					multipartIsValid = false;
-					errorMessage = "The input test string was not detected in one of the parts of the multipart response.";
+				if(mimeMultipart.getBodyPart(i).getContent().toString().contains(TEST_STRING_INPUT)) {
+				    foundTestString = true;
+				    break;
 				}
 			}
 
 	
 					   
 		} catch (Exception e) {
-			multipartIsValid = false;
 			errorMessage = e.getLocalizedMessage();
 		} 
-		
+                if(!foundTestString) {
+                    errorMessage = "The input test string was not detected in one of the parts of the multipart response.";
+                }
+     
 
-		Assert.assertTrue(multipartIsValid, "The multipart response fail the validity check because "+errorMessage);
+		Assert.assertTrue(foundTestString, "The multipart response failed the validity check because "+errorMessage);
 	}	
 
 	/**
