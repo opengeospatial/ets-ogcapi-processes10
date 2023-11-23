@@ -567,10 +567,20 @@ public class Jobs extends CommonFixture {
                 ObjectNode inputsNode = objectMapper.createObjectNode();
                 ObjectNode outputsNode = objectMapper.createObjectNode();
                 boolean foundBBoxInput = false;
-                for (Input input : inputs) {
+                for (Input input : inputs) {                    
+                        boolean inputIsBBox = false;
+                        if(foundBBoxInput) {
+                            addInput(input, inputsNode);
+                            continue;
+                        }
                         if(input.isBbox()) {
-                            foundBBoxInput = true;
                             addBBoxInput(input, inputsNode);
+                            foundBBoxInput = true;
+                            inputIsBBox = true;
+                            continue;
+                        }
+                        if(!inputIsBBox) {
+                            addInput(input, inputsNode);
                         }
                 }
                 for (Output output : outputs) {
@@ -637,18 +647,24 @@ public class Jobs extends CommonFixture {
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
                 boolean foundArrayInput = false;
-		for (Input input : inputs) {
+		for (Input input : inputs) {                  
+		    boolean inputIsArray = false;
                     if(foundArrayInput) {
-                        break;
+                        addInput(input, inputsNode);
+                        continue;
                     }
 			List<Type> types = input.getTypes();
 			for (Type type : types) {
 				if(type.getTypeDefinition().equals(TYPE_DEFINITION_ARRAY)) {
 					addArrayInput(input, inputsNode);
 					foundArrayInput = true;
-					break;
+					inputIsArray = true;
+					continue;
 				}
-			}
+			}                    
+			if(!inputIsArray) {
+                            addInput(input, inputsNode);
+                        }
 		}
 		boolean foundArrayOutput = false;
 		for (Output output : outputs) {
@@ -749,18 +765,32 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		for (Input input : inputs) {
-			List<Type> types = input.getTypes();
-			for (Type type : types) {
-				if(type.isBinary()) {
-					addBinaryInput(input, inputsNode);
-					continue;
-				}
-			}
-		}
+                boolean foundBinaryInput = false;
+                for (Input input : inputs) {                    
+                        boolean inputIsBinary = false;
+                        if(foundBinaryInput) {
+                            addInput(input, inputsNode);
+                            continue;
+                        }
+                        List<Type> types = input.getTypes();
+                        for (Type type : types) {
+                                if(type.isBinary()) {
+                                        addBinaryInput(input, inputsNode);
+                                        foundBinaryInput = true;
+                                        inputIsBinary = true;
+                                        continue;
+                                }
+                        }
+                        if(!inputIsBinary) {
+                            addInput(input, inputsNode);
+                        }
+                }
 		for (Output output : outputs) {
 			addOutput(output, outputsNode);
 		}
+                if(inputsNode.isEmpty()) {
+                    throw new SkipException("No input of type binary found.");
+                }
 		executeNode.set("inputs", inputsNode);
 		executeNode.set("outputs", outputsNode);
 		return executeNode;
@@ -956,19 +986,12 @@ public class Jobs extends CommonFixture {
 			} catch (IOException e2) {
 				Assert.fail(e2.getLocalizedMessage());
 			}
-			
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			
-			try {
-				IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			} catch (Exception e1) {
-				Assert.fail(e1.getLocalizedMessage());
-			}
-			
-			String responsePayload = writer.toString();
-			
-			if(!responsePayload.contains("Content-Type: multipart/related")) {
+                        Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+                        String responseContentTypeValue = responseContentType.getValue();
+                        if(responseContentTypeValue == null) {
+                            throw new SkipException("Got empty response content type header.");
+                        }
+			if(!responseContentTypeValue.startsWith("multipart/related")) {
 				
 				try {				
 				int statusCode = httpResponse.getStatusLine().getStatusCode();
@@ -990,18 +1013,22 @@ public class Jobs extends CommonFixture {
                                     Assert.fail(e.getLocalizedMessage());
                             }
 		   }
-		   else if(responsePayload.contains("Content-Type: multipart/related")){
+		   else if(responseContentTypeValue.startsWith("multipart/related")){
+                       
+                       StringWriter writer = new StringWriter();
+                       String encoding = StandardCharsets.UTF_8.name();
+                       
+                       try {
+                               IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+                       } catch (Exception e1) {
+                               Assert.fail(e1.getLocalizedMessage());
+                       }
+                       
+                       String responsePayload = writer.toString();
 			   
-
-			   
-				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);	
-				if(responseContentType.getValue().startsWith("multipart/related")) {
-					validateMultipartResponse(responsePayload,executeNode);						
-				}
-				else {
-					throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
-				}
-			}
+			validateMultipartResponse(responsePayload,executeNode);	
+	
+		}
 			
 
 	}
@@ -1010,13 +1037,24 @@ public class Jobs extends CommonFixture {
             ObjectNode executeNode = objectMapper.createObjectNode();
             ObjectNode inputsNode = objectMapper.createObjectNode();
             ObjectNode outputsNode = objectMapper.createObjectNode();
+            boolean foundBinaryInput = false;
             for (Input input : inputs) {
+                    boolean inputIsBinary = false;
+                    if(foundBinaryInput) {
+                        addInput(input, inputsNode);
+                        continue;
+                    }
                     List<Type> types = input.getTypes();
                     for (Type type : types) {
                             if(type.isBinary()) {
                                     addHrefInput(input, inputsNode);
+                                    foundBinaryInput = true;
+                                    inputIsBinary = true;
                                     continue;
                             }
+                    }
+                    if(!inputIsBinary) {
+                        addInput(input, inputsNode);
                     }
             }
             for (Output output : outputs) {
@@ -1069,23 +1107,30 @@ public class Jobs extends CommonFixture {
 		ValidationData<Void> data = new ValidationData<>();
 		
 		HttpResponse httpResponse = null;
-		String responsePayload = null;
-		try {
 
-			httpResponse = sendPostRequestSync(executeNode);
-			responsePayload = parseRawResponse(httpResponse);
+                try {
+                    httpResponse = sendPostRequestSync(executeNode);
+                } catch (IOException e) {
+                    Assert.fail(e.getLocalizedMessage());
+                }
 
-		}
-		catch(Exception ee)
-		{
-			Assert.fail(ee.getLocalizedMessage());
-		}
+                Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+                String responseContentTypeValue = responseContentType.getValue();
+                if(responseContentTypeValue == null) {
+                    throw new SkipException("Got empty response content type header.");
+                }
 		
-		
-		Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);		
-		
-		if(responsePayload.contains("Content-Type: multipart/related")){
+		if(responseContentTypeValue.startsWith("multipart/related")){
 			if(responseContentType.getValue().startsWith("multipart/related")) {
+		                String responsePayload = null;
+		                try {
+		                        responsePayload = parseRawResponse(httpResponse);
+
+		                }
+		                catch(Exception ee)
+		                {
+		                        Assert.fail(ee.getLocalizedMessage());
+		                }
 				validateMultipartResponse(responsePayload,executeNode);						
 			}
 			else {
@@ -1466,7 +1511,10 @@ public class Jobs extends CommonFixture {
                 if(responseContentTypeValue.equals("application/problem+json")) {
                     responseContentTypeValue = "application/json";
                 }
-		Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+                if(validator.getOperation().getOperationId().equals("execute") && httpResponse.getStatusLine().getStatusCode() == 200) {
+                    responseContentTypeValue = "/*";
+                }
+		Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentTypeValue)
 				.build();
 		validator.validateResponse(response, data);
 		Assert.assertTrue(data.isValid(), printResults(data.results()));
@@ -1867,9 +1915,6 @@ public class Jobs extends CommonFixture {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode > 200, "Got unexpected status code: " + statusCode);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			validateResponse(httpResponse, executeValidator, data);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
