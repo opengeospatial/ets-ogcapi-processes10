@@ -289,6 +289,9 @@ public class Jobs extends CommonFixture {
 			addOutput(output, outputsNode);
 		}
 		executeNode.set("inputs", inputsNode);
+		if(inputsNode.isEmpty()) {
+		    throw new AssertionError("No supported input found. Only plain string input is supported.");
+		}
 		executeNode.set("outputs", outputsNode);
 		return executeNode;
 	}
@@ -305,7 +308,9 @@ public class Jobs extends CommonFixture {
 
 		for (Type type : types) {
 			if(type.getTypeDefinition().equals("string")) {
-				inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
+			        if(input.getFormat() == null && type.getContentMediaType() == null) {
+	                           inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
+			        }
 			} else if(input.isBbox()) {
 				inputNode.set("crs", new TextNode("urn:ogc:def:crs:EPSG:6.6:4326"));
 				ArrayNode arrayNode = objectMapper.createArrayNode();
@@ -315,7 +320,9 @@ public class Jobs extends CommonFixture {
 				arrayNode.add(345345345);
 				inputNode.set("bbox", arrayNode);
 				inputsNode.set(input.getId(), inputNode);
-			}
+			} else if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+                            addObjectInput(input, inputsNode);
+                        }
 		}
 	}
 
@@ -1839,7 +1846,12 @@ public class Jobs extends CommonFixture {
 			HttpResponse httpResponse = null;
 			final ValidationData<Void> data = new ValidationData<>();
 			//create invalid execute request
-			JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+			JsonNode executeNode;
+            try {
+                executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+            } catch (SkipException e) {
+                throw e;
+            }
 			
 			try {
 				System.out.println("Checking error: asynchronous POST request..."+executeNode);
@@ -2427,7 +2439,11 @@ public class Jobs extends CommonFixture {
 			}
 		}
 		
-		inputsNode.set("pause", new IntNode(5));
+		if(inputs.stream().anyMatch(p -> p.getId().equals("pause") )) {	                
+	                inputsNode.set("pause", new IntNode(5));		    
+		} else  {
+		    throw new SkipException("No input with id pause found.");
+		}
 		
 		executeNode.set("inputs", inputsNode);
 		executeNode.set("outputs", outputsNode);
