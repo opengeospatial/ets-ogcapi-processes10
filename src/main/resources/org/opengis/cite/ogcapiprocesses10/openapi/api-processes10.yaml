@@ -769,24 +769,27 @@ components:
                 contentSchema:
                   type: string
               additionalProperties: false
+        statusCode:
+          nullable: false
+          enum:
+            - accepted
+            - running
+            - successful
+            - failed
+            - dismissed
         statusInfo:
           type: object
           required:
              - jobID
              - status
+             - type
           properties:
              processID:
                 type: string
              jobID:
                 type: string
              status:
-                type: string
-                enum:
-                   - accepted
-                   - running
-                   - successful
-                   - failed
-                   - dismissed
+                $ref: "#/components/schemas/statusCode"
              message:
                 type: string
              created:
