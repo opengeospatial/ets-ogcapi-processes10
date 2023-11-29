@@ -36,5 +36,4 @@ The test run arguments are summarized in Table 3\. The _Obligation_ descriptor c
 | echoprocessid | String | M | The identifier of the process used for execute operation tests.
 | testallprocesses | Boolean | C | If true, all processes of the test instance will be used for testing.
 | processtestlimit | Integer | C | Number of processes to be tested. Not applicable when _testallprocesses_ is set to true.
-| uselocalschema | Boolean | O | If true, a local OpenAPI schema will be used for testing.
 |===
