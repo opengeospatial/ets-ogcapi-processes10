@@ -1842,34 +1842,61 @@ public class Jobs extends CommonFixture {
 			JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
 			
 			try {
+				System.out.println("Checking error: asynchronous POST request..."+executeNode);
 				httpResponse = sendPostRequestASync(executeNode);
+				
+				ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+				httpResponse.getEntity().writeTo(baos1);
+				
+				String responseContentString1 = baos1.toString();	
+				baos1.close();
+				System.out.println("HTTP Response Content: " + responseContentString1);
+				httpResponse.getEntity().getContent().close();
 				
 				int statusCode = httpResponse.getStatusLine().getStatusCode();
 				Header locationHeader = httpResponse.getFirstHeader("location");	//location of job			
 				String jobLocationString = locationHeader.getValue();			
+				System.out.println("Job location: " + jobLocationString);
+				
+				System.out.println("Checking error: Sending GET request to job location...");
 				httpResponse = sendGetRequest(jobLocationString, "application/json");	//Issue an HTTP GET request to the URL ‘/jobs/{jobID}/results’ before the job completes execution.
 				
 				
 				String jobResultsLocationString = jobLocationString + "/results";
+				System.out.println("Checking error: Job results location: " + jobResultsLocationString);
 				httpResponse = sendGetRequest(jobResultsLocationString, "application/json");
 				Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 404,"Failed Abstract test A.46 (Step 3). The response to the /jobs/{jobID}/results request did not return a 404 status code.");
 				
 				
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				httpResponse.getEntity().writeTo(baos);
+				
 				String responseContentString = baos.toString();	
 				baos.close();
+				System.out.println("HTTP Response Content: " + responseContentString);
 				httpResponse.getEntity().getContent().close();
 				ObjectMapper objectMapper =new ObjectMapper();
 			    JsonNode resultsNode = objectMapper.readTree(responseContentString);
+				JsonNode typeNode = resultsNode.get("type");
+				if (typeNode != null) {
+					String typeValue = typeNode.textValue();
+					System.out.println("Actual Type Value: " + typeValue);
+				}
+				
 			    
 			    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
 			    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
 			    
 			    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
-					    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
+					    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);	
+				
+				boolean isSchemaValid = validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL, responseContentString);
+				System.out.println("Schema Validation Result: " + isSchemaValid);
+
 			    
 			} catch (Exception e) {
+				System.out.println("Checking error: An exception occurred: " + e.getMessage());
+				e.printStackTrace();
 				Assert.fail(e.getLocalizedMessage());
 			}
 		
@@ -1941,18 +1968,18 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-results ")
 	public void testJobResults() {
-		
+		System.out.println("Entering testJobResults()");
 		HttpResponse httpResponse = null;
 		
 		if(echoProcessSupportsAsync())
-		{		
+		{	
 			//create async job
 			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 			final ValidationData<Void> data = new ValidationData<>();
 			try {
-	
-	
-				httpResponse = this.sendPostRequestASync(executeNode);	
+				httpResponse = this.sendPostRequestASync(executeNode);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
 				Header locationHeader = httpResponse.getFirstHeader("location");
 				String locationString = locationHeader.getValue();
 				httpResponse = sendGetRequest(locationString, "application/json");
@@ -1976,8 +2003,11 @@ public class Jobs extends CommonFixture {
 			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 			final ValidationData<Void> data = new ValidationData<>();
 			try {
-				httpResponse = sendPostRequestSync(executeNode, true);
-	
+				System.out.println("Sending POST request...");
+				httpResponse = sendPostRequestSync(executeNode);
+				System.out.println("Received POST response: " + httpResponse);
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);	
 			}
 			catch(Exception ee)
 			{
@@ -1987,6 +2017,7 @@ public class Jobs extends CommonFixture {
 	}
 
 	private HttpResponse getResultResponse(HttpResponse httpResponse) throws IOException {
+		System.out.println("No 'results' link found in status document.");
 		JsonNode statusNode = parseResponse(httpResponse);
 		JsonNode linksNode = statusNode.get("links");
 		Assert.assertNotNull(linksNode);
@@ -2327,6 +2358,7 @@ public class Jobs extends CommonFixture {
 				
 				HttpResponse httpResponse = sendPostRequestASync(executeNode);
 				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				System.out.println("Status Code: " + statusCode);
 				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 				JsonNode responseNode = parseResponse(httpResponse);
 				if(statusCode == 200){
@@ -2335,6 +2367,7 @@ public class Jobs extends CommonFixture {
 					
 					Header locationHeader = httpResponse.getFirstHeader("location");				
 					String locationString = locationHeader.getValue();			
+					System.out.println("Location String: " + locationString);
 					httpResponse = sendGetRequest(locationString, "application/json");	
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();
 					httpResponse.getEntity().writeTo(baos);
@@ -2345,7 +2378,7 @@ public class Jobs extends CommonFixture {
 				
 					ObjectMapper objectMapper =new ObjectMapper();
 				    JsonNode statusNode = objectMapper.readTree(responseContentString);
-				    
+				    System.out.println("Status Node: " + statusNode);
 				 			
 					
 				    loopOverStatus(statusNode);
