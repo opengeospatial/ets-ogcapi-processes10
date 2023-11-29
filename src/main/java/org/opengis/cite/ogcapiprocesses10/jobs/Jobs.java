@@ -320,7 +320,9 @@ public class Jobs extends CommonFixture {
 				arrayNode.add(345345345);
 				inputNode.set("bbox", arrayNode);
 				inputsNode.set(input.getId(), inputNode);
-			}
+			} else if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+                            addObjectInput(input, inputsNode);
+                        }
 		}
 	}
 
