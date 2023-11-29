@@ -9,13 +9,22 @@ for more information, including the API documentation.
 
 == How to run the test suite using Docker
 
-Run the following maven command from the root folder of the repository:
+There are two Dockerfiles in this repository. Each one is used for a different purpose, as explained in the following.
+
+==== Run the test suite using Docker with Apache Maven installed locally
+
+The Dockerfile under src/docker/ is used for a build with Apache Maven.
+Run the following Maven command from the root folder of the repository:
 
 `mvn clean install -Dsource=8  docker:run -Pdocker`
 
 From here, you can now access http://localhost:8081/teamengine to access the deployed teamengine with the OGC API - Processes Test Suite.
 
-You can log in as `ogctest`, with a password of ogctest.
+You can log in as `ogctest`, with a password of ogctest. 
+
+==== Run the test suite using Docker without Apache Maven installed locally
+
+You can use the Dockerfile in the root directory of this repository to build the ETS within a Docker container, i.e. without the need to have Apache Maven and Java installed locally on your computer. In oder to do so, please follow the instructions given in the Dockerfile.
 
 == How to build the test suite
 
