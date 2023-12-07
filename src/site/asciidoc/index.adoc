@@ -16,3 +16,25 @@ The following conformance classes from v1.0.0 (https://docs.ogc.org/is/18-062r2/
 Preconditions:
 * For Abstract Test A.46 (/conf/core/job-results-exception-results-not-ready), the ETS will automatically add a field called `"pause":5` into the execution request of the echo process to support Recommendation A.1.
 * Several test of process execution rely on the tested process offering a plain string input. Plain string meaning `"type": "string"` and **no** format or content MIME-type. For those tests, other input types will not be used to create an execute JSON request. If no plain string input is available, the respective tests will fail.
+
+== How to run the tests 
+
+The test suite may be run in any of the following environments: 
+
+* Integrated development environment (IDE): The main Java class is `TestNGController`. 
+* REST API: Submit a request that includes the necessary arguments to the test run controller (/rest/suites/${ets-code}/${project.version}/run). 
+* TEAM-Engine: Run the CTL script located in the `/src/main/ctl/` directory. 
+
+The test run arguments are summarized in Table 3\. The _Obligation_ descriptor can have the following values: M (mandatory), O (optional), or C (conditional). 
+
+**Table 3 - Test run arguments**
+
+[cols="1,1,1,1"]
+|===
+| Name | Value domain | Obligation | Description 
+
+| iut | URI | M | An absolute URI that refers to either a representation of an OGC API - Processes - Part 1: Core landing page.
+| echoprocessid | String | M | The identifier of the process used for execute operation tests.
+| testallprocesses | Boolean | C | If true, all processes of the test instance will be used for testing.
+| processtestlimit | Integer | C | Number of processes to be tested. Not applicable when _testallprocesses_ is set to true.
+|===

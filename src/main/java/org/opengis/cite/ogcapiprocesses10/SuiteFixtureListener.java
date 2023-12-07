@@ -87,8 +87,10 @@ public class SuiteFixtureListener implements ISuiteListener {
         } catch ( NumberFormatException e ) {
         	TestSuiteLogger.log( Level.WARNING,
         			String.format( "Could not parse parameter %s: %s. Expected is a valid string",
-        					TestRunArg.ECHOPROCESSID.toString(), echoProcessId ) );
+        					TestRunArg.PROCESSTESTLIMIT.toString(), limit ) );
         }
+        
+        suite.setAttribute( SuiteAttribute.USE_LOCAL_SCHEMA.getName(), true );
         
         String testAllProcesses = params.get( TestRunArg.TESTALLPROCESSES.toString() );
 

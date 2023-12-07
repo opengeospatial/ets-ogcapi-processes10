@@ -53,21 +53,16 @@ public enum SuiteAttribute {
      * Parsed OpenApi3 document resource /api; Added during execution.
      */
     API_MODEL( "apiModel", OpenApi3.class ),
+    
+    /**
+     * Use local OpenAPI schema included in ETS.
+     */
+    USE_LOCAL_SCHEMA( "useLocalSchema", Boolean.class ),
 
     /**
      * Requirement classes parsed from /conformance; Added during execution.
      */
-    REQUIREMENTCLASSES( "requirementclasses", List.class ),
-
-    /**
-     * Parsed collections from resource /collections; Added during execution.
-     */
-    COLLECTIONS( "collections", List.class ),
-
-    /**
-     * Collection names assigned to a feature id parsed from resource /collections/{name}/items; Added during execution.
-     */
-    FEATUREIDS( "featureIds", Map.class );
+    REQUIREMENTCLASSES( "requirementclasses", List.class );
 
     private final Class attrType;
 
