@@ -118,8 +118,14 @@ public class Process extends CommonFixture {
 	    this.rspEntity = writer.toString();
 	    JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 	    Body body = Body.from(responseNode);
-	    Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-	    Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
+	    //https://github.com/opengeospatial/ets-ogcapi-processes10/issues/14
+	    //Treat Content-Type application/problem+json as application/json for now
+            Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+            String responseContentTypeValue = responseContentType.getValue();
+            if(responseContentTypeValue.equals("application/problem+json")) {
+                responseContentTypeValue = "application/json";
+            }
+	    Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentTypeValue)
 		.build();
 	    getProcessDescriptionValidator.validateResponse(response, data);
 	    Assert.assertTrue(data.isValid(), printResults(data.results()));

@@ -30,6 +30,7 @@ import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
 import org.testng.Assert;
 import org.testng.ITestContext;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -329,9 +330,15 @@ public class OGCProcessDescription extends CommonFixture {
 			}
 			}
 			
-		} catch (Exception e) {
-			Assert.fail(e.getLocalizedMessage());
-		}		
+		} catch (SkipException e) {
+	              throw e;
+	        } catch (UnsupportedOperationException e) {
+	              Assert.fail(e.getLocalizedMessage());
+	        } catch (ClientProtocolException e) {
+	              Assert.fail(e.getLocalizedMessage());
+	        } catch (IOException e) {
+	              Assert.fail(e.getLocalizedMessage());
+	        }
 	}
 	
 
@@ -501,9 +508,15 @@ public class OGCProcessDescription extends CommonFixture {
 	    }
 	    }
 	    
-	  } catch (Exception e) {
-	    Assert.fail(e.getLocalizedMessage());
-	  }		
+	  } catch (SkipException e) {
+              throw e;
+          } catch (UnsupportedOperationException e) {
+              Assert.fail(e.getLocalizedMessage());
+          } catch (ClientProtocolException e) {
+              Assert.fail(e.getLocalizedMessage());
+          } catch (IOException e) {
+              Assert.fail(e.getLocalizedMessage());
+          }
 	}
 	
 
@@ -588,10 +601,9 @@ public class OGCProcessDescription extends CommonFixture {
 		    Assert.assertTrue(input.has("schema"), "At least one Input element in the process description of '"+processIdentifier+"' is missing a 'schema' element. ");								
 		  }
 		}
-		
-		if(checkHasMixedTypeInput) {
-			Assert.assertTrue(atLeastOneMixedTypeInputFound,"No Input definition of '"+processIdentifier+"' process identifies a Mixed Type input");
-		}
+                if(checkHasMixedTypeInput & !atLeastOneMixedTypeInputFound) {
+                    throw new SkipException("No input definition of '"+processIdentifier+"' process identifies a mixed type input");
+                }
 	}
 	
 	
@@ -632,9 +644,8 @@ public class OGCProcessDescription extends CommonFixture {
 		    Assert.assertTrue(output.has("schema"), "At least one Output element in the process description of '"+processIdentifier+"' is missing a 'schema' element. ");								
 		  }
 		}
-		
-		if(checkHasMixedTypeOutput) {
-			Assert.assertTrue(atLeastOneMixedTypeOutputFound,"No Output definition of '"+processIdentifier+"' process identifies a Mixed Type Output");
-		}
+                if(checkHasMixedTypeOutput & !atLeastOneMixedTypeOutputFound) {
+                    throw new SkipException("No output definition of '"+processIdentifier+"' process identifies a mixed type output");
+                }
 	}	
 }
