@@ -505,10 +505,13 @@ public class CommonFixture {
             } else if(rspEntity instanceof String) {
                 response = response.append((String)rspEntity);
             }
+            String responseString = JsonUtils.prettifyString(response.toString());
             if (response.length() > MAX_RSP_ATTR_LENGTH) {
+                response = new StringBuilder();
+                response.append(responseString);
                 response.delete(MAX_RSP_ATTR_LENGTH, response.length());
             }
-            result.setAttribute(RSP_ATTR, response.toString());
+            result.setAttribute(RSP_ATTR, responseString);
         }
     }
 

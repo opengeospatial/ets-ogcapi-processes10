@@ -22,6 +22,8 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -31,6 +33,8 @@ import io.restassured.specification.RequestSpecification;
  */
 public class JsonUtils {
 
+    private static ObjectMapper objectMapper;
+    
     private JsonUtils() {
     }
 
@@ -346,7 +350,26 @@ public class JsonUtils {
         StringWriter writer = new StringWriter();
         String encoding = StandardCharsets.UTF_8.name();
         IOUtils.copy(inputStream, writer, encoding);
-        return writer.toString();
+        return prettifyString(writer.toString());
+    }
+
+    public static String prettifyString(String string) {
+        ObjectMapper objectMapper = getObjectMapper();
+        try {
+            Object jsonObject = objectMapper.readValue(string, Object.class);
+            String prettyJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
+            return prettyJson;
+        } catch (Exception e) {
+            //String was not JSON
+            return string;
+        }
+    }
+
+    private static ObjectMapper getObjectMapper() {
+        if(objectMapper == null) {
+            objectMapper = new ObjectMapper();
+        }
+        return objectMapper;
     }
 
     private static boolean isSameMediaType( String mediaType1, String mediaType2 ) {
