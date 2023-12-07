@@ -126,6 +126,7 @@ public class OGCProcessDescription extends CommonFixture {
 							StringWriter writer2 = new StringWriter();
 							String encoding2 = StandardCharsets.UTF_8.name();
 							IOUtils.copy(httpResponse2.getEntity().getContent(), writer2, encoding2);
+				                        this.rspEntity = (this.rspEntity == null ? "" : this.rspEntity)  + "\n" + writer2.toString();
 							JsonNode responseNode2 = new ObjectMapper().readTree(writer2.toString());
 							Body body2 = Body.from(responseNode2);
 							Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
@@ -146,6 +147,7 @@ public class OGCProcessDescription extends CommonFixture {
 					StringWriter writer2 = new StringWriter();
 					String encoding2 = StandardCharsets.UTF_8.name();
 					IOUtils.copy(httpResponse2.getEntity().getContent(), writer2, encoding2);
+                                        this.rspEntity = writer2.toString();
 					JsonNode responseNode2 = new ObjectMapper().readTree(writer2.toString());
 					Body body2 = Body.from(responseNode2);
 					Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
@@ -193,6 +195,7 @@ public class OGCProcessDescription extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		        this.rspEntity = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			JsonNode processesNode = responseNode.get("processes");
 			if(processesNode.isArray()) {
@@ -247,6 +250,7 @@ public class OGCProcessDescription extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+                        this.rspEntity = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			JsonNode processesNode = responseNode.get("processes");
 			if(processesNode.isArray()) {
@@ -304,6 +308,7 @@ public class OGCProcessDescription extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+                        this.rspEntity = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			JsonNode processesNode = responseNode.get("processes");
 			if(processesNode.isArray()) {
@@ -368,6 +373,7 @@ public class OGCProcessDescription extends CommonFixture {
 	    StringWriter writer = new StringWriter();
 	    String encoding = StandardCharsets.UTF_8.name();
 	    IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+            this.rspEntity = writer.toString();
 	    JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 	    JsonNode processesNode = responseNode.get("processes");
 	    if(processesNode.isArray()) {
@@ -422,6 +428,7 @@ public class OGCProcessDescription extends CommonFixture {
 		  StringWriter writer = new StringWriter();
 		  String encoding = StandardCharsets.UTF_8.name();
 		  IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+                  this.rspEntity = writer.toString();
 		  JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 		  JsonNode processesNode = responseNode.get("processes");
 		  if(processesNode.isArray()) {
@@ -479,6 +486,7 @@ public class OGCProcessDescription extends CommonFixture {
 	    StringWriter writer = new StringWriter();
 	    String encoding = StandardCharsets.UTF_8.name();
 	    IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+            this.rspEntity = writer.toString();
 	    JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 	    JsonNode processesNode = responseNode.get("processes");
 	    if(processesNode.isArray()) {

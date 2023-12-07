@@ -1133,6 +1133,7 @@ public class Jobs extends CommonFixture {
 		                String responsePayload = null;
 		                try {
 		                        responsePayload = parseRawResponse(httpResponse);
+		                        this.rspEntity = responsePayload;
 
 		                }
 		                catch(Exception ee)
@@ -1182,6 +1183,7 @@ public class Jobs extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			this.rspEntity = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			Body body = Body.from(responseNode);
 			responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
@@ -1552,6 +1554,7 @@ public class Jobs extends CommonFixture {
 		StringWriter writer = new StringWriter();
 		String encoding = StandardCharsets.UTF_8.name();
 		IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		this.rspEntity = writer.toString();
 		return new ObjectMapper().readTree(writer.toString());
 	}
 
@@ -1651,6 +1654,7 @@ public class Jobs extends CommonFixture {
 		
 		boolean foundTestString = false;
 		String errorMessage = "";
+		this.rspEntity = responsePayload;
 		
      try {
     	 
@@ -2328,6 +2332,7 @@ public class Jobs extends CommonFixture {
 		    HttpResponse httpResponse = client.execute(request);
 		
 		    JsonNode resultNode = parseResponse(httpResponse);
+                    this.rspEntity = responseNode.asText();
 		 
 		    // May be more generic here
 		    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);

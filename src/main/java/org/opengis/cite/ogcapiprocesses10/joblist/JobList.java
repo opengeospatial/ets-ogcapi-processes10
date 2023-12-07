@@ -118,8 +118,9 @@ public class JobList extends CommonFixture {
 			HttpResponse httpResponse = client.execute(request);			
 			StringWriter writer = new StringWriter();			
 			String encoding = StandardCharsets.UTF_8.name();		
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);		
-			String responsePayload = writer.toString();		
+			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			String responsePayload = writer.toString();
+			this.rspEntity = responsePayload;
 			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);		
 			ArrayNode arrayNode = (ArrayNode) responseNode.get("jobs");	
 			Assert.assertTrue(arrayNode.size()>0,"No processes listed at "+getJobListURL.toString());
@@ -156,6 +157,7 @@ public class JobList extends CommonFixture {
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			String responsePayload = writer.toString();
+                        this.rspEntity = responsePayload;
 			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
 			Body body = Body.from(responseNode);
 			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
