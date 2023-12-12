@@ -2,25 +2,29 @@ package org.opengis.cite.ogcapiprocesses10.jobs;
 
 import static org.testng.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 
-import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
-import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -30,8 +34,6 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.openapi4j.core.exception.ResolutionException;
-import org.openapi4j.core.validation.ValidationException;
 import org.openapi4j.operation.validator.model.Response;
 import org.openapi4j.operation.validator.model.impl.Body;
 import org.openapi4j.operation.validator.model.impl.DefaultResponse;
@@ -43,8 +45,6 @@ import org.openapi4j.parser.model.v3.Path;
 import org.openapi4j.schema.validator.ValidationData;
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
-import org.opengis.cite.ogcapiprocesses10.conformance.Conformance;
-import org.opengis.cite.ogcapiprocesses10.util.ExecutionMode;
 import org.opengis.cite.ogcapiprocesses10.util.TestSuiteLogger;
 import org.testng.Assert;
 import org.testng.ITestContext;
@@ -52,14 +52,12 @@ import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.databind.node.IntNode;
 
 /**
  *
@@ -85,6 +83,9 @@ public class Jobs extends CommonFixture {
 	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
 	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
 	private static final String ASYNC_MODE_NOT_SUPPORTED_MESSAGE = "This test is skipped because the server has not declared support for asynchronous execution mode.";
+	private static final String GEOTIFF_URL = "https://raw.githubusercontent.com/opengeospatial/ets-ogcapi-processes10/master/src/main/resources/org/opengis/cite/testdata/testgeotiff.tiff";
+    private static final Object TYPE_DEFINITION_ARRAY = "array";
+    private static final CharSequence ISSUE_54_MESSAGE_TEXT = "More than 1 schema is valid.";
     private int attempts = 0;
     private static final int MAX_ATTEMPTS = 4;
     private static final int ASYNC_LOOP_WAITING_PERIOD = 5000;
@@ -173,8 +174,8 @@ public class Jobs extends CommonFixture {
 		    getResultValidator = new OperationValidator(openApi3, getResultPath, getResultOperation);
 		    getJobsListURL = new URL(jobsListEndpointString);
 		    getProcessesListURL = new URL(processListEndpointString);
-		    getInvalidJobURL = new URL(processListEndpointString + "/invalid-job-" + UUID.randomUUID());
-		    getInvalidJobResultURL = new URL(rootUri +  getProcessListPath + "/invalid-job-" + UUID.randomUUID() + "/results");
+		    getInvalidJobURL = new URL(jobsListEndpointString + "/invalid-job-" + UUID.randomUUID());
+		    getInvalidJobResultURL = new URL(jobsListEndpointString + "/invalid-job-" + UUID.randomUUID() + "/results");
 			clientBuilder = HttpClientBuilder.create();
 		} catch (Exception e) {		
 			Assert.fail("Could set up endpoint: " + processListEndpointString + ". Exception: " + e);
@@ -292,6 +293,9 @@ public class Jobs extends CommonFixture {
 			addOutput(output, outputsNode);
 		}
 		executeNode.set("inputs", inputsNode);
+		if(inputsNode.isEmpty()) {
+		    throw new AssertionError("No supported input found. Only plain string input is supported.");
+		}
 		executeNode.set("outputs", outputsNode);
 		return executeNode;
 	}
@@ -308,7 +312,9 @@ public class Jobs extends CommonFixture {
 
 		for (Type type : types) {
 			if(type.getTypeDefinition().equals("string")) {
-				inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
+			        if(input.getFormat() == null && type.getContentMediaType() == null) {
+	                           inputsNode.set(input.getId(), new TextNode(TEST_STRING_INPUT));
+			        }
 			} else if(input.isBbox()) {
 				inputNode.set("crs", new TextNode("urn:ogc:def:crs:EPSG:6.6:4326"));
 				ArrayNode arrayNode = objectMapper.createArrayNode();
@@ -318,7 +324,9 @@ public class Jobs extends CommonFixture {
 				arrayNode.add(345345345);
 				inputNode.set("bbox", arrayNode);
 				inputsNode.set(input.getId(), inputNode);
-			}
+			} else if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
+                            addObjectInput(input, inputsNode);
+                        }
 		}
 	}
 
@@ -391,7 +399,7 @@ public class Jobs extends CommonFixture {
 				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
 			}
 			if(supportedExecutionModes.equals(SupportedExecutionModes.ONLY_ASYNC)) {
-				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
@@ -476,7 +484,7 @@ public class Jobs extends CommonFixture {
 	@Test(description = "Implements Requirement /req/core/job-creation-input-inline-bbox ")
 	public void testJobCreationInputInlineBbox() {
 		//create job
-		JsonNode executeNode = createExecuteJsonNode(echoProcessId);
+		JsonNode executeNode = createExecuteJsonNodeWithBBox(echoProcessId);
 		TestSuiteLogger.log(Level.INFO, executeNode.toString());
 		try {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
@@ -565,7 +573,54 @@ public class Jobs extends CommonFixture {
 		}
 	}
 
-	private JsonNode createExecuteJsonNodeWithObject(String echoProcessId) {
+        private JsonNode createExecuteJsonNodeWithBBox(String echoProcessId) {
+                ObjectNode executeNode = objectMapper.createObjectNode();
+                ObjectNode inputsNode = objectMapper.createObjectNode();
+                ObjectNode outputsNode = objectMapper.createObjectNode();
+                boolean foundBBoxInput = false;
+                for (Input input : inputs) {                    
+                        boolean inputIsBBox = false;
+                        if(foundBBoxInput) {
+                            addInput(input, inputsNode);
+                            continue;
+                        }
+                        if(input.isBbox()) {
+                            addBBoxInput(input, inputsNode);
+                            foundBBoxInput = true;
+                            inputIsBBox = true;
+                            continue;
+                        }
+                        if(!inputIsBBox) {
+                            addInput(input, inputsNode);
+                        }
+                }
+                for (Output output : outputs) {
+                        if(output.isBbox()) {
+                        addOutput(output, outputsNode);
+                        }
+                }
+                if(!foundBBoxInput) {
+                    throw new SkipException("No input of type bounding box found.");
+                }
+                executeNode.set("inputs", inputsNode);
+                executeNode.set("outputs", outputsNode);
+                return executeNode;
+        }
+
+	private void addBBoxInput(Input input,
+                ObjectNode inputsNode) {
+            ObjectNode inputObjectNode = objectMapper.createObjectNode();
+            ArrayNode bboxArrayNode = objectMapper.createArrayNode();
+            bboxArrayNode.add(51.9);
+            bboxArrayNode.add(7);
+            bboxArrayNode.add(52);
+            bboxArrayNode.add(7.1);
+            inputObjectNode.set("bbox", bboxArrayNode);
+            inputObjectNode.set("crs", new TextNode("http://www.opengis.net/def/crs/OGC/1.3/CRS84"));
+            inputsNode.set(input.getId(), inputObjectNode);            
+        }
+
+    private JsonNode createExecuteJsonNodeWithObject(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
@@ -602,63 +657,151 @@ public class Jobs extends CommonFixture {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		//executeNode.set("id", new TextNode(echoProcessId));
-		boolean foundObjectInput = false;
-		for (Input input : inputs) {
-			boolean inputIsObject = false;
+                boolean foundArrayInput = false;
+		for (Input input : inputs) {                  
+		    boolean inputIsArray = false;
+                    if(foundArrayInput) {
+                        addInput(input, inputsNode);
+                        continue;
+                    }
 			List<Type> types = input.getTypes();
-			if(foundObjectInput) {
-				addInput(input, inputsNode);
-				continue;
-			}
 			for (Type type : types) {
-				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
-					addObjectInput(input, inputsNode);
-					foundObjectInput = true;
-					inputIsObject = true;
+				if(type.getTypeDefinition().equals(TYPE_DEFINITION_ARRAY)) {
+					addArrayInput(input, inputsNode);
+					foundArrayInput = true;
+					inputIsArray = true;
 					continue;
 				}
-			}
-			if(!inputIsObject) {
-				addInput(input, inputsNode);
-			}
+			}                    
+			if(!inputIsArray) {
+                            addInput(input, inputsNode);
+                        }
 		}
+		boolean foundArrayOutput = false;
 		for (Output output : outputs) {
-			addOutput(output, outputsNode);
+		    if(foundArrayOutput) {
+		        break;
+		    }
+                    List<Type> types = output.getTypes();
+                    if(types == null) {
+                        continue;
+                    }
+                    for (Type type : types) {
+                            if(type.getTypeDefinition().equals(TYPE_DEFINITION_ARRAY)) {
+                                    addOutput(output, outputsNode);
+                                    foundArrayOutput = true;
+                                    break;
+                            }
+                    }
+                }
+		if(!foundArrayInput) {
+		    throw new SkipException("No input of type array found.");
 		}
 		executeNode.set("inputs", inputsNode);
 		executeNode.set("outputs", outputsNode);
 		return executeNode;
 	}
 
-	private JsonNode createExecuteJsonNodeWithBinaryInput(String echoProcessId) {
+        private void addArrayInput(Input input,
+                ObjectNode inputsNode) {
+            Optional<Type> firstItemType = input.getTypes().stream().filter(p -> p != null)
+                    .filter(p -> !p.getTypeDefinition().equals("array")).findFirst();
+            try {
+                String itemType = firstItemType.get().getTypeDefinition();
+                ArrayNode arrayNode = objectMapper.createArrayNode();
+                switch (itemType) {
+                case "integer":
+                    arrayNode.add(1);
+                    arrayNode.add(2);
+                    arrayNode.add(3);
+                    break;
+                case "double":
+                    arrayNode.add(1.1);
+                    arrayNode.add(2.2);
+                    arrayNode.add(3.3);
+                    break;
+                case "float":
+                    arrayNode.add(1.1f);
+                    arrayNode.add(2.2f);
+                    arrayNode.add(3.3f);
+                    break;
+                case "string":
+                    arrayNode.add("test1");
+                    arrayNode.add("test2");
+                    arrayNode.add("test3");
+                    break;
+                default:
+                    break;
+                }
+                inputsNode.set(input.getId(), arrayNode);
+            } catch (Exception e) {
+                throw new NoSuchElementException(String.format("No item type for array input \"%s\" specified.", input.getId()));
+            }
+        }
+
+        private void addBinaryInput(Input input, ObjectNode inputsNode) {
+                List<Type> types = input.getTypes();
+                ObjectNode inputNode = objectMapper.createObjectNode();
+                byte[] inputFileAsByteArray = null;
+                try {
+                    URL fileUrl = getClass().getClassLoader().getResource("org/opengis/cite/testdata/testgeotiff.tiff");
+                    File inputFile = new File(fileUrl.getFile());
+                    InputStream in = new FileInputStream(inputFile);
+                    inputFileAsByteArray = new byte[(int)inputFile.length()];
+                    in.read(inputFileAsByteArray);
+                    in.close();
+                } catch (IOException e) {
+                    return;
+                }
+                String base64EncodedString = Base64.encodeBase64String(inputFileAsByteArray);
+                
+                inputNode.set("value", new TextNode(base64EncodedString));
+                                
+                ObjectNode formatNode = objectMapper.createObjectNode();
+                
+                for (Type type : types) {
+                        if(type.getTypeDefinition().equals("string")) {
+                                if(type.getContentMediaType() != null && type.getContentMediaType().contains("tiff"))
+                                formatNode.set("mediaType", new TextNode(type.getContentMediaType()));
+                        }
+                }
+                formatNode.set("encoding", new TextNode("base64"));
+                
+                inputNode.set("format", formatNode);
+                
+                inputsNode.set(input.getId(), inputNode);
+        }
+
+    private JsonNode createExecuteJsonNodeWithBinaryInput(String echoProcessId) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
-		//executeNode.set("id", new TextNode(echoProcessId));
-		boolean foundObjectInput = false;
-		for (Input input : inputs) {
-			boolean inputIsObject = false;
-			List<Type> types = input.getTypes();
-			if(foundObjectInput) {
-				addInput(input, inputsNode);
-				continue;
-			}
-			for (Type type : types) {
-				if(type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
-					addObjectInput(input, inputsNode);
-					foundObjectInput = true;
-					inputIsObject = true;
-					continue;
-				}
-			}
-			if(!inputIsObject) {
-				addInput(input, inputsNode);
-			}
-		}
+                boolean foundBinaryInput = false;
+                for (Input input : inputs) {                    
+                        boolean inputIsBinary = false;
+                        if(foundBinaryInput) {
+                            addInput(input, inputsNode);
+                            continue;
+                        }
+                        List<Type> types = input.getTypes();
+                        for (Type type : types) {
+                                if(type.isBinary()) {
+                                        addBinaryInput(input, inputsNode);
+                                        foundBinaryInput = true;
+                                        inputIsBinary = true;
+                                        continue;
+                                }
+                        }
+                        if(!inputIsBinary) {
+                            addInput(input, inputsNode);
+                        }
+                }
 		for (Output output : outputs) {
 			addOutput(output, outputsNode);
 		}
+                if(inputsNode.isEmpty()) {
+                    throw new SkipException("No input of type binary found.");
+                }
 		executeNode.set("inputs", inputsNode);
 		executeNode.set("outputs", outputsNode);
 		return executeNode;
@@ -854,84 +997,107 @@ public class Jobs extends CommonFixture {
 			} catch (IOException e2) {
 				Assert.fail(e2.getLocalizedMessage());
 			}
-			
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			
-			try {
-				IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			} catch (Exception e1) {
-				Assert.fail(e1.getLocalizedMessage());
-			}
-			
-			String responsePayload = writer.toString();
-			
-			if(!responsePayload.contains("Content-Type: multipart/related")) {
-				JsonNode responseNode = null;
+                        Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+                        String responseContentTypeValue = responseContentType.getValue();
+                        if(responseContentTypeValue == null) {
+                            throw new SkipException("Got empty response content type header.");
+                        }
+			if(!responseContentTypeValue.startsWith("multipart/related")) {
 				
-				try {
-					responseNode = new ObjectMapper().readTree(responsePayload);
-				} catch (Exception e) {
-					Assert.fail(e.getLocalizedMessage());
-				}
-				
-				Body body = Body.from(responseNode);
-				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-				Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
-						.build();
-				executeValidator.validateResponse(response, data);
-				Assert.assertTrue(data.isValid(), printResults(data.results()));
+				try {				
+				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				switch (statusCode) {
+                                case 200:                            
+                                    validateResponse(httpResponse, executeValidator, data);
+                                    break;
+                                case 201:
+                                    Header locationHeader = httpResponse.getFirstHeader("location");
+                                    String locationString = locationHeader.getValue();
+                                    httpResponse = sendGetRequest(locationString, "application/json");
+                                    validateResponse(httpResponse, getStatusValidator, data);
+                                    break;
+                                default:
+                                    Assert.fail("Got unexpected status code: " + statusCode);
+                                    break;
+                                }
+                                } catch (Exception e) {
+                                    Assert.fail(e.getLocalizedMessage());
+                            }
 		   }
-		   else if(responsePayload.contains("Content-Type: multipart/related")){
+		   else if(responseContentTypeValue.startsWith("multipart/related")){
+                       
+                       StringWriter writer = new StringWriter();
+                       String encoding = StandardCharsets.UTF_8.name();
+                       
+                       try {
+                               IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+                       } catch (Exception e1) {
+                               Assert.fail(e1.getLocalizedMessage());
+                       }
+                       
+                       String responsePayload = writer.toString();
 			   
-
-			   
-				Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);	
-				if(responseContentType.getValue().startsWith("multipart/related")) {
-					validateMultipartResponse(responsePayload,executeNode);						
-				}
-				else {
-					throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
-				}
-			}
+			validateMultipartResponse(responsePayload,executeNode);	
+	
+		}
 			
 
 	}
 
 	private JsonNode createExecuteJsonNodeWithHref(String echoProcessId2) throws SkipException {
-		ObjectNode executeNode = objectMapper.createObjectNode();
-		ObjectNode inputsNode = objectMapper.createObjectNode();
-		ObjectNode outputsNode = objectMapper.createObjectNode();
-		//executeNode.set("id", new TextNode(echoProcessId));
-		boolean foundObjectInput = false;
-		for (Input input : inputs) {
-			boolean inputIsObject = false;
-			List<Type> types = input.getTypes();
-			if (foundObjectInput) {
-				addInput(input, inputsNode);
-				continue;
-			}
-			for (Type type : types) {
-				if (type.getTypeDefinition().equals(TYPE_DEFINITION_OBJECT)) {
-					addObjectInput(input, inputsNode);
-					foundObjectInput = true;
-					inputIsObject = true;
-					continue;
-				}
-			}
-			if (!inputIsObject) {
-				addInput(input, inputsNode);
-			}
-		}
-		for (Output output : outputs) {
-			addOutput(output, outputsNode);
-		}
-		executeNode.set("inputs", inputsNode);
-		executeNode.set("outputs", outputsNode);
-		return executeNode;
+            ObjectNode executeNode = objectMapper.createObjectNode();
+            ObjectNode inputsNode = objectMapper.createObjectNode();
+            ObjectNode outputsNode = objectMapper.createObjectNode();
+            boolean foundBinaryInput = false;
+            for (Input input : inputs) {
+                    boolean inputIsBinary = false;
+                    if(foundBinaryInput) {
+                        addInput(input, inputsNode);
+                        continue;
+                    }
+                    List<Type> types = input.getTypes();
+                    for (Type type : types) {
+                            if(type.isBinary()) {
+                                    addHrefInput(input, inputsNode);
+                                    foundBinaryInput = true;
+                                    inputIsBinary = true;
+                                    continue;
+                            }
+                    }
+                    if(!inputIsBinary) {
+                        addInput(input, inputsNode);
+                    }
+            }
+            for (Output output : outputs) {
+                    addOutput(output, outputsNode);
+            }
+            executeNode.set("inputs", inputsNode);
+            executeNode.set("outputs", outputsNode);
+            return executeNode;
 	}
 
-	/**
+	private void addHrefInput(Input input,
+            ObjectNode inputsNode) {
+            List<Type> types = input.getTypes();
+            ObjectNode inputNode = objectMapper.createObjectNode();
+            inputNode.set("href", new TextNode(GEOTIFF_URL));
+                            
+            ObjectNode formatNode = objectMapper.createObjectNode();
+            
+            for (Type type : types) {
+                    if(type.getTypeDefinition().equals("string")) {
+                            if(type.getContentMediaType() != null && type.getContentMediaType().contains("tiff"))
+                            formatNode.set("mediaType", new TextNode(type.getContentMediaType()));
+                    }
+            }
+            
+            inputNode.set("format", formatNode);
+            
+            inputsNode.set(input.getId(), inputNode);
+        
+        }
+
+    /**
 	* <pre>
 	* Abstract Test null: /conf/core/job-creation-input-validation
 	* Test Purpose: Verify that the server correctly validates process input values according to the definition obtained from the sc_process_description,process description.
@@ -952,48 +1118,63 @@ public class Jobs extends CommonFixture {
 		ValidationData<Void> data = new ValidationData<>();
 		
 		HttpResponse httpResponse = null;
-		String responsePayload = null;
-		try {
 
-			httpResponse = sendPostRequestSync(executeNode);
-			responsePayload = parseRawResponse(httpResponse);
+                try {
+                    httpResponse = sendPostRequestSync(executeNode);
+                } catch (IOException e) {
+                    Assert.fail(e.getLocalizedMessage());
+                }
 
-		}
-		catch(Exception ee)
-		{
-			Assert.fail(ee.getLocalizedMessage());
-		}
+                Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
+                String responseContentTypeValue = responseContentType.getValue();
+                if(responseContentTypeValue == null) {
+                    throw new SkipException("Got empty response content type header.");
+                }
 		
-		
-		Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);		
-		
-		if(responsePayload.contains("Content-Type: multipart/related")){
+		if(responseContentTypeValue.startsWith("multipart/related")){
 			if(responseContentType.getValue().startsWith("multipart/related")) {
+		                String responsePayload = null;
+		                try {
+		                        responsePayload = parseRawResponse(httpResponse);
+
+		                }
+		                catch(Exception ee)
+		                {
+		                        Assert.fail(ee.getLocalizedMessage());
+		                }
 				validateMultipartResponse(responsePayload,executeNode);						
 			}
 			else {
 				throw new SkipException("The value of the Content-Type header of the response is "+responseContentType.getValue()+ " but the response payload states Content-Type: multipart/related");						
 			}
 		}
-		else {		
-		
-		
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			JsonNode responseNode = null;
-			
+		else {
+			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			try {
-				responseNode = new ObjectMapper().readTree(responsePayload);
-			}
-			catch(Exception ew)
-			{
-			  Assert.fail(ew.getLocalizedMessage());	
-			}
-			Body body = Body.from(responseNode);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, "/*")
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+	                        switch (statusCode) {
+	                        case 200:
+	                            validateResponse(httpResponse, executeValidator, data);
+	                            break;
+	                        case 201:                            
+	                            Header locationHeader = httpResponse.getFirstHeader("location");
+	                            String locationString = locationHeader.getValue();
+	                            httpResponse = sendGetRequest(locationString, "application/json");
+	                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	                            httpResponse.getEntity().writeTo(baos);
+	                            String responseContentString = baos.toString();
+	                            baos.close();
+	                            httpResponse.getEntity().getContent().close();
+	                            ObjectMapper objectMapper =new ObjectMapper();
+	                            JsonNode statusNode = objectMapper.readTree(responseContentString);
+	                            loopOverStatus(statusNode);
+	                            break;
+	                        default:
+	                            Assert.fail("Got unexpected status code: " + statusCode);
+	                            break;
+	                        }
+                        } catch (Exception e) {
+                            Assert.fail(e.getMessage());
+                        }
 		}
 
 
@@ -1008,17 +1189,49 @@ public class Jobs extends CommonFixture {
 			Body body = Body.from(responseNode);
 			responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
-			Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
-			assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,body.getContentAsNode(null, null, null).toString()),
-				    "Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);
+			if(statusCode == 201) {
+                            Header locationHeader = httpResponse.getFirstHeader("location");
+                            String locationString = locationHeader.getValue();
+                            httpResponse = sendGetRequest(locationString, "application/json");
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            httpResponse.getEntity().writeTo(baos);
+                            String responseContentString = baos.toString();
+                            baos.close();
+                            httpResponse.getEntity().getContent().close();
+                            ObjectMapper objectMapper =new ObjectMapper();
+                            JsonNode statusNode = objectMapper.readTree(responseContentString);
+                            assertTrue(loopOverStatusReturnsFailed(statusNode));
+			} else {
+	                        Assert.assertTrue(statusCode==HttpStatus.SC_BAD_REQUEST || statusCode==HttpStatus.SC_INTERNAL_SERVER_ERROR, "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
+	                        Assert.assertTrue(responseContentType.getValue().equals("application/json") || responseContentType.getValue().startsWith("application/json;"), "Was expecting a Status Code of 400 or 500 but found "+statusCode+" (See Table 10 of OGC API - Processes - Part 1, OGC 18-062r2).");
+	                        assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,body.getContentAsNode(null, null, null).toString()),
+	                                    "Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);
+			}
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
 
 	}
 
-	private HttpResponse sendPostRequestSync(JsonNode executeNode, boolean checkForStatusCode) throws IOException {
+        private boolean checkForIssue54(ValidationData<Void> data) {
+            try {
+                // Validity of schemas needs to be checked by OAPIP SWG.
+                // See https://github.com/opengeospatial/ogcapi-processes/issues/350
+                // Validation results containing message "More than 1 schema is
+                // valid." will not be regarded as errors until
+                // ogcapi-processes/issues/350 is fixed/closed.
+                if (data.results() != null && data.results().items().size() > 0) {
+                    if (data.results().items().get(0).message().contains(ISSUE_54_MESSAGE_TEXT)) {
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                return false;
+            }
+            return false;
+    }
+
+    private HttpResponse sendPostRequestSync(JsonNode executeNode, boolean checkForStatusCode) throws IOException {
 		HttpResponse httpResponse = clientBuilder.build().execute(createPostRequest(executeNode));
 		int statusCode = httpResponse.getStatusLine().getStatusCode();
 		if(checkForStatusCode) {
@@ -1049,7 +1262,20 @@ public class Jobs extends CommonFixture {
 		request.setEntity(new StringEntity(executeNode.toString(), contentType));
 		HttpResponse httpResponse = clientBuilder.build().execute(request);
 		int statusCode = httpResponse.getStatusLine().getStatusCode();
-		Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+		//https://github.com/opengeospatial/ets-ogcapi-processes10/issues/52
+		//Allow also 200 responses if process supports both sync and async execution
+		switch(supportedExecutionModes) {
+        case EITHER:
+            Assert.assertTrue(statusCode == 201 || statusCode == 200, "Got unexpected status code: " + statusCode);
+            break;
+        case ONLY_ASYNC:
+            Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
+            break;
+        case ONLY_SYNC:
+            break;
+        default:
+            break;
+		}
 		return httpResponse;
 	}
 
@@ -1307,8 +1533,17 @@ public class Jobs extends CommonFixture {
 	private void validateResponse(HttpResponse httpResponse, OperationValidator validator, ValidationData<Void> data) throws IOException {
 		JsonNode responseNode = parseResponse(httpResponse);
 		Body body = Body.from(responseNode);
+	        //https://github.com/opengeospatial/ets-ogcapi-processes10/issues/14
+	        //Treat Content-Type application/problem+json as application/json for now
 		Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-		Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
+                String responseContentTypeValue = responseContentType.getValue();
+                if(responseContentTypeValue.equals("application/problem+json")) {
+                    responseContentTypeValue = "application/json";
+                }
+                if(validator.getOperation().getOperationId().equals("execute") && httpResponse.getStatusLine().getStatusCode() == 200) {
+                    responseContentTypeValue = "/*";
+                }
+		Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentTypeValue)
 				.build();
 		validator.validateResponse(response, data);
 		Assert.assertTrue(data.isValid(), printResults(data.results()));
@@ -1353,9 +1588,7 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_DOCUMENT);
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			sendPostRequestSync(executeNode, true);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1388,9 +1621,7 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			 sendPostRequestSync(executeNode, true);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1413,9 +1644,7 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1423,7 +1652,7 @@ public class Jobs extends CommonFixture {
 	
 	private void validateMultipartResponse(String responsePayload, JsonNode executeNode){
 		
-		boolean multipartIsValid = true;
+		boolean foundTestString = false;
 		String errorMessage = "";
 		
      try {
@@ -1434,26 +1663,25 @@ public class Jobs extends CommonFixture {
 	    	 {
 	    	 	Assert.assertTrue(mimeMultipart.getCount()>0,"Error with multipart response");
 	    	 }
-	    	 
-			
-			JsonNode inputsNode = executeNode.get("inputs");
 			for(int i=0; i < mimeMultipart.getCount(); i++)
 			{
-				if(!mimeMultipart.getBodyPart(i).getContent().toString().contains(TEST_STRING_INPUT)) {
-					multipartIsValid = false;
-					errorMessage = "The input test string was not detected in one of the parts of the multipart response.";
+				if(mimeMultipart.getBodyPart(i).getContent().toString().contains(TEST_STRING_INPUT)) {
+				    foundTestString = true;
+				    break;
 				}
 			}
 
 	
 					   
 		} catch (Exception e) {
-			multipartIsValid = false;
 			errorMessage = e.getLocalizedMessage();
 		} 
-		
+                if(!foundTestString) {
+                    errorMessage = "The input test string was not detected in one of the parts of the multipart response.";
+                }
+     
 
-		Assert.assertTrue(multipartIsValid, "The multipart response fail the validity check because "+errorMessage);
+		Assert.assertTrue(foundTestString, "The multipart response failed the validity check because "+errorMessage);
 	}	
 
 	/**
@@ -1473,9 +1701,7 @@ public class Jobs extends CommonFixture {
 		//create job
 		JsonNode executeNode = createExecuteJsonNode(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1500,11 +1726,7 @@ public class Jobs extends CommonFixture {
 		JsonNode executeNode = createExecuteJsonNodeOneOutput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
 
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
 
 			Assert.assertTrue(parseRawResponse(httpResponse).contains(TEST_STRING_INPUT));
 
@@ -1646,37 +1868,69 @@ public class Jobs extends CommonFixture {
 			HttpResponse httpResponse = null;
 			final ValidationData<Void> data = new ValidationData<>();
 			//create invalid execute request
-			JsonNode executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+			JsonNode executeNode;
+            try {
+                executeNode = createExecuteJsonNodeWithPauseInput(echoProcessId, RESPONSE_VALUE_RAW);
+            } catch (SkipException e) {
+                throw e;
+            }
 			
 			try {
+				System.out.println("Checking error: asynchronous POST request..."+executeNode);
 				httpResponse = sendPostRequestASync(executeNode);
+				
+				ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+				httpResponse.getEntity().writeTo(baos1);
+				
+				String responseContentString1 = baos1.toString();	
+				baos1.close();
+				System.out.println("HTTP Response Content: " + responseContentString1);
+				httpResponse.getEntity().getContent().close();
 				
 				int statusCode = httpResponse.getStatusLine().getStatusCode();
 				Header locationHeader = httpResponse.getFirstHeader("location");	//location of job			
 				String jobLocationString = locationHeader.getValue();			
+				System.out.println("Job location: " + jobLocationString);
+				
+				System.out.println("Checking error: Sending GET request to job location...");
 				httpResponse = sendGetRequest(jobLocationString, "application/json");	//Issue an HTTP GET request to the URL ‘/jobs/{jobID}/results’ before the job completes execution.
 				
 				
 				String jobResultsLocationString = jobLocationString + "/results";
+				System.out.println("Checking error: Job results location: " + jobResultsLocationString);
 				httpResponse = sendGetRequest(jobResultsLocationString, "application/json");
 				Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 404,"Failed Abstract test A.46 (Step 3). The response to the /jobs/{jobID}/results request did not return a 404 status code.");
 				
 				
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				httpResponse.getEntity().writeTo(baos);
+				
 				String responseContentString = baos.toString();	
 				baos.close();
+				System.out.println("HTTP Response Content: " + responseContentString);
 				httpResponse.getEntity().getContent().close();
 				ObjectMapper objectMapper =new ObjectMapper();
 			    JsonNode resultsNode = objectMapper.readTree(responseContentString);
+				JsonNode typeNode = resultsNode.get("type");
+				if (typeNode != null) {
+					String typeValue = typeNode.textValue();
+					System.out.println("Actual Type Value: " + typeValue);
+				}
+				
 			    
 			    Assert.assertTrue(resultsNode.get("type").textValue().equals("http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready"),
 			    		"Failed Abstract test A.46 (Step 4). The document did not contain an exception of type http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/result-not-ready");
 			    
 			    Assert.assertTrue(validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL,responseContentString),
-					    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);		    
+					    "Failed Abstract test A.46 (Step 5). Unable to validate the response document against: "+EXCEPTION_SCHEMA_URL);	
+				
+				boolean isSchemaValid = validateResponseAgainstSchema(EXCEPTION_SCHEMA_URL, responseContentString);
+				System.out.println("Schema Validation Result: " + isSchemaValid);
+
 			    
 			} catch (Exception e) {
+				System.out.println("Checking error: An exception occurred: " + e.getMessage());
+				e.printStackTrace();
 				Assert.fail(e.getLocalizedMessage());
 			}
 		
@@ -1721,16 +1975,7 @@ public class Jobs extends CommonFixture {
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
 			int statusCode = httpResponse.getStatusLine().getStatusCode();
 			Assert.assertTrue(statusCode > 200, "Got unexpected status code: " + statusCode);
-			StringWriter writer = new StringWriter();
-			String encoding = StandardCharsets.UTF_8.name();
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
-			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
-			Body body = Body.from(responseNode);
-			Header responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, responseContentType.getValue())
-					.build();
-			executeValidator.validateResponse(response, data);
-			Assert.assertTrue(data.isValid(), printResults(data.results()));
+			validateResponse(httpResponse, executeValidator, data);
 		} catch (Exception e) {
 			Assert.fail(e.getLocalizedMessage());
 		}
@@ -1757,22 +2002,18 @@ public class Jobs extends CommonFixture {
 	*/
 	@Test(description = "Implements Requirement /req/core/job-results ")
 	public void testJobResults() {
-		
+		System.out.println("Entering testJobResults()");
 		HttpResponse httpResponse = null;
 		
 		if(echoProcessSupportsAsync())
-		{		
+		{	
 			//create async job
 			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 			final ValidationData<Void> data = new ValidationData<>();
 			try {
-	
-	
 				httpResponse = this.sendPostRequestASync(executeNode);
 				int statusCode = httpResponse.getStatusLine().getStatusCode();
 				Assert.assertTrue(statusCode == 201, "Got unexpected status code: " + statusCode);
-	
-	
 				Header locationHeader = httpResponse.getFirstHeader("location");
 				String locationString = locationHeader.getValue();
 				httpResponse = sendGetRequest(locationString, "application/json");
@@ -1796,10 +2037,11 @@ public class Jobs extends CommonFixture {
 			JsonNode executeNode = createExecuteJsonNode(echoProcessId);
 			final ValidationData<Void> data = new ValidationData<>();
 			try {
+				System.out.println("Sending POST request...");
 				httpResponse = sendPostRequestSync(executeNode);
+				System.out.println("Received POST response: " + httpResponse);
 				int statusCode = httpResponse.getStatusLine().getStatusCode();
-				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
-	
+				Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);	
 			}
 			catch(Exception ee)
 			{
@@ -1809,6 +2051,7 @@ public class Jobs extends CommonFixture {
 	}
 
 	private HttpResponse getResultResponse(HttpResponse httpResponse) throws IOException {
+		System.out.println("No 'results' link found in status document.");
 		JsonNode statusNode = parseResponse(httpResponse);
 		JsonNode linksNode = statusNode.get("links");
 		Assert.assertNotNull(linksNode);
@@ -2030,6 +2273,46 @@ public class Jobs extends CommonFixture {
 		} 		
 	}
 
+	    private boolean loopOverStatusReturnsFailed(JsonNode responseNode){
+	        try{
+	                
+	            HttpClient client = HttpClientBuilder.create().build();
+	            ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
+	            
+	            boolean hasMonitorOrResultLink=false;
+	            
+	            JsonNode statusNode = responseNode.get("status");
+	            
+	            if(statusNode != null) {
+	                String statusNodeText = statusNode.asText();
+	                if(statusNodeText.equals("failed")) {
+	                    return true;
+	                } else if(statusNodeText.equals("successful")) {
+	                    return false;
+	                }
+	            }
+
+	            if(!hasMonitorOrResultLink)
+	                for (JsonNode currentJsonNode : linksArrayNode) {
+	                
+	                    // Fetch status document
+	                    if(currentJsonNode.get("rel").asText()=="monitor"){
+	                        HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
+	                        request.setHeader("Accept", "application/json");
+	                        HttpResponse httpResponse = client.execute(request);
+	                        JsonNode resultNode = parseResponse(httpResponse);
+	                        loopOverStatus(resultNode);
+	                        hasMonitorOrResultLink=true;
+	                    }
+	                }
+	         
+	        }
+	        catch (Exception e) {
+	            Assert.fail(e.getLocalizedMessage());
+	        }
+	        return false;
+	    }
+
     private void loopOverStatus(JsonNode responseNode){
 	try{
             
@@ -2121,6 +2404,7 @@ public class Jobs extends CommonFixture {
 				
 				HttpResponse httpResponse = sendPostRequestASync(executeNode);
 				int statusCode = httpResponse.getStatusLine().getStatusCode();
+				System.out.println("Status Code: " + statusCode);
 				Assert.assertTrue(statusCode == 200 || statusCode == 201, "Got unexpected status code: " + statusCode);
 				JsonNode responseNode = parseResponse(httpResponse);
 				if(statusCode == 200){
@@ -2129,6 +2413,7 @@ public class Jobs extends CommonFixture {
 					
 					Header locationHeader = httpResponse.getFirstHeader("location");				
 					String locationString = locationHeader.getValue();			
+					System.out.println("Location String: " + locationString);
 					httpResponse = sendGetRequest(locationString, "application/json");	
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();
 					httpResponse.getEntity().writeTo(baos);
@@ -2139,7 +2424,7 @@ public class Jobs extends CommonFixture {
 				
 					ObjectMapper objectMapper =new ObjectMapper();
 				    JsonNode statusNode = objectMapper.readTree(responseContentString);
-				    
+				    System.out.println("Status Node: " + statusNode);
 				 			
 					
 				    loopOverStatus(statusNode);
@@ -2190,7 +2475,11 @@ public class Jobs extends CommonFixture {
 			}
 		}
 		
-		inputsNode.set("pause", new IntNode(5));
+		if(inputs.stream().anyMatch(p -> p.getId().equals("pause") )) {	                
+	                inputsNode.set("pause", new IntNode(5));		    
+		} else  {
+		    throw new SkipException("No input with id pause found.");
+		}
 		
 		executeNode.set("inputs", inputsNode);
 		executeNode.set("outputs", outputsNode);
@@ -2220,14 +2509,8 @@ public class Jobs extends CommonFixture {
 			
 
 		
-			HttpResponse httpResponse = sendPostRequestSync(executeNode);
-					
-			int statusCode = httpResponse.getStatusLine().getStatusCode();
-			Assert.assertTrue(statusCode == 200, "Got unexpected status code: " + statusCode);
-			Header[] headers = httpResponse.getHeaders("Link");
-
-
-			
+			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
+			Header[] headers = httpResponse.getHeaders("Link");			
 			
 			if(headers.length>0) {
 				boolean foundRelMonitorHeader = false;

@@ -231,10 +231,36 @@ public class CommonFixture {
 		JsonNode formatNode = schemaNode.get("format");
 		if(formatNode != null) {
 		    String format  = formatNode.asText();
+		    input.setFormat(format);
 		    if(format.equals("byte")) {
 			type.setBinary(true);
 		    }
-		}				
+		}
+                JsonNode contentMediaTypeNode = schemaNode.get(CONTENT_MEDIA_TYPE_PROPERTY_KEY);
+                if(contentMediaTypeNode != null && !contentMediaTypeNode.isMissingNode()) {
+                    type.setContentMediaType(contentMediaTypeNode.asText());
+                }
+                JsonNode contentEncodingNode = schemaNode.get(CONTENT_ENCODING_PROPERTY_KEY);
+                if(contentEncodingNode != null && !contentEncodingNode.isMissingNode()) {
+                    String contentEncodingNodeText = contentEncodingNode.asText();
+                    if(contentEncodingNodeText.equals("binary")) {
+                        type.setBinary(true);
+                    }
+                    type.setContentEncoding(contentEncodingNodeText);
+                }
+                JsonNode contentSchemaNode = schemaNode.get(CONTENT_SCHEMA_PROPERTY_KEY);
+                if(contentSchemaNode != null && !contentSchemaNode.isMissingNode()) {
+                    type.setContentSchema(contentSchemaNode.asText());
+                }
+	    } else if (typeDefinition.equals("array")) {
+	        JsonNode itemsNode = schemaNode.get("items");
+	        if(itemsNode != null) {
+	            JsonNode itemsTypeNode = itemsNode.get("type");
+	            if(itemsTypeNode != null) {
+	                Type itemsType = new Type(itemsTypeNode.asText());
+	                input.addType(itemsType);
+	            }
+	        }
 	    }
 	    input.addType(type);
 	}else {
@@ -275,24 +301,69 @@ public class CommonFixture {
 				}
 				JsonNode contentEncodingNode = oneOfChildNode.get(CONTENT_ENCODING_PROPERTY_KEY);
 				if(contentEncodingNode != null && !contentEncodingNode.isMissingNode()) {
-				    type.setContentEncoding(contentEncodingNode.asText());
+                                    String contentEncodingNodeText = contentEncodingNode.asText();
+                                    if(contentEncodingNodeText.equals("binary")) {
+                                        type.setBinary(true);
+                                    }
+				    type.setContentEncoding(contentEncodingNodeText);
 				}
 				JsonNode contentSchemaNode = oneOfChildNode.get(CONTENT_SCHEMA_PROPERTY_KEY);
 				if(contentSchemaNode != null && !contentSchemaNode.isMissingNode()) {
 				    type.setContentSchema(contentSchemaNode.asText());
 				}
-			    }
+			    } else if (typeDefinition.equals("array")) {
+		                JsonNode itemsNode = oneOfChildNode.get("items");
+		                if(itemsNode != null) {
+		                    JsonNode itemsTypeNode = itemsNode.get("type");
+		                    if(itemsTypeNode != null) {
+		                        Type itemsType = new Type(itemsTypeNode.asText());
+		                        input.addType(itemsType);
+		                    }
+		                }
+		            }
 			    input.addType(type);							
-			}						
+			}
 		    }
 		}
+	    }else {
+	            if(checkAllOfForBbox(schemaNode)) {
+                        input.setBbox(true);
+	            }
 	    }
 	}		
 	return input;
     }
 	
+    private boolean checkAllOfForBbox(JsonNode schemaNode) {
+        JsonNode allOfNode = schemaNode.get("allOf");
+        if(allOfNode != null) {
+            if(allOfNode instanceof ArrayNode) {
+                for (JsonNode jsonNode : allOfNode) {
+                    JsonNode formatNode = jsonNode.get("format");
+                    String format  = formatNode.asText();
+                    if(format.equals("ogc-bbox")) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     protected Output createOutput(JsonNode schemaNode, String id) {
 		Output output = new Output(id);
+	        JsonNode typeNode = schemaNode.get("type");
+	        if(typeNode != null) {
+	            String typeDefinition = typeNode.asText();
+	            if (typeDefinition.equals("array")) {
+                        Type itemsType = new Type(typeDefinition);
+                        output.addType(itemsType);
+	            }
+	        } else {
+	                if(checkAllOfForBbox(schemaNode)) {
+	                    output.setBbox(true);
+	                }	            
+	        }
 		return output;
 	}
 	
@@ -303,6 +374,7 @@ public class CommonFixture {
 		private String contentMediaType;
 		private String contentSchema;
 		private boolean isBinary;
+		private String format;
 
 		public Type(String typeDefinition) {
 			this.typeDefinition = typeDefinition;
@@ -354,13 +426,18 @@ public class CommonFixture {
 			builder.append("\tIs binary: " + isBinary + "\n");
 			return builder.toString();
 		}
+
+        public String getFormat() {
+            return format;
+        }
 	}
 
 	public class Input {
 		
-		private String id;
-		private List<Type> types;
-		private boolean isBbox;
+		protected String id;
+		protected List<Type> types;
+		protected boolean isBbox;
+		protected String format;
 		
 		public Input(String id, List<Type> types, boolean isBbox) {
 			this.id = id;
@@ -396,7 +473,15 @@ public class CommonFixture {
 			return types.add(type);
 		}
 
-		@Override
+		public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
+        }
+
+        @Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("Id: " + id + "\n");
@@ -411,12 +496,26 @@ public class CommonFixture {
 		
 		private String id;
 		private List<Type> types;
+		private boolean bbox;
 		
 		public Output(String id) {
 			this.id = id;
+			this.types = new ArrayList<CommonFixture.Type>();
 		}
 
-		public String getId() {
+		public void addType(Type itemsType) {
+                    types.add(itemsType);            
+              }
+
+        public void setBbox(boolean b) {
+		    bbox = true;
+                }
+		
+		public boolean isBbox() {
+		    return bbox;
+		}
+
+        public String getId() {
 			return id;
 		}
 

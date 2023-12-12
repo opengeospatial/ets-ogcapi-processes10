@@ -16,6 +16,11 @@
       <outputDirectory>ctl</outputDirectory>
       <filtered>true</filtered>
     </fileSet>
+    <fileSet>
+      <directory>${basedir}/src/main/resources/org/opengis/cite/testdata/</directory>
+      <outputDirectory>testdata</outputDirectory>
+      <filtered>false</filtered>
+    </fileSet>
   </fileSets>
   <files>
     <file>
