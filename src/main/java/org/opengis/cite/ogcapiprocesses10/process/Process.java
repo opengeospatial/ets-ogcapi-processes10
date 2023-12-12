@@ -67,7 +67,7 @@ public class Process extends CommonFixture {
 	String processListEndpointString = rootUri.toString() + getProcessListPath;		
 	try {
 	
-	    openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+	    openApi3 = new OpenApi3Parser().parse(specURL, false);
 	    addServerUnderTest(openApi3);
 	    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID_GET_PROCESS_DESCRIPTION);
 	    final Operation operation = openApi3.getOperationById(OPERATION_ID_GET_PROCESS_DESCRIPTION);
@@ -115,6 +115,7 @@ public class Process extends CommonFixture {
 	    StringWriter writer = new StringWriter();
 	    String encoding = StandardCharsets.UTF_8.name();
 	    IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+	    this.rspEntity = writer.toString();
 	    JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 	    Body body = Body.from(responseNode);
 	    //https://github.com/opengeospatial/ets-ogcapi-processes10/issues/14
@@ -159,6 +160,7 @@ public class Process extends CommonFixture {
 	    StringWriter writer = new StringWriter();
 	    String encoding = StandardCharsets.UTF_8.name();
 	    IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+            this.rspEntity = writer.toString();
 	    JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 	    Body body = Body.from(responseNode);
 	    Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
@@ -205,6 +207,7 @@ public class Process extends CommonFixture {
 	    StringWriter writer = new StringWriter();
 	    String encoding = StandardCharsets.UTF_8.name();
 	    IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+            this.rspEntity = writer.toString();
 	    JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 	    Body body = Body.from(responseNode);
 	    Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);

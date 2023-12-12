@@ -1,0 +1,855 @@
+openapi: 3.1
+info:
+  title: The OGC API - Processes
+  version: 1.0-draft.6-SNAPSHOT
+  description: |-
+    WARNING - THIS IS WORK IN PROGRESS\
+    TODO - Add a description of the sample service.\
+    TODO - Add security elements in a separate example.\
+    TODO - Connect to a live service.
+  contact:
+    name: Open Geospatial Consortium
+    email: standards@opengeospatial.org
+    url: 'http://www.opengeospatial.org'
+  license:
+    name: CC-BY 4.0 license
+    url: 'https://creativecommons.org/licenses/by/4.0/'
+paths:
+  /:
+    get:
+      summary: landing page of this API
+      description: >-
+        The landing page provides links to the API definition, the Conformance
+        statements and the metadata about the processes offered by this service.
+      operationId: getLandingPage
+      tags:
+        - Capabilities
+      responses:
+        '200':
+          description: links to the API capabilities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/landingPage'
+            text/html:
+              schema:
+                type: string
+  /conformance:
+    get:
+      summary: information about standards that this API conforms to
+      description: >-
+        list all requirements classes specified in a standard (e.g., WPS REST/JSON Binding
+        Part 1: Core) that the server conforms to
+      operationId: getRequirementsClasses
+      tags:
+        - Conformance
+      responses:
+        '200':
+          description: the URIs of all requirements classes supported by the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/confClasses'
+        default:
+          description: An error occured.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/exception'
+  /processes:
+    get:
+      summary: retrieve available processes
+      description: >-
+        TODO
+      operationId: getProcesses
+      tags:
+        - Processes
+      responses:
+        '200':
+          description: >-
+            Information about the available processes
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/processList'
+        default:
+          description: An error occured.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/exception'
+  /processes/{id}:
+    get:
+      summary: retrieve a process description
+      operationId: getProcessDescription
+      tags:
+        - ProcessDescription
+      parameters:
+          - in: path
+            name: id
+            description: The id of a process
+            required: true
+            schema:
+              type: string
+            example: buffer
+      responses:
+        '200':
+          description: A process description.
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/process'
+                example:
+                  id: buffer
+                  title: Buffer process 
+                  description: Buffer process 
+                  keywords: [process, buffer]
+                  inputs: 
+                     - id: features
+                       title: features
+                       description: The features to buffer
+                       formats: 
+                          - mimeType: application/json
+                            maximumMegabytes: 3
+                            default: true
+                          - mimeType: application/x-zipped-shp
+                            maximumMegabytes: 4 
+                     - id: width
+                       title: width
+                       description: The width of the buffer
+                       literalDataDomain:
+                          dataType:
+                              name: double
+                          valueDefinition:
+                              defaultValue: 1000
+                          uom: meters
+                  outputs:
+                        - id: result
+                          title: result
+                          description: The buffered features
+                          formats: 
+                             - mimeType: application/json
+                               default: true
+                             - mimeType: application/x-zipped-shp
+                  version: 1.1
+                  jobControlOptions: [sync-execute, async-execute]
+                  outputTransmission: [value, reference]
+                  links:
+                     - rel: canonical
+                       href: https://virtserver.swaggerhub.com/geoprocessing/WPS/0./processes/buffer/jobs
+                       type: application/json
+                       title: Execute endpoint
+        '404':
+          description: 'The process with id {id} does not exist.'
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/exception'
+        default:
+          description: An error occured.
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/exception'
+  /processes/{id}/jobs:
+    get:
+      summary: retrieve the list of jobs for a process.
+      operationId: getJobs
+      tags:
+        - JobList
+      parameters:
+          - in: path
+            name: id
+            description: The id of a process.
+            required: true
+            schema:
+              type: string
+      responses:
+        '200':
+          description: A list of jobs for this process.
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/jobList'
+        '404':
+          description: 'The process with id {id} does not exist.'
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/exception'
+        default:
+          description: An error occured.
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/exception'
+    post: 
+      summary: execute a process.
+      operationId: execute
+      tags:
+        - Execute
+      parameters:
+          - in: path
+            name: id
+            description: The id of a process.
+            required: true
+            schema:
+              type: string
+      requestBody:
+        description: Mandatory execute request JSON
+        required: true
+        content:
+          application/json:
+            schema:
+                $ref: '#/components/schemas/execute'
+      responses:
+        '200':
+           description: Result of a synchronous execution.
+           content:
+              /*:
+                schema:
+                  oneOf:
+                    - $ref: "#/components/schemas/results"
+                    - $ref: "#/components/schemas/exception"
+                    - type: object
+                    - type: string
+                      format: binary
+                      description: Single binary data output.
+                    - type: string
+                      format: byte
+                      description: Single data output encoded in base64.
+                    - type: string
+                      description: Text-based single data output.
+                    - type: number
+                    - type: boolean
+        '201':
+          description: Started execution. Created job.
+          headers:
+            Location:
+              schema:
+                  type: string
+              description: URL to check the status of the execution/job.
+        '404':
+          description: 'The process with id {id} does not exist.'
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/exception'
+        default:
+          description: An error occured.
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/exception'
+  /processes/{id}/jobs/{jobID}:
+    get:
+      summary: retrieve the status of a job
+      operationId: getStatus
+      tags:
+        - Status
+      parameters:
+          - in: path
+            name: id
+            description: The id of a process
+            required: true
+            schema:
+              type: string
+          - in: path
+            name: jobID
+            description: The id of a job
+            required: true
+            schema:
+              type: string
+      responses:
+        '200':
+          description: The status of a job.
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/statusInfo'
+        '404':
+          description: 'The process with id {id} or the job with id {jobID} does not exist.'
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/exception'
+        default:
+          description: An error occured.
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/exception'
+  /processes/{id}/jobs/{jobID}/results:
+    get:
+      summary: retrieve the result(s) of a job
+      operationId: getResult
+      tags:
+        - Result
+      parameters:
+          - in: path
+            name: id
+            description: The id of a process
+            required: true
+            schema:
+              type: string
+          - in: path
+            name: jobID
+            description: The id of a job
+            required: true
+            schema:
+              type: string
+      responses:
+        '200':
+          description: The result of a job.
+          content:
+            application/json:
+                schema:
+                  $ref: '#/components/schemas/results'
+        '404':
+          description: 'The process with id {id} or the job with id {jobID} does not exist.'
+          content:
+            application/json:
+                  schema:
+                    $ref: '#/components/schemas/exception'
+        '500':
+          description: 'The job execution failed due to a internal server error.'
+          content:
+            application/json:
+                  schema:
+                    $ref: '#/components/schemas/exception'
+        default:
+          description: An error occured.
+          content:
+            application/json:
+                  schema:
+                    $ref: '#/components/schemas/exception'
+components:
+    schemas:        
+        additionalParameter:
+          type: object
+          required:
+             - name
+             - value
+          properties:
+             name:
+                type: string
+             value:
+                type: array
+                items:
+                   oneOf:
+                      - type: string
+                      - type: number
+                      - type: integer
+                      - type: array
+                        items: {}
+                      - type: object
+        bbox:
+          type: object
+          required:
+            - bbox
+          properties:
+            bbox:
+              type: array
+              oneOf:
+                - minItems: 4
+                  maxItems: 4
+                - minItems: 6
+                  maxItems: 6
+              items:
+                type: number
+            crs:
+              type: string
+              format: uri
+              default: "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+              enum:
+                - "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+                - "http://www.opengis.net/def/crs/OGC/0/CRS84h"
+        binaryInputValue:
+          type: string
+          format: byte
+        confClasses:
+          type: object
+          required:
+            - conformsTo
+          properties:
+            conformsTo:
+              type: array
+              items:
+                type: string
+                example: "http://www.opengis.net/spec/ogcapi_processes/1.0/req/core"
+        descriptionType:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            keywords:
+              type: array
+              items:
+                type: string
+            metadata:
+              type: array
+              items:
+                $ref: "#/components/schemas/metadata"
+            additionalParameters:
+              allOf:
+                - $ref: "#/components/schemas/metadata"
+                - type: object
+                  properties:
+                    parameters:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/additionalParameter"
+        exception:
+          title: Exception Schema
+          description: JSON schema for exceptions based on RFC 7807
+          type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+            title:
+              type: string
+            status:
+              type: integer
+            detail:
+              type: string
+            instance:
+              type: string
+          additionalProperties: true
+        execute:
+          type: object
+          properties:
+            inputs:
+              additionalProperties:
+                oneOf:
+                  - $ref: "#/components/schemas/inlineOrRefData"
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/inlineOrRefData"
+            outputs:
+              additionalProperties:
+                $ref: "#/components/schemas/output"
+            response:
+              type: string
+              enum:
+                - raw
+                - document
+              default:
+                - raw
+            subscriber:
+              $ref: "#/components/schemas/subscriber"
+        format:
+          type: object
+          properties:
+            mediaType:
+              type: string
+            encoding:
+              type: string
+            schema:
+              oneOf:
+                - type: string
+                  format: url
+                - type: object
+        inlineOrRefData:
+          oneOf:
+            - $ref: "#/components/schemas/inputValueNoObject"
+            - $ref: "#/components/schemas/qualifiedInputValue"
+            - $ref: "#/components/schemas/link"
+        inputDescription:
+          allOf:
+            - $ref: "#/components/schemas/descriptionType"
+            - type: object
+              required:
+                - schema
+              properties:
+                minOccurs:
+                  type: integer
+                  default: 1
+                maxOccurs:
+                  oneOf:
+                    - type: integer
+                      default: 1
+                    - type: string
+                      enum:
+                        - "unbounded"
+                schema:
+                  $ref: "#/components/schemas/schema"
+        inputValue:
+          oneOf:
+            - $ref: "#/components/schemas/inputValueNoObject"
+            - type: object
+        inputValueNoObject:
+          oneOf:
+            - type: string
+            - type: number
+            - type: integer
+            - type: boolean
+            - type: array
+            - $ref: "#/components/schemas/binaryInputValue"
+            - $ref: "#/components/schemas/bbox"
+        jobControlOptions:
+          type: string
+          enum:
+            - sync-execute
+            - async-execute
+            - dismiss
+        jobList:
+          type: object
+          required:
+            - jobs
+            - links
+          properties:
+            jobs:
+              type: array
+              items:
+                $ref: "#/components/schemas/statusInfo"
+            links:
+              type: array
+              items:
+                $ref: "#/components/schemas/link"
+        landingPage:
+          type: object
+          required:
+            - links
+          properties:
+            title:
+              type: string
+              example: Example processing server
+            description:
+              type: string
+              example: Example server implementing the OGC API - Processes 1.0
+            links:
+              type: array
+              items:
+                $ref: "#/components/schemas/link"
+        link:
+          type: object
+          required:
+            - href
+          properties:
+            href:
+              type: string
+            rel:
+              type: string
+              example: service
+            type:
+              type: string
+              example: application/json
+            hreflang:
+              type: string
+              example: en
+            title:
+              type: string
+        metadata:
+          type: object
+          properties:
+             title:
+                type: string
+             role:
+                type: string
+             href:
+                type: string
+        output:
+          type: object
+          properties:
+            format:
+              $ref: "#/components/schemas/format"
+            transmissionMode:
+              $ref: "#/components/schemas/transmissionMode"
+        outputDescription:
+          allOf:
+            - $ref: "#/components/schemas/descriptionType"
+            - type: object
+              required:
+                - schema
+              properties:
+                schema:
+                  $ref: "#/components/schemas/schema"
+        process:
+          allOf:
+            - $ref: "#/components/schemas/processSummary"
+            - type: object
+              properties:
+                inputs:
+                  additionalProperties:
+                    $ref: "#/components/schemas/inputDescription"
+                outputs:
+                  additionalProperties:
+                    $ref: "#/components/schemas/outputDescription"
+        processList:
+          type: object
+          required:
+            - processes
+            - links
+          properties:
+            processes:
+              type: array
+              items:
+                $ref: "#/components/schemas/processSummary"
+            links:
+              type: array
+              items:
+                $ref: "#/components/schemas/link"
+        processSummary:
+          allOf:
+            - $ref: "#/components/schemas/descriptionType"
+            - type: object
+              required:
+                - id
+                - version
+              properties:
+                id:
+                  type: string
+                version:
+                  type: string
+                jobControlOptions:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/jobControlOptions"
+                outputTransmission:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/transmissionMode"
+                links:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/link"
+        qualifiedInputValue:
+          allOf:
+            - $ref: "#/components/schemas/format"
+            - type: object
+              required:
+                - value
+              properties:
+                value:
+                  $ref: "#/components/schemas/inputValue"
+        reference:
+          type: object
+          required:
+            - "$ref"
+          properties:
+            "$ref":
+              type: string
+              format: uri-reference
+        results:
+          additionalProperties:
+            oneOf:
+              - $ref: "#/components/schemas/inlineOrRefData"
+        schema:
+          oneOf:
+            - $ref: '#/components/schemas/reference'
+            - type: object
+              properties:
+                title:
+                  type: string
+                multipleOf:
+                  type: number
+                  minimum: 0
+                  exclusiveMinimum: true
+                maximum:
+                  type: number
+                exclusiveMaximum:
+                  type: boolean
+                  default: false
+                minimum:
+                  type: number
+                exclusiveMinimum:
+                  type: boolean
+                  default: false
+                maxLength:
+                  type: integer
+                  minimum: 0
+                minLength:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                pattern:
+                  type: string
+                  format: regex
+                maxItems:
+                  type: integer
+                  minimum: 0
+                minItems:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                uniqueItems:
+                  type: boolean
+                  default: false
+                maxProperties:
+                  type: integer
+                  minimum: 0
+                minProperties:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                required:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  uniqueItems: true
+                enum:
+                  type: array
+                  items: {}
+                  minItems: 1
+                  uniqueItems: false
+                type:
+                  type: string
+                  enum:
+                    - array
+                    - boolean
+                    - integer
+                    - number
+                    - object
+                    - string
+                not:
+                  oneOf:
+                    - $ref: "#/components/schemas/schema"
+                    - $ref: "#/components/schemas/reference"
+                allOf:
+                  type: array
+                  items:
+                    oneOf:
+                      - $ref: "#/components/schemas/schema"
+                      - $ref: "#/components/schemas/reference"
+                oneOf:
+                  type: array
+                  items:
+                    oneOf:
+                      - $ref: "#/components/schemas/schema"
+                      - $ref: "#/components/schemas/reference"
+                anyOf:
+                  type: array
+                  items:
+                    oneOf:
+                      - $ref: "#/components/schemas/schema"
+                      - $ref: "#/components/schemas/reference"
+                items:
+                  oneOf:
+                    - $ref: "#/components/schemas/schema"
+                    - $ref: "#/components/schemas/reference"
+                properties:
+                  type: object
+                  additionalProperties:
+                    oneOf:
+                      - $ref: "#/components/schemas/schema"
+                      - $ref: "#/components/schemas/reference"
+                additionalProperties:
+                  oneOf:
+                    - $ref: "#/components/schemas/schema"
+                    - $ref: "#/components/schemas/reference"
+                    - type: boolean
+                  default: true
+                description:
+                  type: string
+                format:
+                  type: string
+                default: {}
+                nullable:
+                  type: boolean
+                  default: false
+                readOnly:
+                  type: boolean
+                  default: false
+                writeOnly:
+                  type: boolean
+                  default: false
+                example: {}
+                deprecated:
+                  type: boolean
+                  default: false
+                contentMediaType:
+                  type: string
+                contentEncoding:
+                  type: string
+                contentSchema:
+                  type: string
+              additionalProperties: false
+        statusCode:
+          nullable: false
+          enum:
+            - accepted
+            - running
+            - successful
+            - failed
+            - dismissed
+        statusInfo:
+          type: object
+          required:
+             - jobID
+             - status
+             - type
+          properties:
+             processID:
+                type: string
+             jobID:
+                type: string
+             status:
+                $ref: "#/components/schemas/statusCode"
+             message:
+                type: string
+             created:
+                type: string
+                format: date-time
+             started:
+                type: string
+                format: date-time
+             finished:
+                type: string
+                format: date-time
+             updated:
+                type: string
+                format: date-time
+             progress:
+                type: integer
+                minimum: 0
+                maximum: 100
+             links:
+                type: array
+                items:
+                   $ref: "#/components/schemas/link"
+        subscriber:
+          description: |-
+            Optional URIs for callbacks for this job.
+          
+            Support for this parameter is not required and the parameter may be
+            removed from the API definition, if conformance class **'callback'**
+            is not listed in the conformance declaration under `/conformance`.
+          type: object
+          required:
+            - successUrl
+          properties:
+            successUri:
+              type: string
+              format: uri
+            inProgressUri:
+              type: string
+              format: uri
+            failedUri:
+              type: string
+              format: uri
+        transmissionMode:
+          type: string
+          enum:
+            - value
+            - reference
+          default:
+            - value
+tags:
+  - name: Capabilities
+    description: >-
+      Essential characteristics of this API including information about the
+      data.
+  - name: Processes
+    description: Access to processes.
+# Added by API Auto Mocking Plugin
+servers:
+# Added by API Auto Mocking Plugin
+   - description: SwaggerHub API Auto Mocking
+     url: https://virtserver.swaggerhub.com/geoprocessing/WPS/0.01
+   - description: 52°North demo server
+     url: http://geoprocessing.demo.52north.org:8080/javaps/rest/

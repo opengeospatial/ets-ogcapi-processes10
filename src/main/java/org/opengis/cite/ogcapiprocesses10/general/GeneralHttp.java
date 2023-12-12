@@ -33,6 +33,7 @@ public class GeneralHttp extends CommonFixture {
     @Test(description = "Implements A.2.1.1. HTTP, Abstract Test 1 (Requirement /req/core/http)")
     public void testHttp() {
         Response response = init().baseUri( rootUri.toString() ).when().request( GET, "/" );
+        this.rspEntity = response.getBody().asInputStream();
         response.then().statusLine( containsString( "HTTP/1.1" ) );
     }
 

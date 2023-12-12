@@ -64,7 +64,7 @@ public class ProcessList extends CommonFixture {
 	public void setup() {		
 		String processListEndpointString = rootUri.toString() + getProcessListPath;		
 		try {		
-			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+			openApi3 = new OpenApi3Parser().parse(specURL, false);
 			addServerUnderTest(openApi3);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
 		    final Operation operation = openApi3.getOperationById(OPERATION_ID);
@@ -123,6 +123,7 @@ public class ProcessList extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		        this.rspEntity = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			JsonNode processesNode = responseNode.get("processes");
 			if(!(processesNode instanceof ArrayNode)) {
@@ -160,6 +161,7 @@ public class ProcessList extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		        this.rspEntity = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			JsonNode linksNode = responseNode.get("links");
 			if(!(linksNode instanceof ArrayNode)) {
@@ -197,7 +199,8 @@ public class ProcessList extends CommonFixture {
 			HttpResponse httpResponse = client.execute(request);			
 			StringWriter writer = new StringWriter();			
 			String encoding = StandardCharsets.UTF_8.name();		
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);		
+			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		        this.rspEntity = writer.toString();
 			String responsePayload = writer.toString();		
 			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);		
 			ArrayNode arrayNode = (ArrayNode) responseNode.get("processes");	
@@ -241,6 +244,7 @@ public class ProcessList extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+                        this.rspEntity = writer.toString();
 			String responsePayload = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
 			Body body = Body.from(responseNode);

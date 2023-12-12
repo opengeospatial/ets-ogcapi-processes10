@@ -86,7 +86,7 @@ public class JobList extends CommonFixture {
 	public void setup() {		
 		String jobListEndpointString = rootUri.toString() + getJobListPath;		
 		try {		
-			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+			openApi3 = new OpenApi3Parser().parse(specURL, false);
 			addServerUnderTest(openApi3);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
 		    final Operation operation = openApi3.getOperationById(OPERATION_ID);
@@ -118,8 +118,9 @@ public class JobList extends CommonFixture {
 			HttpResponse httpResponse = client.execute(request);			
 			StringWriter writer = new StringWriter();			
 			String encoding = StandardCharsets.UTF_8.name();		
-			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);		
-			String responsePayload = writer.toString();		
+			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			String responsePayload = writer.toString();
+			this.rspEntity = responsePayload;
 			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);		
 			ArrayNode arrayNode = (ArrayNode) responseNode.get("jobs");	
 			Assert.assertTrue(arrayNode.size()>0,"No processes listed at "+getJobListURL.toString());
@@ -156,6 +157,7 @@ public class JobList extends CommonFixture {
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			String responsePayload = writer.toString();
+                        this.rspEntity = responsePayload;
 			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
 			Body body = Body.from(responseNode);
 			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);

@@ -159,7 +159,7 @@ public class Jobs extends CommonFixture {
 		    echoProcessPath = getProcessListPath + "/" + echoProcessId;
 			executeEndpoint = rootUri + echoProcessPath + "/execution";
 		    parseEchoProcess();
-			openApi3 = new OpenApi3Parser().parse(specURI.toURL(), false);
+			openApi3 = new OpenApi3Parser().parse(specURL, false);
 		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID_GET_JOBS);
 		    final Operation operation = openApi3.getOperationById(OPERATION_ID_GET_JOBS);
 		    getJobsValidator = new OperationValidator(openApi3, path, operation);
@@ -1136,6 +1136,7 @@ public class Jobs extends CommonFixture {
 		                String responsePayload = null;
 		                try {
 		                        responsePayload = parseRawResponse(httpResponse);
+		                        this.rspEntity = responsePayload;
 
 		                }
 		                catch(Exception ee)
@@ -1185,6 +1186,7 @@ public class Jobs extends CommonFixture {
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+			this.rspEntity = writer.toString();
 			JsonNode responseNode = new ObjectMapper().readTree(writer.toString());
 			Body body = Body.from(responseNode);
 			responseContentType = httpResponse.getFirstHeader(CONTENT_TYPE);
@@ -1555,6 +1557,7 @@ public class Jobs extends CommonFixture {
 		StringWriter writer = new StringWriter();
 		String encoding = StandardCharsets.UTF_8.name();
 		IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
+		this.rspEntity = writer.toString();
 		return new ObjectMapper().readTree(writer.toString());
 	}
 
@@ -1654,6 +1657,7 @@ public class Jobs extends CommonFixture {
 		
 		boolean foundTestString = false;
 		String errorMessage = "";
+		this.rspEntity = responsePayload;
 		
      try {
     	 
@@ -2333,6 +2337,7 @@ public class Jobs extends CommonFixture {
 		    HttpResponse httpResponse = client.execute(request);
 		
 		    String resultString = parseRawResponse(httpResponse);
+                    this.rspEntity = responseNode.asText();
 		 
 		    // May be more generic here
 		    Assert.assertTrue(resultString.contains(TEST_STRING_INPUT), "Response does not contain " + TEST_STRING_INPUT + "\n" + resultString);

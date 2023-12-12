@@ -4,13 +4,25 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.Method.GET;
 import static org.opengis.cite.ogcapiprocesses10.OgcApiProcesses10.GEOJSON_MIME_TYPE;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.io.IOUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -21,6 +33,8 @@ import io.restassured.specification.RequestSpecification;
  */
 public class JsonUtils {
 
+    private static ObjectMapper objectMapper;
+    
     private JsonUtils() {
     }
 
@@ -323,6 +337,39 @@ public class JsonUtils {
             }
         }
         return numberOfAllReturnedFeatures;
+    }
+    
+    /**
+     * Converts an inputstream to String using UTF-8 encoding.
+     * 
+     * @param inputStream the inputstream
+     * @return the content of the inputstream as String
+     * @throws IOException if an I/O error occurs
+     */
+    public static String inputStreamToString(InputStream inputStream) throws IOException {
+        StringWriter writer = new StringWriter();
+        String encoding = StandardCharsets.UTF_8.name();
+        IOUtils.copy(inputStream, writer, encoding);
+        return prettifyString(writer.toString());
+    }
+
+    public static String prettifyString(String string) {
+        ObjectMapper objectMapper = getObjectMapper();
+        try {
+            Object jsonObject = objectMapper.readValue(string, Object.class);
+            String prettyJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
+            return prettyJson;
+        } catch (Exception e) {
+            //String was not JSON
+            return string;
+        }
+    }
+
+    private static ObjectMapper getObjectMapper() {
+        if(objectMapper == null) {
+            objectMapper = new ObjectMapper();
+        }
+        return objectMapper;
     }
 
     private static boolean isSameMediaType( String mediaType1, String mediaType2 ) {
