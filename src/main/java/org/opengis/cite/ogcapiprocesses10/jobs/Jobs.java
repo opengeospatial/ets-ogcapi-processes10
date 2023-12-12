@@ -85,6 +85,9 @@ public class Jobs extends CommonFixture {
 	private static final String EXCEPTION_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/exception.yaml";
 	private static final String STATUS_SCHEMA_URL = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/statusInfo.yaml";
 	private static final String ASYNC_MODE_NOT_SUPPORTED_MESSAGE = "This test is skipped because the server has not declared support for asynchronous execution mode.";
+    private int attempts = 0;
+    private static final int MAX_ATTEMPTS = 4;
+    private static final int ASYNC_LOOP_WAITING_PERIOD = 5000;
 
 	private OpenApi3 openApi3;
 
@@ -1494,7 +1497,7 @@ public class Jobs extends CommonFixture {
 	public void testJobCreationSyncRawValueOne() {
 		// create job
 
-		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
+		JsonNode executeNode = createExecuteJsonNodeOneOutput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
 
 			HttpResponse httpResponse = sendPostRequestSync(executeNode);
@@ -2029,7 +2032,11 @@ public class Jobs extends CommonFixture {
 
     private void loopOverStatus(JsonNode responseNode){
 	try{
-		
+            
+	    if(attempts >= MAX_ATTEMPTS) {
+	        throw new Exception(String.format("Server did not return result in %d seconds.", MAX_ATTEMPTS * ASYNC_LOOP_WAITING_PERIOD / 1000));
+	    }
+	    
 	    HttpClient client = HttpClientBuilder.create().build();
 	    ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
 	  
@@ -2053,13 +2060,20 @@ public class Jobs extends CommonFixture {
 
 	    if(!hasMonitorOrResultLink)
 		for (JsonNode currentJsonNode : linksArrayNode) {
+	            String relString = currentJsonNode.get("rel").asText();
 		
 		    // Fetch status document
-		    if(currentJsonNode.get("rel").asText()=="monitor"){
+		    if(relString.equals("monitor") || relString.equals("status")){
 			HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
 			request.setHeader("Accept", "application/json");
 			HttpResponse httpResponse = client.execute(request);
 			JsonNode resultNode = parseResponse(httpResponse);
+			try {
+                            Thread.sleep(ASYNC_LOOP_WAITING_PERIOD);
+                        } catch (Exception e) {
+                            TestSuiteLogger.log(Level.WARNING, e.getMessage());
+                        }
+			attempts++;
 			loopOverStatus(resultNode);
 			hasMonitorOrResultLink=true;
 		    }
@@ -2102,7 +2116,7 @@ public class Jobs extends CommonFixture {
 		if(echoProcessSupportsAsync())
 		{			
 			// create job
-			JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
+			JsonNode executeNode = createExecuteJsonNodeOneOutput(echoProcessId, RESPONSE_VALUE_RAW);
 			try {
 				
 				HttpResponse httpResponse = sendPostRequestASync(executeNode);
@@ -2139,14 +2153,16 @@ public class Jobs extends CommonFixture {
 		} 		
 	}
 
-	private JsonNode createExecuteJsonNodeOneInput(String echoProcessId, String responseValue) {
+	private JsonNode createExecuteJsonNodeOneOutput(String echoProcessId, String responseValue) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
 		//executeNode.set("id", new TextNode(echoProcessId));
 		Input inputOne = inputs.get(0);
 		String inputId = inputOne.getId();
-		addInput(inputOne, inputsNode);
+                for (Input input : inputs) {
+                    addInput(input, inputsNode);
+                }
 		for (Output output : outputs) {
 			if(output.getId().equals(inputId)) {
 			    addOutput(output, outputsNode);
