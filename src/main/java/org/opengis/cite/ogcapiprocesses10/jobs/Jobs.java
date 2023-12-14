@@ -86,6 +86,9 @@ public class Jobs extends CommonFixture {
 	private static final String GEOTIFF_URL = "https://raw.githubusercontent.com/opengeospatial/ets-ogcapi-processes10/master/src/main/resources/org/opengis/cite/testdata/testgeotiff.tiff";
     private static final Object TYPE_DEFINITION_ARRAY = "array";
     private static final CharSequence ISSUE_54_MESSAGE_TEXT = "More than 1 schema is valid.";
+    private int attempts = 0;
+    private static final int MAX_ATTEMPTS = 4;
+    private static final int ASYNC_LOOP_WAITING_PERIOD = 5000;
 
 	private OpenApi3 openApi3;
 
@@ -171,7 +174,7 @@ public class Jobs extends CommonFixture {
 		    getResultValidator = new OperationValidator(openApi3, getResultPath, getResultOperation);
 		    getJobsListURL = new URL(jobsListEndpointString);
 		    getProcessesListURL = new URL(processListEndpointString);
-		    getInvalidJobURL = new URL(processListEndpointString + "/invalid-job-" + UUID.randomUUID());
+		    getInvalidJobURL = new URL(jobsListEndpointString + "/invalid-job-" + UUID.randomUUID());
 		    getInvalidJobResultURL = new URL(jobsListEndpointString + "/invalid-job-" + UUID.randomUUID() + "/results");
 			clientBuilder = HttpClientBuilder.create();
 		} catch (Exception e) {		
@@ -1724,7 +1727,7 @@ public class Jobs extends CommonFixture {
 	public void testJobCreationSyncRawValueOne() {
 		// create job
 
-		JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
+		JsonNode executeNode = createExecuteJsonNodeOneOutput(echoProcessId, RESPONSE_VALUE_RAW);
 		try {
 
 			HttpResponse httpResponse = sendPostRequestSync(executeNode, true);
@@ -2316,26 +2319,28 @@ public class Jobs extends CommonFixture {
 
     private void loopOverStatus(JsonNode responseNode){
 	try{
-		
+            
+	    if(attempts >= MAX_ATTEMPTS) {
+	        throw new Exception(String.format("Server did not return result in %d seconds.", MAX_ATTEMPTS * ASYNC_LOOP_WAITING_PERIOD / 1000));
+	    }
+	    
 	    HttpClient client = HttpClientBuilder.create().build();
 	    ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
 	  
 	    boolean hasMonitorOrResultLink=false;
 	    for (JsonNode currentJsonNode : linksArrayNode) {
 		// Fetch result document
-	    
-		if(currentJsonNode.get("rel").asText()=="http://www.opengis.net/def/rel/ogc/1.0/results"){
+	        if(currentJsonNode.get("rel").asText().equals("http://www.opengis.net/def/rel/ogc/1.0/results")){
 	
 		    HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
 		
-		    request.setHeader("Accept", "application/json");
 		    HttpResponse httpResponse = client.execute(request);
 		
-		    JsonNode resultNode = parseResponse(httpResponse);
+		    String resultString = parseRawResponse(httpResponse);
                     this.rspEntity = responseNode.asText();
 		 
 		    // May be more generic here
-		    Assert.assertEquals(responseNode.asText(), TEST_STRING_INPUT);
+		    Assert.assertTrue(resultString.contains(TEST_STRING_INPUT), "Response does not contain " + TEST_STRING_INPUT + "\n" + resultString);
 		    hasMonitorOrResultLink=true;
 		}
 	
@@ -2343,17 +2348,27 @@ public class Jobs extends CommonFixture {
 
 	    if(!hasMonitorOrResultLink)
 		for (JsonNode currentJsonNode : linksArrayNode) {
+	            String relString = currentJsonNode.get("rel").asText();
 		
 		    // Fetch status document
-		    if(currentJsonNode.get("rel").asText()=="monitor"){
+		    if(relString.equals("monitor") || relString.equals("status")){
 			HttpUriRequest request = new HttpGet(currentJsonNode.get("href").asText());
 			request.setHeader("Accept", "application/json");
 			HttpResponse httpResponse = client.execute(request);
 			JsonNode resultNode = parseResponse(httpResponse);
+			try {
+                            Thread.sleep(ASYNC_LOOP_WAITING_PERIOD);
+                        } catch (Exception e) {
+                            TestSuiteLogger.log(Level.WARNING, e.getMessage());
+                        }
+			attempts++;
 			loopOverStatus(resultNode);
 			hasMonitorOrResultLink=true;
 		    }
 		}
+	        // if the code gets to this position, no result or monitor link were found
+	        // imho we need to throw an exception
+	        throw new AssertionError("No result (rel='http://www.opengis.net/def/rel/ogc/1.0/results') or monitor (rel='monitor') links were found in response.");
 	 
 	}
 	catch (Exception e) {
@@ -2389,7 +2404,7 @@ public class Jobs extends CommonFixture {
 		if(echoProcessSupportsAsync())
 		{			
 			// create job
-			JsonNode executeNode = createExecuteJsonNodeOneInput(echoProcessId, RESPONSE_VALUE_RAW);
+			JsonNode executeNode = createExecuteJsonNodeOneOutput(echoProcessId, RESPONSE_VALUE_RAW);
 			try {
 				
 				HttpResponse httpResponse = sendPostRequestASync(executeNode);
@@ -2428,14 +2443,16 @@ public class Jobs extends CommonFixture {
 		} 		
 	}
 
-	private JsonNode createExecuteJsonNodeOneInput(String echoProcessId, String responseValue) {
+	private JsonNode createExecuteJsonNodeOneOutput(String echoProcessId, String responseValue) {
 		ObjectNode executeNode = objectMapper.createObjectNode();
 		ObjectNode inputsNode = objectMapper.createObjectNode();
 		ObjectNode outputsNode = objectMapper.createObjectNode();
 		//executeNode.set("id", new TextNode(echoProcessId));
 		Input inputOne = inputs.get(0);
 		String inputId = inputOne.getId();
-		addInput(inputOne, inputsNode);
+                for (Input input : inputs) {
+                    addInput(input, inputsNode);
+                }
 		for (Output output : outputs) {
 			if(output.getId().equals(inputId)) {
 			    addOutput(output, outputsNode);
