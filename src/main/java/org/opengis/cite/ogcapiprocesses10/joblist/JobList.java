@@ -65,39 +65,41 @@ import com.fasterxml.jackson.databind.node.IntNode;
 
 /**
  *
- * A.2.6. JobList  {root}/jobs
+ * A.2.6. JobList {root}/jobs
  *
  * @author <a href="mailto:b.pross@52north.org">Benjamin Pross</a>
  */
 public class JobList extends CommonFixture {
+
 	private static final String OPERATION_ID = "getJobs";
 
 	private OpenApi3 openApi3;
-	
+
 	private String getJobListPath = "/jobs";
-	
+
 	private OperationValidator validator;
-    
-    private URL getJobListURL;
-    
-    private static String urlSchema="https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/jobList.yaml";    
-    
+
+	private URL getJobListURL;
+
+	private static String urlSchema = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/jobList.yaml";
+
 	@BeforeClass
-	public void setup() {		
-		String jobListEndpointString = rootUri.toString() + getJobListPath;		
-		try {		
+	public void setup() {
+		String jobListEndpointString = rootUri.toString() + getJobListPath;
+		try {
 			openApi3 = new OpenApi3Parser().parse(specURL, false);
 			addServerUnderTest(openApi3);
-		    final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
-		    final Operation operation = openApi3.getOperationById(OPERATION_ID);
-		    validator = new OperationValidator(openApi3, path, operation);
-		    getJobListURL = new URL(jobListEndpointString);
-		} catch (MalformedURLException | ResolutionException | ValidationException e) {	
-			
-			Assert.fail("Could not set up endpoint: " + jobListEndpointString + ". Exception: " + e.getLocalizedMessage());
+			final Path path = openApi3.getPathItemByOperationId(OPERATION_ID);
+			final Operation operation = openApi3.getOperationById(OPERATION_ID);
+			validator = new OperationValidator(openApi3, path, operation);
+			getJobListURL = new URL(jobListEndpointString);
+		}
+		catch (MalformedURLException | ResolutionException | ValidationException e) {
+
+			Assert.fail(
+					"Could not set up endpoint: " + jobListEndpointString + ". Exception: " + e.getLocalizedMessage());
 		}
 	}
-
 
 	/**
 	 * <pre>
@@ -107,26 +109,28 @@ public class JobList extends CommonFixture {
 	 * </pre>
 	 */
 	@Test(description = "Implements Requirement /req/job-list/job-list-op ", groups = "jobList")
-	public void testJobList() {		
+	public void testJobList() {
 		final ValidationData<Void> data = new ValidationData<>();
-		try { 
-		
-			HttpClient client = HttpClientBuilder.create().build();				
-			HttpUriRequest request = new HttpGet(getJobListURL.toString());			
-			request.setHeader("Accept", "application/json");		
-		    this.reqEntity = request;	    
-			HttpResponse httpResponse = client.execute(request);			
-			StringWriter writer = new StringWriter();			
-			String encoding = StandardCharsets.UTF_8.name();		
+		try {
+
+			HttpClient client = HttpClientBuilder.create().build();
+			HttpUriRequest request = new HttpGet(getJobListURL.toString());
+			request.setHeader("Accept", "application/json");
+			this.reqEntity = request;
+			HttpResponse httpResponse = client.execute(request);
+			StringWriter writer = new StringWriter();
+			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			String responsePayload = writer.toString();
 			this.rspEntity = responsePayload;
-			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);		
-			ArrayNode arrayNode = (ArrayNode) responseNode.get("jobs");	
-			Assert.assertTrue(arrayNode.size()>0,"No processes listed at "+getJobListURL.toString());
+			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
+			ArrayNode arrayNode = (ArrayNode) responseNode.get("jobs");
+			Assert.assertTrue(arrayNode.size() > 0, "No processes listed at " + getJobListURL.toString());
 
-		} catch (Exception e) {
-			Assert.fail("jobList.testjobList(): An exception occured when trying to retrieve the job list from "+getJobListURL.toString());
+		}
+		catch (Exception e) {
+			Assert.fail("jobList.testjobList(): An exception occured when trying to retrieve the job list from "
+					+ getJobListURL.toString());
 		}
 	}
 
@@ -135,11 +139,11 @@ public class JobList extends CommonFixture {
 	 * Abstract test A.71: /conf/job-list/job-list-success
 	 * Test Purpose: Validate that the job list content complies with the required structure and contents.
 	 * Requirement: /req/job-list/job-list-success
-	 * Test Method: 
+	 * Test Method:
 	 * |===
-	 * 
+	 *
 	 * 1. Validate that a document was returned with an HTTP status code of 200.
-	 * 
+	 *
 	 * 2. Validate the job list content for all supported media types using the resources and tests identified in Table A.10
 	 * |===
 	 * </pre>
@@ -147,29 +151,33 @@ public class JobList extends CommonFixture {
 	@Test(description = "Implements Requirement /req/job-list/job-list-success ", groups = "jobList")
 	public void testJobListSuccess() {
 		final ValidationData<Void> data = new ValidationData<>();
-		try { 
+		try {
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpUriRequest request = new HttpGet(getJobListURL.toString());
 			request.setHeader("Accept", "application/json");
-		    this.reqEntity = request;
+			this.reqEntity = request;
 			HttpResponse httpResponse = client.execute(request);
 			StringWriter writer = new StringWriter();
 			String encoding = StandardCharsets.UTF_8.name();
 			IOUtils.copy(httpResponse.getEntity().getContent(), writer, encoding);
 			String responsePayload = writer.toString();
-                        this.rspEntity = responsePayload;
+			this.rspEntity = responsePayload;
 			JsonNode responseNode = new ObjectMapper().readTree(responsePayload);
 			Body body = Body.from(responseNode);
 			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
-			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body).header(CONTENT_TYPE, contentType.getValue())
-					.build();
-			validator.validateResponse(response, data);			
-			
-			assertTrue( validateResponseAgainstSchema(JobList.urlSchema,responsePayload),
-				    "The response document failed validation against: "+JobList.urlSchema+ " ");	
-	
-		} catch (Exception e) {
-			Assert.fail("jobList.testjobListSuccess(): An exception occured when trying to retrieve the processes list from "+getJobListURL.toString());
+			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body)
+					.header(CONTENT_TYPE, contentType.getValue()).build();
+			validator.validateResponse(response, data);
+
+			assertTrue(validateResponseAgainstSchema(JobList.urlSchema, responsePayload),
+					"The response document failed validation against: " + JobList.urlSchema + " ");
+
+		}
+		catch (Exception e) {
+			Assert.fail(
+					"jobList.testjobListSuccess(): An exception occured when trying to retrieve the processes list from "
+							+ getJobListURL.toString());
 		}
 	}
+
 }

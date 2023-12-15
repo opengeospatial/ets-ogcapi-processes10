@@ -11,13 +11,20 @@ import org.openapi4j.operation.validator.model.Request;
 import org.openapi4j.operation.validator.model.impl.Body;
 
 public class PathSettingRequest implements Request {
+
 	private final String url;
+
 	private final Method method;
+
 	private final String path;
+
 	private final Map<String, String> cookies;
-//	private final Map<String, Collection<String>> headers;
-    private final MultiStringMap<String> headers;
+
+	// private final Map<String, Collection<String>> headers;
+	private final MultiStringMap<String> headers;
+
 	private final String query;
+
 	private final Body body;
 
 	public PathSettingRequest(String url, String path, Method method) {
