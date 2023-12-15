@@ -7,11 +7,11 @@ package org.opengis.cite.ogcapiprocesses10;
  */
 public class OgcApiProcesses10 {
 
-    private OgcApiProcesses10() {
-    }
+	private OgcApiProcesses10() {
+	}
 
-    public static final String OPEN_API_MIME_TYPE = "application/vnd.oai.openapi+json;version=3.0";
+	public static final String OPEN_API_MIME_TYPE = "application/vnd.oai.openapi+json;version=3.0";
 
-    public static final String GEOJSON_MIME_TYPE = "application/geo+json";
+	public static final String GEOJSON_MIME_TYPE = "application/geo+json";
 
 }
