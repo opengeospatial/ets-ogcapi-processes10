@@ -1,5 +1,26 @@
 = Release Notes OGC API - Processes - Part 1: Core
 
+== 1.1 (2023-12)
+
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/60[#60] Confused expectations regarding number of outputs
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/55[#55] ETS expects unquoted strings while using Accept: application/json
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/39[#39] ETS should not rely on Internet connectivity for YAML schemas
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/51[#51] Log the body used for POST Operations
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/54[#54] Confusing _More than 1 schema is valid_ errors
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/56[#56] ETS reports error on 400 response for bad input values
+- https://github.com/opengeospatial/ets-ogcapi-processes10/pull/64[#64] Fix documentation included in the Dockerfile
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/85[#85] Create documentation about different Dockerfiles
+- https://github.com/opengeospatial/ets-ogcapi-processes10/pull/70[#70] GSoC2023: Updates for passing etsp10 tests
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/84[#84] Several tests fail after merging PR #82
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/50[#50] testJobResultsNoSuchJob -> /req/core/job-results-exception-no-such-job: wrong API Address
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/62[#62] testJobCreationInputRef: is the content type correct?
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/14[#14] Implement recognition of the MIME type from RFC 7807
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/57[#57] Reported test failures for Ref, BBOX, Binary do not test what they claim
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/52[#52] Negotiation mode in execution: Prefer Header
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/53[#53] Failure on lack of mixed type
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/88[#88] Introduce spring-javaformat-maven-plugin and execute formatting
+- https://github.com/opengeospatial/ets-ogcapi-processes10/pull/91[#91] Update TEAM Engine dependencies to version 5.7
+
 == 1.0 (2023-06)
 
 - https://github.com/opengeospatial/ets-ogcapi-processes10/pull/67[#67] Set status of test suite to Final
