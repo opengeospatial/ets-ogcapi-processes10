@@ -13,6 +13,7 @@
     <dependencySet>
       <includes>
         <include>com.sun.jersey:jersey-client</include>
+        <include>com.sun.jersey:jersey-core</include>
         <include>org.opengis.cite:schema-utils</include>
       </includes>
       <outputDirectory>/</outputDirectory>

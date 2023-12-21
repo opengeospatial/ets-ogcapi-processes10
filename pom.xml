@@ -49,7 +49,7 @@
   <properties>
     <ets-code>ogcapi-processes-1.0</ets-code>
     <spec-version>0.1</spec-version>
-    <docker.teamengine.version>5.7</docker.teamengine.version>
+    <docker.teamengine.version>6.0-SNAPSHOT</docker.teamengine.version>
     <spec-version>1.0</spec-version>
   </properties>
 
@@ -57,7 +57,7 @@
     <dependency>
       <groupId>org.opengis.cite.teamengine</groupId>
       <artifactId>teamengine-spi</artifactId>
-      <version>5.7</version>
+      <version>6.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.opengis.cite</groupId>
@@ -66,6 +66,11 @@
     <dependency>
       <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-core</artifactId>
+      <version>1.19</version>
     </dependency>
     <dependency>
       <groupId>io.rest-assured</groupId>
@@ -108,18 +113,21 @@
     </dependency>
   </dependencies>
 
+  <reporting>
+  
+  </reporting>
+
   <build>
     <plugins>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.4</version>
+        <version>3.6.3</version>
         <configuration>
-        <source>8</source>
           <docfilessubdirs>true</docfilessubdirs>
           <show>package</show>
-          <links>
-            <link>http://testng.org/javadocs/</link>
-          </links>
+          <additionalJOption>-Xdoclint:none</additionalJOption>
+          <detectOfflineLinks>false</detectOfflineLinks>
+<!--           <destDir>${project.basedir}/target/site/apidocs</destDir> -->
         </configuration>
         <executions>
           <execution>
@@ -173,6 +181,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
+        <version>3.12.1</version>
         <executions>
           <execution>
             <id>site-package</id>
@@ -184,13 +193,20 @@
         </executions>
         <dependencies>
           <dependency>
+            <groupId>org.apache.maven.doxia</groupId>
+            <artifactId>doxia-module-markdown</artifactId>
+            <version>2.0.0-M8</version>
+          </dependency>
+          <dependency>
             <groupId>org.asciidoctor</groupId>
             <artifactId>asciidoctor-maven-plugin</artifactId>
-            <version>1.5.7.1</version>
+            <version>2.2.3</version>
           </dependency>
         </dependencies>
         <configuration>
           <relativizeDecorationLinks>false</relativizeDecorationLinks>
+          <generateReports>false</generateReports>
+          <skipDeploy>true</skipDeploy>
         </configuration>
       </plugin>
       <plugin>
@@ -226,6 +242,7 @@
           <artifactId>docker-maven-plugin</artifactId>
           <version>0.36.1</version>
           <configuration>
+          <dockerHost>http://localhost:2375</dockerHost>
             <images>
               <image>
                 <name>ogccite/${project.artifactId}:latest</name>

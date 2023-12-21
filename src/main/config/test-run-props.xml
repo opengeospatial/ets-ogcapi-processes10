@@ -6,5 +6,5 @@
 <!--   <entry key="iut">http://geoprocessing.demo.52north.org:8080/javaps/rest/</entry> -->
   <entry key="echoprocessid">echo</entry>
   <!-- entry key="testallprocesses">on</entry-->
-  <entry key="processtestlimit">5</entry>
+  <entry key="processtestlimit">3</entry>
 </properties>
