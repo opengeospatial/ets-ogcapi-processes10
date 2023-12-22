@@ -19,6 +19,7 @@ RUN cd /root/ && unzip -q teamengine-console-*-base.zip -d /root/te_base
 
 # set TE_BASE
 ENV JAVA_OPTS="-Xms1024m -Xmx2048m -DTE_BASE=/root/te_base"
+ENV JPDA_ADDRESS="*:8000"
 
 # add ETS for OGC API Processes 1.0
 ADD maven/ets-ogcapi-processes10-*-ctl.zip /root/

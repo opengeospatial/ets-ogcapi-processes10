@@ -21,11 +21,6 @@
       <outputDirectory>testdata</outputDirectory>
       <filtered>false</filtered>
     </fileSet>
-    <fileSet>
-      <directory>${project.build.outputDirectory}/apidocs/</directory>
-      <outputDirectory>site/apidocs</outputDirectory>
-      <filtered>false</filtered>
-    </fileSet>
   </fileSets>
   <files>
     <file>

@@ -1,12 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <parent>
-    <groupId>org.opengis.cite</groupId>
-    <artifactId>ets-common</artifactId>
-    <version>9</version>
-  </parent>
-
   <modelVersion>4.0.0</modelVersion>
+  <groupId>org.opengis.cite</groupId>  
   <artifactId>ets-ogcapi-processes10</artifactId>
   <version>1.2-SNAPSHOT</version>
   <packaging>jar</packaging>
@@ -62,10 +57,12 @@
     <dependency>
       <groupId>org.opengis.cite</groupId>
       <artifactId>schema-utils</artifactId>
+      <version>1.8</version>
     </dependency>
     <dependency>
       <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-client</artifactId>
+        <version>1.19</version>
     </dependency>
     <dependency>
       <groupId>com.sun.jersey</groupId>
@@ -85,6 +82,8 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.openapi4j</groupId>
@@ -113,31 +112,32 @@
     </dependency>
   </dependencies>
 
-  <reporting>
-  
-  </reporting>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.6.3</version>
+				<reportSets>
+					<reportSet>
+						<id>default</id>
+						<configuration>
+							<docfilessubdirs>true</docfilessubdirs>
+							<show>package</show>
+							<additionalJOption>-Xdoclint:none</additionalJOption>
+							<detectOfflineLinks>false</detectOfflineLinks>
+						</configuration>
+						<reports>
+							<report>javadoc</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+		</plugins>
+	</reporting>
 
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.6.3</version>
-        <configuration>
-          <docfilessubdirs>true</docfilessubdirs>
-          <show>package</show>
-          <additionalJOption>-Xdoclint:none</additionalJOption>
-          <detectOfflineLinks>false</detectOfflineLinks>
-<!--           <destDir>${project.basedir}/target/site/apidocs</destDir> -->
-        </configuration>
-        <executions>
-          <execution>
-            <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
@@ -205,7 +205,6 @@
         </dependencies>
         <configuration>
           <relativizeDecorationLinks>false</relativizeDecorationLinks>
-          <generateReports>false</generateReports>
           <skipDeploy>true</skipDeploy>
         </configuration>
       </plugin>
@@ -271,6 +270,7 @@
 <!--                   <containerNamePattern>%a</containerNamePattern> -->
                   <ports>
                     <port>8081:8080</port>
+                    <port>8000:8000</port>
                   </ports>
                   <wait>
                     <http>
@@ -314,7 +314,6 @@
       </plugins>
     </pluginManagement>
   </build>
-
   <profiles>
     <profile>
       <id>integration-tests</id>
