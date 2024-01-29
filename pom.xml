@@ -239,9 +239,8 @@
         <plugin>
           <groupId>io.fabric8</groupId>
           <artifactId>docker-maven-plugin</artifactId>
-          <version>0.36.1</version>
+          <version>0.43.4</version>
           <configuration>
-          <dockerHost>http://localhost:2375</dockerHost>
             <images>
               <image>
                 <name>ogccite/${project.artifactId}:latest</name>
