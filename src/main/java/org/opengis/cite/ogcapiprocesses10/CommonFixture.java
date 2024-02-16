@@ -67,7 +67,7 @@ public class CommonFixture {
 
 	protected URI rootUri;
 
-	protected int limit = 0;
+	protected int limit = -1;
 
 	protected boolean testAllProcesses = false;
 
