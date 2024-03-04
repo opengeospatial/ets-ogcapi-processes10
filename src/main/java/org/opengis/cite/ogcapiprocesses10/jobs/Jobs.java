@@ -2450,7 +2450,8 @@ public class Jobs extends CommonFixture {
 				}
 			// if the code gets to this position, no result or monitor link were found
 			// imho we need to throw an exception
-			throw new AssertionError(
+			if (!hasMonitorOrResultLink)
+				throw new AssertionError(
 					"No result (rel='http://www.opengis.net/def/rel/ogc/1.0/results') or monitor (rel='monitor') links were found in response.");
 
 		}
