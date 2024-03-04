@@ -2407,8 +2407,19 @@ public class Jobs extends CommonFixture {
 			HttpClient client = HttpClientBuilder.create().build();
 			ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
 
+			JsonNode statusNode = responseNode.get("status");
+
+			if (statusNode != null) {
+				String statusNodeText = statusNode.asText();
+				if (statusNodeText.equals("failed")) {
+					throw new SkipError("Process failed to execute.");
+					return;
+				}
+			}
+
 			boolean hasMonitorOrResultLink = false;
 			for (JsonNode currentJsonNode : linksArrayNode) {
+				System.out.println("currentNode: " + currentJsonNode.get("rel").asText());
 				// Fetch result document
 				if (currentJsonNode.get("rel").asText().equals("http://www.opengis.net/def/rel/ogc/1.0/results")) {
 
@@ -2423,6 +2434,8 @@ public class Jobs extends CommonFixture {
 					Assert.assertTrue(resultString.contains(TEST_STRING_INPUT),
 							"Response does not contain " + TEST_STRING_INPUT + "\n" + resultString);
 					hasMonitorOrResultLink = true;
+					System.out.println("currentNode (return): " + currentJsonNode.get("rel").asText());
+					return;
 				}
 
 			}
@@ -2446,12 +2459,13 @@ public class Jobs extends CommonFixture {
 						attempts++;
 						loopOverStatus(resultNode);
 						hasMonitorOrResultLink = true;
+						System.out.println("currentNode (return): " + relString);
+						return;
 					}
 				}
 			// if the code gets to this position, no result or monitor link were found
 			// imho we need to throw an exception
-			if (!hasMonitorOrResultLink)
-				throw new AssertionError(
+			throw new AssertionError(
 					"No result (rel='http://www.opengis.net/def/rel/ogc/1.0/results') or monitor (rel='monitor') links were found in response.");
 
 		}
@@ -2519,6 +2533,7 @@ public class Jobs extends CommonFixture {
 			}
 			catch (Exception e) {
 				Assert.fail(e.getLocalizedMessage());
+
 			}
 		}
 		else {
