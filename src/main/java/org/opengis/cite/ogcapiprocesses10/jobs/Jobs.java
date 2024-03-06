@@ -2404,22 +2404,20 @@ public class Jobs extends CommonFixture {
 						MAX_ATTEMPTS * ASYNC_LOOP_WAITING_PERIOD / 1000));
 			}
 
-			HttpClient client = HttpClientBuilder.create().build();
-			ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
-
 			JsonNode statusNode = responseNode.get("status");
 
 			if (statusNode != null) {
 				String statusNodeText = statusNode.asText();
 				if (statusNodeText.equals("failed")) {
-					throw new SkipError("Process failed to execute.");
-					return;
+					throw new SkipException("Process failed to execute.");
 				}
 			}
 
+			HttpClient client = HttpClientBuilder.create().build();
+			ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
+
 			boolean hasMonitorOrResultLink = false;
 			for (JsonNode currentJsonNode : linksArrayNode) {
-				System.out.println("currentNode: " + currentJsonNode.get("rel").asText());
 				// Fetch result document
 				if (currentJsonNode.get("rel").asText().equals("http://www.opengis.net/def/rel/ogc/1.0/results")) {
 
