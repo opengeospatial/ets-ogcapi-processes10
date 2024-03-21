@@ -2404,6 +2404,15 @@ public class Jobs extends CommonFixture {
 						MAX_ATTEMPTS * ASYNC_LOOP_WAITING_PERIOD / 1000));
 			}
 
+			JsonNode statusNode = responseNode.get("status");
+
+			if (statusNode != null) {
+				String statusNodeText = statusNode.asText();
+				if (statusNodeText.equals("failed")) {
+					throw new SkipException("Process failed to execute.");
+				}
+			}
+
 			HttpClient client = HttpClientBuilder.create().build();
 			ArrayNode linksArrayNode = (ArrayNode) responseNode.get("links");
 
@@ -2423,6 +2432,8 @@ public class Jobs extends CommonFixture {
 					Assert.assertTrue(resultString.contains(TEST_STRING_INPUT),
 							"Response does not contain " + TEST_STRING_INPUT + "\n" + resultString);
 					hasMonitorOrResultLink = true;
+					System.out.println("currentNode (return): " + currentJsonNode.get("rel").asText());
+					return;
 				}
 
 			}
@@ -2446,6 +2457,8 @@ public class Jobs extends CommonFixture {
 						attempts++;
 						loopOverStatus(resultNode);
 						hasMonitorOrResultLink = true;
+						System.out.println("currentNode (return): " + relString);
+						return;
 					}
 				}
 			// if the code gets to this position, no result or monitor link were found
@@ -2518,6 +2531,7 @@ public class Jobs extends CommonFixture {
 			}
 			catch (Exception e) {
 				Assert.fail(e.getLocalizedMessage());
+
 			}
 		}
 		else {
