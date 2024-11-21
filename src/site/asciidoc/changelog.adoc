@@ -1,5 +1,10 @@
 = Release Notes OGC API - Processes - Part 1: Core
 
+== 1.2 (2024-03)
+
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/95[#95] clarify /req/core/job-results-async-raw-value-one
+- https://github.com/opengeospatial/ets-ogcapi-processes10/issues/92[#92] All tests are skipped when using the REST Interface
+
 == 1.1 (2023-12)
 
 - https://github.com/opengeospatial/ets-ogcapi-processes10/issues/60[#60] Confused expectations regarding number of outputs

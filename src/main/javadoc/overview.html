@@ -84,10 +84,22 @@ dt {
 		<td>A URI that refers to the landing page of the SUT. Ampersand ('&amp;') characters must be percent-encoded as '%26'.</td>
       </tr>
       <tr>
-        <td>noofcollections</td>
+        <td>echoprocessid</td>
+        <td>String</td>
+        <td>M</td>
+        <td>The identifier of the process used for execute operation tests.</td>
+      </tr>
+      <tr>
+        <td>testallprocesses</td>
+        <td>Boolean</td>
+        <td>C</td>
+        <td>If true, all processes of the test instance will be used for testing.</td>
+      </tr>
+      <tr>
+        <td>processtestlimit</td>
         <td>Integer</td>
-        <td>O</td>
-        <td>Number of collections under test. -1 means that all collections should be tested. Default: 3</td>
+        <td>C</td>
+        <td>Number of processes to be tested. Not applicable when _testallprocesses_ is set to true.</td>
       </tr>
 	  </tbody>
   </table>

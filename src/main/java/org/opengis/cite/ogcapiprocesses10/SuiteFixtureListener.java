@@ -87,6 +87,9 @@ public class SuiteFixtureListener implements ISuiteListener {
 			if (limit != null) {
 				suite.setAttribute(SuiteAttribute.PROCESS_TEST_LIMIT.getName(), Integer.valueOf(limit));
 			}
+			else {
+				suite.setAttribute(SuiteAttribute.PROCESS_TEST_LIMIT.getName(), -1);
+			}
 		}
 		catch (NumberFormatException e) {
 			TestSuiteLogger.log(Level.WARNING,

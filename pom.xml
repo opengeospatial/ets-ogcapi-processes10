@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.opengis.cite</groupId>  
   <artifactId>ets-ogcapi-processes10</artifactId>
-  <version>1.2-SNAPSHOT</version>
+  <version>1.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>OGC API-Processes 1.0 Conformance Test Suite</name>
