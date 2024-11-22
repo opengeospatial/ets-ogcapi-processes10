@@ -121,7 +121,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>org.opengis.cite.iso19142.TestNGController</mainClass>
+              <mainClass>org.opengis.cite.ogcapiprocesses10.TestNGController</mainClass>
             </manifest>
           </archive>
         </configuration>
@@ -179,6 +179,21 @@
         </plugin>
       </plugins>
     </pluginManagement>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <excludes>
+           <exclude>**/testdata/*.*</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/main/javadoc</directory>
+        <filtering>true</filtering>
+        <targetPath>doc/${ets-code}/${project.version}</targetPath>
+      </resource>
+    </resources>
   </build>
 
   <profiles>
