@@ -12,7 +12,7 @@ import org.opengis.cite.ogcapiprocesses10.util.URIUtils;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
 
-import com.sun.jersey.api.client.Client;
+import jakarta.ws.rs.client.Client;
 
 /**
  * A listener that performs various tasks before and after a test suite is run, usually
