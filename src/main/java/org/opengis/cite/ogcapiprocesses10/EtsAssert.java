@@ -8,6 +8,9 @@ package org.opengis.cite.ogcapiprocesses10;
 public class EtsAssert {
 
 	/**
+	 * <p>
+	 * assertTrue.
+	 * </p>
 	 * @param valueToAssert the boolean to assert to be <code>true</code>
 	 * @param failureMsg the message to throw in case of a failure, should not be
 	 * <code>null</code>
@@ -18,6 +21,9 @@ public class EtsAssert {
 	}
 
 	/**
+	 * <p>
+	 * assertFalse.
+	 * </p>
 	 * @param valueToAssert the boolean to assert to be <code>false</code>
 	 * @param failureMsg the message to throw in case of a failure, should not be
 	 * <code>null</code>

@@ -60,6 +60,11 @@ public class ProcessList extends CommonFixture {
 
 	private static String urlSchema = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/processList.yaml";
 
+	/**
+	 * <p>
+	 * setup.
+	 * </p>
+	 */
 	@BeforeClass
 	public void setup() {
 		String processListEndpointString = rootUri.toString() + getProcessListPath;
@@ -263,7 +268,8 @@ public class ProcessList extends CommonFixture {
 			Body body = Body.from(responseNode);
 			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body)
-					.header(CONTENT_TYPE, contentType.getValue()).build();
+				.header(CONTENT_TYPE, contentType.getValue())
+				.build();
 			validator.validateResponse(response, data);
 
 			assertTrue(validateResponseAgainstSchema(ProcessList.urlSchema, responsePayload),

@@ -62,6 +62,12 @@ public class Process extends CommonFixture {
 
 	private String echoProcessPath;
 
+	/**
+	 * <p>
+	 * setup.
+	 * </p>
+	 * @param testContext a {@link org.testng.ITestContext} object
+	 */
 	@BeforeClass
 	public void setup(ITestContext testContext) {
 		String processListEndpointString = rootUri.toString() + getProcessListPath;
@@ -128,7 +134,8 @@ public class Process extends CommonFixture {
 				responseContentTypeValue = "application/json";
 			}
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body)
-					.header(CONTENT_TYPE, responseContentTypeValue).build();
+				.header(CONTENT_TYPE, responseContentTypeValue)
+				.build();
 			getProcessDescriptionValidator.validateResponse(response, data);
 			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		}
@@ -170,7 +177,8 @@ public class Process extends CommonFixture {
 			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body)
-					.header(CONTENT_TYPE, contentType.getValue()).build();
+				.header(CONTENT_TYPE, contentType.getValue())
+				.build();
 			getProcessDescriptionValidator.validateResponse(response, data);
 			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		}
@@ -217,7 +225,8 @@ public class Process extends CommonFixture {
 			Body body = Body.from(responseNode);
 			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body)
-					.header(CONTENT_TYPE, contentType.getValue()).build();
+				.header(CONTENT_TYPE, contentType.getValue())
+				.build();
 			getProcessDescriptionValidator.validateResponse(response, data);
 			Assert.assertTrue(data.isValid(), printResults(data.results()));
 		}

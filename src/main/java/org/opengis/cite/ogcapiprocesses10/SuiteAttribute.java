@@ -11,6 +11,8 @@ import jakarta.ws.rs.client.Client;
 /**
  * An enumerated type defining ISuite attributes that may be set to constitute a shared
  * test fixture.
+ *
+ * @author bpr
  */
 @SuppressWarnings("rawtypes")
 public enum SuiteAttribute {
@@ -76,14 +78,27 @@ public enum SuiteAttribute {
 		this.attrType = attrType;
 	}
 
+	/**
+	 * <p>
+	 * getType.
+	 * </p>
+	 * @return a {@link java.lang.Class} object
+	 */
 	public Class getType() {
 		return attrType;
 	}
 
+	/**
+	 * <p>
+	 * getName.
+	 * </p>
+	 * @return a {@link java.lang.String} object
+	 */
 	public String getName() {
 		return attrName;
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(attrName);

@@ -51,7 +51,7 @@ public class LandingPage extends CommonFixture {
 	/**
 	 * <pre>
 	 * cf. <a href=
-	"https://github.com/opengeospatial/ogcapi-processes/blob/master/core/abstract_tests/core/ATS_landingpage-op.adoc">core/abstract_tests/core/ATS_landingpage-op.adoc</a>
+	 *	"https://github.com/opengeospatial/ogcapi-processes/blob/master/core/abstract_tests/core/ATS_landingpage-op.adoc">core/abstract_tests/core/ATS_landingpage-op.adoc</a>
 	 * Abstract Test 1: /conf/core/landingpage-op
 	 * Test Purpose: Validate that a landing page can be retrieved from the expected location.
 	 * Requirement: /req/core/root-op
@@ -74,7 +74,7 @@ public class LandingPage extends CommonFixture {
 	/**
 	 * <pre>
 	 * cf. <a href=
-	"https://github.com/opengeospatial/ogcapi-processes/blob/master/core/abstract_tests/core/ATS_landingpage-success.adoc">core/abstract_tests/core/ATS_landingpage-success.adoc</a>
+	 *	"https://github.com/opengeospatial/ogcapi-processes/blob/master/core/abstract_tests/core/ATS_landingpage-success.adoc">core/abstract_tests/core/ATS_landingpage-success.adoc</a>
 	 * </pre>
 	 */
 	@Test(description = "Implements Abstract Test 2: /conf/core/landingpage-success", groups = "A.2.1. Landing Page /")

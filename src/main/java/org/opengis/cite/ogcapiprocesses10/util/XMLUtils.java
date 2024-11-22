@@ -16,6 +16,8 @@ import org.w3c.dom.Node;
 
 /**
  * Provides various utility methods for accessing or manipulating XML representations.
+ *
+ * @author bpr
  */
 public class XMLUtils {
 

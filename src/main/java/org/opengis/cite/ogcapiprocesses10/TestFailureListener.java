@@ -16,15 +16,18 @@ import jakarta.ws.rs.core.MediaType;
  * A listener that augments a test result with diagnostic information in the event that a
  * test method failed. This information will appear in the XML report when the test run is
  * completed.
+ *
+ * @author bpr
  */
 public class TestFailureListener extends TestListenerAdapter {
 
 	/**
+	 * {@inheritDoc}
+	 *
 	 * Sets the "request" and "response" attributes of a test result. The value of these
 	 * attributes is a string that contains information about the content of an outgoing
 	 * or incoming message: target resource, status code, headers, entity (if present).
 	 * The entity is represented as a String with UTF-8 character encoding.
-	 * @param result A description of a test result (with a fail verdict).
 	 */
 	@Override
 	public void onTestFailure(ITestResult result) {
@@ -73,30 +76,30 @@ public class TestFailureListener extends TestListenerAdapter {
 	 * @return A string containing information gleaned from the response message.
 	 */
 
-        /**
-         * Gets diagnostic information about a response message.
-         * @param rsp An object representing an HTTP response message.
-         * @return A string containing information gleaned from the response message.
-         */
-        String getResponseMessageInfo(ClientResponse rsp) {
-                if (null == rsp) {
-                        return "No response message.";
-                }
-                StringBuilder msgInfo = new StringBuilder();
-                msgInfo.append("Status: ").append(rsp.getStatus()).append('\n');
-                msgInfo.append("Headers: ").append(rsp.getHeaders()).append('\n');
-                if (rsp.hasEntity()) {
-                        if (rsp.getMediaType().isCompatible(MediaType.APPLICATION_XML_TYPE)) {
-                                Document doc = ClientUtils.getResponseEntityAsDocument(rsp, null);
-                                msgInfo.append(XMLUtils.writeNodeToString(doc));
-                        }
-                        else {
-                                byte[] body = rsp.readEntity(byte[].class);
-                                msgInfo.append(new String(body, StandardCharsets.UTF_8));
-                        }
-                        msgInfo.append('\n');
-                }
-                return msgInfo.toString();
-        }
+	/**
+	 * Gets diagnostic information about a response message.
+	 * @param rsp An object representing an HTTP response message.
+	 * @return A string containing information gleaned from the response message.
+	 */
+	String getResponseMessageInfo(ClientResponse rsp) {
+		if (null == rsp) {
+			return "No response message.";
+		}
+		StringBuilder msgInfo = new StringBuilder();
+		msgInfo.append("Status: ").append(rsp.getStatus()).append('\n');
+		msgInfo.append("Headers: ").append(rsp.getHeaders()).append('\n');
+		if (rsp.hasEntity()) {
+			if (rsp.getMediaType().isCompatible(MediaType.APPLICATION_XML_TYPE)) {
+				Document doc = ClientUtils.getResponseEntityAsDocument(rsp, null);
+				msgInfo.append(XMLUtils.writeNodeToString(doc));
+			}
+			else {
+				byte[] body = rsp.readEntity(byte[].class);
+				msgInfo.append(new String(body, StandardCharsets.UTF_8));
+			}
+			msgInfo.append('\n');
+		}
+		return msgInfo.toString();
+	}
 
 }

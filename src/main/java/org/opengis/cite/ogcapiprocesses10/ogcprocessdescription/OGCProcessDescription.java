@@ -63,6 +63,12 @@ public class OGCProcessDescription extends CommonFixture {
 
 	private final int maximumNumberOfProcessesTested = 5;
 
+	/**
+	 * <p>
+	 * setup.
+	 * </p>
+	 * @param testContext a {@link org.testng.ITestContext} object
+	 */
 	@BeforeClass
 	public void setup(ITestContext testContext) {
 		String processListEndpointString = rootUri.toString() + getProcessListPath;
@@ -70,7 +76,7 @@ public class OGCProcessDescription extends CommonFixture {
 			echoProcessId = (String) testContext.getSuite().getAttribute(SuiteAttribute.ECHO_PROCESS_ID.getName());
 
 			processTestLimit = (Integer) testContext.getSuite()
-					.getAttribute(SuiteAttribute.PROCESS_TEST_LIMIT.getName());
+				.getAttribute(SuiteAttribute.PROCESS_TEST_LIMIT.getName());
 
 			openApi3 = new OpenApi3Parser().parse(specURL, false);
 			addServerUnderTest(openApi3);
@@ -139,8 +145,10 @@ public class OGCProcessDescription extends CommonFixture {
 							Body body2 = Body.from(responseNode2);
 							Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
 							Response response2 = new DefaultResponse.Builder(
-									httpResponse2.getStatusLine().getStatusCode()).body(body2)
-											.header(CONTENT_TYPE, contentType2.getValue()).build();
+									httpResponse2.getStatusLine().getStatusCode())
+								.body(body2)
+								.header(CONTENT_TYPE, contentType2.getValue())
+								.build();
 							validator.validateResponse(response2, data);
 							Assert.assertTrue(data.isValid(), printResults(data.results()));
 
@@ -161,7 +169,9 @@ public class OGCProcessDescription extends CommonFixture {
 						Body body2 = Body.from(responseNode2);
 						Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
 						Response response2 = new DefaultResponse.Builder(httpResponse2.getStatusLine().getStatusCode())
-								.body(body2).header(CONTENT_TYPE, contentType2.getValue()).build();
+							.body(body2)
+							.header(CONTENT_TYPE, contentType2.getValue())
+							.build();
 						validator.validateResponse(response2, data);
 						Assert.assertTrue(data.isValid(), printResults(data.results()));
 					}
@@ -382,9 +392,9 @@ public class OGCProcessDescription extends CommonFixture {
 	 * Requirement: /req/ogc-process-description/outputs-def
 	 * Test Method:
 	 * |===
-	   * 1. Retrieve a description of each process according to test /conf/core/process.
-	   *
-	   * 2. For each process, verify that the definition of the outputs conforms to the JSON Schema: outputDescription.yaml.
+	 * 1. Retrieve a description of each process according to test /conf/core/process.
+	 *
+	 * 2. For each process, verify that the definition of the outputs conforms to the JSON Schema: outputDescription.yaml.
 	 * </pre>
 	 */
 	@Test(description = "Implements Requirement /req/ogc-process-description/outputs-def",
@@ -509,11 +519,11 @@ public class OGCProcessDescription extends CommonFixture {
 	 * Requirement: /req/ogc-process-description/output-mixed-type
 	 * Test Method:
 	 * |===
-	   * 1. Retrieve a description of each process according to test /conf/core/process.
+	 * 1. Retrieve a description of each process according to test /conf/core/process.
 	 *
-	   * 2. For each process identify if the process has one or more output of mixed type denoted by the use of the oneOf JSON Schema keyword.
+	 * 2. For each process identify if the process has one or more output of mixed type denoted by the use of the oneOf JSON Schema keyword.
 	 *
-	   * 3. For each sub-schema or each identified output, verify that the definition validates according to the JSON Schema: schema.yaml.
+	 * 3. For each sub-schema or each identified output, verify that the definition validates according to the JSON Schema: schema.yaml.
 	 * </pre>
 	 */
 	@Test(description = "Implements Requirement /req/ogc-process-description/output-mixed-type",
@@ -595,7 +605,8 @@ public class OGCProcessDescription extends CommonFixture {
 		Body body2 = Body.from(responseNode2);
 		Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
 		Response response2 = new DefaultResponse.Builder(httpResponse2.getStatusLine().getStatusCode()).body(body2)
-				.header(CONTENT_TYPE, contentType2.getValue()).build();
+			.header(CONTENT_TYPE, contentType2.getValue())
+			.build();
 		Assert.assertTrue(responseNode2.has("outputs"),
 				"No 'outputs' field was found in the process description of '" + processIdentifier + "'. ");
 
@@ -618,7 +629,8 @@ public class OGCProcessDescription extends CommonFixture {
 		Body body2 = Body.from(responseNode2);
 		Header contentType2 = httpResponse2.getFirstHeader(CONTENT_TYPE);
 		Response response2 = new DefaultResponse.Builder(httpResponse2.getStatusLine().getStatusCode()).body(body2)
-				.header(CONTENT_TYPE, contentType2.getValue()).build();
+			.header(CONTENT_TYPE, contentType2.getValue())
+			.build();
 		Assert.assertTrue(responseNode2.has("inputs"),
 				"No 'inputs' field was found in the process description of '" + processIdentifier + "'. ");
 
@@ -642,7 +654,8 @@ public class OGCProcessDescription extends CommonFixture {
 		Body body3 = Body.from(responseNode3);
 		Header contentType3 = httpResponse3.getFirstHeader(CONTENT_TYPE);
 		Response response3 = new DefaultResponse.Builder(httpResponse3.getStatusLine().getStatusCode()).body(body3)
-				.header(CONTENT_TYPE, contentType3.getValue()).build();
+			.header(CONTENT_TYPE, contentType3.getValue())
+			.build();
 		JsonNode inputsNode3 = responseNode3.get("inputs");
 		Iterator inputsIter3 = inputsNode3.elements();
 		boolean atLeastOneMixedTypeInputFound = false;
@@ -686,7 +699,8 @@ public class OGCProcessDescription extends CommonFixture {
 		Body body3 = Body.from(responseNode3);
 		Header contentType3 = httpResponse3.getFirstHeader(CONTENT_TYPE);
 		Response response3 = new DefaultResponse.Builder(httpResponse3.getStatusLine().getStatusCode()).body(body3)
-				.header(CONTENT_TYPE, contentType3.getValue()).build();
+			.header(CONTENT_TYPE, contentType3.getValue())
+			.build();
 		JsonNode outputsNode3 = responseNode3.get("outputs");
 		Iterator outputsIter3 = outputsNode3.elements();
 		boolean atLeastOneMixedTypeOutputFound = false;

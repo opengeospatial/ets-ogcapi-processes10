@@ -29,6 +29,10 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
 /**
+ * <p>
+ * JsonUtils class.
+ * </p>
+ *
  * @author <a href="mailto:goltz@lat-lon.de">Lyn Goltz </a>
  */
 public class JsonUtils {
@@ -60,8 +64,8 @@ public class JsonUtils {
 	 * @param collection the collection containing the extent to parse, never
 	 * <code>null</code>
 	 * @return the parsed temporal extent, <code>null</code> if no extent exists
-	 * @throws IllegalArgumentException if the number of items in the extent invalid
-	 *
+	 * @throws java.lang.IllegalArgumentException if the number of items in the extent
+	 * invalid
 	 */
 	public static TemporalExtent parseTemporalExtent(Map<String, Object> collection) {
 		Object extent = collection.get("extent");
@@ -134,8 +138,8 @@ public class JsonUtils {
 	 * @param collection the collection containing the extent to parse, never
 	 * <code>null</code>
 	 * @return the parsed bbox, <code>null</code> if no extent exists
-	 * @throws IllegalArgumentException if the number of items in the extent invalid
-	 *
+	 * @throws java.lang.IllegalArgumentException if the number of items in the extent
+	 * invalid
 	 */
 	public static BBox parseSpatialExtent(Map<String, Object> collection) {
 		Object extent = collection.get("extent");
@@ -264,7 +268,7 @@ public class JsonUtils {
 	 * @param maximumLimit the limit parameter value to use, if &lt;= 0 the parameter is
 	 * omitted
 	 * @return the number of all returned features
-	 * @throws URISyntaxException if the creation of a uri fails
+	 * @throws java.net.URISyntaxException if the creation of a uri fails
 	 */
 	public static int collectNumberOfAllReturnedFeatures(JsonPath jsonPath, int maximumLimit)
 			throws URISyntaxException {
@@ -315,7 +319,7 @@ public class JsonUtils {
 	 * Converts an inputstream to String using UTF-8 encoding.
 	 * @param inputStream the inputstream
 	 * @return the content of the inputstream as String
-	 * @throws IOException if an I/O error occurs
+	 * @throws java.io.IOException if an I/O error occurs
 	 */
 	public static String inputStreamToString(InputStream inputStream) throws IOException {
 		StringWriter writer = new StringWriter();
@@ -324,6 +328,13 @@ public class JsonUtils {
 		return prettifyString(writer.toString());
 	}
 
+	/**
+	 * <p>
+	 * prettifyString.
+	 * </p>
+	 * @param string a {@link java.lang.String} object
+	 * @return a {@link java.lang.String} object
+	 */
 	public static String prettifyString(String string) {
 		ObjectMapper objectMapper = getObjectMapper();
 		try {

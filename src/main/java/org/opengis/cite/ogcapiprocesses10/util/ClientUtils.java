@@ -25,6 +25,8 @@ import jakarta.ws.rs.core.MediaType;
 
 /**
  * Provides various utility methods for creating and configuring HTTP client components.
+ *
+ * @author bpr
  */
 public class ClientUtils {
 
@@ -149,6 +151,7 @@ public class ClientUtils {
 	 * Checks if a GET request to a given URI returns HTTP 200 - OK
 	 * @param uri The URI to check
 	 * @return true, if HTTP 200 - OK was returned after a GET request, false otherwise
+	 * @since 1.3
 	 */
 	public static boolean is200Response(URI uri) {
 		URL url = null;

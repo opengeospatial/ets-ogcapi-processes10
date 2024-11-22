@@ -83,6 +83,11 @@ public class JobList extends CommonFixture {
 
 	private static String urlSchema = "https://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/jobList.yaml";
 
+	/**
+	 * <p>
+	 * setup.
+	 * </p>
+	 */
 	@BeforeClass
 	public void setup() {
 		String jobListEndpointString = rootUri.toString() + getJobListPath;
@@ -166,7 +171,8 @@ public class JobList extends CommonFixture {
 			Body body = Body.from(responseNode);
 			Header contentType = httpResponse.getFirstHeader(CONTENT_TYPE);
 			Response response = new DefaultResponse.Builder(httpResponse.getStatusLine().getStatusCode()).body(body)
-					.header(CONTENT_TYPE, contentType.getValue()).build();
+				.header(CONTENT_TYPE, contentType.getValue())
+				.build();
 			validator.validateResponse(response, data);
 
 			assertTrue(validateResponseAgainstSchema(JobList.urlSchema, responsePayload),

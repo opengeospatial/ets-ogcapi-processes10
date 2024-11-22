@@ -22,6 +22,8 @@ import java.util.List;
  * <pre>
  * ets-${ets-code}-${version}-aio.jar [-o|--outputDir $TMPDIR] [-d|--deleteSubjectOnFinish] [test-run-props.xml]
  * </pre>
+ *
+ * @author bpr
  */
 public class CommandLineArguments {
 
@@ -35,10 +37,21 @@ public class CommandLineArguments {
 			description = "Delete file containing representation of test subject when finished")
 	private boolean deleteSubjectOnFinish = false;
 
+	/**
+	 * <p>
+	 * Constructor for CommandLineArguments.
+	 * </p>
+	 */
 	public CommandLineArguments() {
 		this.xmlProps = new ArrayList<>();
 	}
 
+	/**
+	 * <p>
+	 * getPropertiesFile.
+	 * </p>
+	 * @return a {@link java.io.File} object
+	 */
 	public File getPropertiesFile() {
 		File fileRef;
 		if (xmlProps.isEmpty()) {
@@ -51,10 +64,22 @@ public class CommandLineArguments {
 		return fileRef;
 	}
 
+	/**
+	 * <p>
+	 * Getter for the field <code>outputDir</code>.
+	 * </p>
+	 * @return a {@link java.lang.String} object
+	 */
 	public String getOutputDir() {
 		return (null != outputDir) ? outputDir : System.getProperty("user.home");
 	}
 
+	/**
+	 * <p>
+	 * doDeleteSubjectOnFinish.
+	 * </p>
+	 * @return a boolean
+	 */
 	public boolean doDeleteSubjectOnFinish() {
 		return deleteSubjectOnFinish;
 	}

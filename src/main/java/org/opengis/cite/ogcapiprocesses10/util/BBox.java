@@ -6,6 +6,10 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
+ * <p>
+ * BBox class.
+ * </p>
+ *
  * @author <a href="mailto:goltz@lat-lon.de">Lyn Goltz </a>
  */
 public class BBox {
@@ -21,6 +25,9 @@ public class BBox {
 	private final double maxY;
 
 	/**
+	 * <p>
+	 * Constructor for BBox.
+	 * </p>
 	 * @param minX Lower left corner, coordinate axis 1
 	 * @param minY Lower left corner, coordinate axis 2
 	 * @param maxX Upper right corner, coordinate axis 1
@@ -34,6 +41,9 @@ public class BBox {
 	}
 
 	/**
+	 * <p>
+	 * asQueryParameter.
+	 * </p>
 	 * @return the bbox as query string like '-12,10, 12,20'
 	 */
 	public String asQueryParameter() {
@@ -46,11 +56,13 @@ public class BBox {
 		return sb.toString();
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public String toString() {
 		return asQueryParameter();
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)
@@ -62,6 +74,7 @@ public class BBox {
 				&& Double.compare(bBox.maxX, maxX) == 0 && Double.compare(bBox.maxY, maxY) == 0;
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public int hashCode() {
 		return Objects.hash(minX, minY, maxX, maxY);

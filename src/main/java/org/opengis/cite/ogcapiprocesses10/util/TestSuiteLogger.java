@@ -10,6 +10,7 @@ import java.util.logging.Logger;
  * {@code src/main/config/logging.properties}.
  *
  * @see java.util.logging.LogManager LogManager
+ * @author bpr
  */
 public class TestSuiteLogger {
 

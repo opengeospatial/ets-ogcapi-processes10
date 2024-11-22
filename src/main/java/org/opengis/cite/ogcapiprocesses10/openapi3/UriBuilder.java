@@ -19,6 +19,9 @@ public class UriBuilder {
 	private final Map<String, String> templateReplacements = new HashMap<>();
 
 	/**
+	 * <p>
+	 * Constructor for UriBuilder.
+	 * </p>
 	 * @param testPoint never <code>null</code>
 	 */
 	public UriBuilder(TestPoint testPoint) {
@@ -49,6 +52,9 @@ public class UriBuilder {
 	}
 
 	/**
+	 * <p>
+	 * buildUrl.
+	 * </p>
 	 * @return this URI, never <code>null</code>
 	 */
 	public String buildUrl() {

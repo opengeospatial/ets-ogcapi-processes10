@@ -27,6 +27,8 @@ import com.occamlab.te.spi.jaxrs.TestSuiteController;
 
 /**
  * Main test run controller oversees execution of TestNG test suites.
+ *
+ * @author bpr
  */
 public class TestNGController implements TestSuiteController {
 
@@ -52,8 +54,8 @@ public class TestNGController implements TestSuiteController {
 	 * @param args Test run arguments (optional). The first argument must refer to an XML
 	 * properties file containing the expected set of test run arguments. If no argument
 	 * is supplied, the file located at ${user.home}/test-run-props.xml will be used.
-	 * @throws Exception If the test run cannot be executed (usually due to unsatisfied
-	 * pre-conditions).
+	 * @throws java.lang.Exception If the test run cannot be executed (usually due to
+	 * unsatisfied pre-conditions).
 	 */
 	public static void main(String[] args) throws Exception {
 		CommandLineArguments testRunArgs = new CommandLineArguments();
@@ -116,21 +118,25 @@ public class TestNGController implements TestSuiteController {
 		this.executor = new TestNGExecutor(tngSuite.toString(), resultsDir.getAbsolutePath(), false);
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public String getCode() {
 		return etsProperties.getProperty("ets-code");
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public String getVersion() {
 		return etsProperties.getProperty("ets-version");
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public String getTitle() {
 		return etsProperties.getProperty("ets-title");
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public Source doTestRun(Document testRunArgs) throws Exception {
 		validateTestRunArgs(testRunArgs);

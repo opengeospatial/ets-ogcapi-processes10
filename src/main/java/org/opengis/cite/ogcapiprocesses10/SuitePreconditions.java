@@ -9,6 +9,8 @@ import org.testng.annotations.BeforeSuite;
 /**
  * Checks that various preconditions are satisfied before the test suite is run. If any of
  * these (BeforeSuite) methods fail, all tests will be skipped.
+ *
+ * @author bpr
  */
 public class SuitePreconditions {
 
@@ -16,7 +18,6 @@ public class SuitePreconditions {
 
 	/**
 	 * Verifies that the referenced test subject exists and has the expected type.
-	 * @param testContext Information about the (pending) test run.
 	 */
 	@BeforeSuite
 	@SuppressWarnings("rawtypes")
@@ -24,8 +25,10 @@ public class SuitePreconditions {
 		SuiteAttribute testFileAttr = SuiteAttribute.TEST_SUBJ_FILE;
 		// ITestcontext was removed from the BeforeSuite annotation, see here:
 		// https://github.com/testng-team/testng/issues/3032
-		Object sutObj = Reporter.getCurrentTestResult().getTestContext().getSuite()
-				.getAttribute(testFileAttr.getName());
+		Object sutObj = Reporter.getCurrentTestResult()
+			.getTestContext()
+			.getSuite()
+			.getAttribute(testFileAttr.getName());
 		Class expectedType = testFileAttr.getType();
 		if (null != sutObj && expectedType.isInstance(sutObj)) {
 			// TODO: Verify test subject

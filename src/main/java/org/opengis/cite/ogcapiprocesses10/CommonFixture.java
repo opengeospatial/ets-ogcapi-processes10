@@ -52,6 +52,8 @@ import io.restassured.specification.RequestSpecification;
 /**
  * A supporting base class that sets up a common test fixture. These configuration methods
  * are invoked before those defined in a subclass.
+ *
+ * @author bpr
  */
 public class CommonFixture {
 
@@ -105,7 +107,7 @@ public class CommonFixture {
 		rootUri = (URI) testContext.getSuite().getAttribute(SuiteAttribute.IUT.getName());
 		limit = (Integer) testContext.getSuite().getAttribute(SuiteAttribute.PROCESS_TEST_LIMIT.getName());
 		boolean useLocalSchema = (boolean) testContext.getSuite()
-				.getAttribute(SuiteAttribute.USE_LOCAL_SCHEMA.getName());
+			.getAttribute(SuiteAttribute.USE_LOCAL_SCHEMA.getName());
 		if (useLocalSchema) {
 			specURL = getClass().getResource("/org/opengis/cite/ogcapiprocesses10/openapi/api-processes10.yaml");
 		}
@@ -119,19 +121,42 @@ public class CommonFixture {
 		}
 	}
 
+	/**
+	 * <p>
+	 * clearMessages.
+	 * </p>
+	 */
 	@BeforeMethod
 	public void clearMessages() {
 		initLogging();
 	}
 
+	/**
+	 * <p>
+	 * getRequest.
+	 * </p>
+	 * @return a {@link java.lang.String} object
+	 */
 	public String getRequest() {
 		return requestOutputStream.toString();
 	}
 
+	/**
+	 * <p>
+	 * getResponse.
+	 * </p>
+	 * @return a {@link java.lang.String} object
+	 */
 	public String getResponse() {
 		return responseOutputStream.toString();
 	}
 
+	/**
+	 * <p>
+	 * init.
+	 * </p>
+	 * @return a {@link io.restassured.specification.RequestSpecification} object
+	 */
 	protected RequestSpecification init() {
 		return given().filters(requestLoggingFilter, responseLoggingFilter).log().all();
 	}
@@ -159,12 +184,18 @@ public class CommonFixture {
 	 */
 
 	/**
-	 *
+	 * <p>
+	 * validateResponseAgainstSchema.
+	 * </p>
+	 * @param urlSchema a {@link java.lang.String} object
+	 * @param body a {@link java.lang.String} object
+	 * @return a boolean
 	 */
 	protected boolean validateResponseAgainstSchema(String urlSchema, String body) {
 		ObjectMapper objMapper = new ObjectMapper(new YAMLFactory());
 		JsonSchemaFactory factory = JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7))
-				.objectMapper(objMapper).build();
+			.objectMapper(objMapper)
+			.build();
 		SchemaValidatorsConfig config = new SchemaValidatorsConfig();
 		config.setTypeLoose(false);
 		try {
@@ -190,6 +221,7 @@ public class CommonFixture {
 	/**
 	 * Try to implement testing for A.5. Conformance Class HTML TODO: Abtract Test 56:
 	 * /conf/html/content Abtract Test 57: /conf/html/definition
+	 * @param uri a {@link java.lang.String} object
 	 */
 	protected void checkHtmlConfClass(String uri) {
 		Response request = init().baseUri(uri).accept(HTML).when().request(GET);
@@ -212,6 +244,14 @@ public class CommonFixture {
 		responseLoggingFilter = new ResponseLoggingFilter(responsePrintStream);
 	}
 
+	/**
+	 * <p>
+	 * printResults.
+	 * </p>
+	 * @param validationResults a {@link org.openapi4j.core.validation.ValidationResults}
+	 * object
+	 * @return a {@link java.lang.String} object
+	 */
 	protected String printResults(ValidationResults validationResults) {
 		List<ValidationItem> validationItems = validationResults.items();
 		StringBuilder printedResultsStringBuilder = new StringBuilder();
@@ -221,6 +261,12 @@ public class CommonFixture {
 		return printedResultsStringBuilder.toString();
 	}
 
+	/**
+	 * <p>
+	 * addServerUnderTest.
+	 * </p>
+	 * @param openApi3 a {@link org.openapi4j.parser.model.v3.OpenApi3} object
+	 */
 	protected void addServerUnderTest(OpenApi3 openApi3) {
 		Server serverUnderTest = new Server();
 		String authority = rootUri.getAuthority();
@@ -229,6 +275,14 @@ public class CommonFixture {
 		openApi3.addServer(serverUnderTest);
 	}
 
+	/**
+	 * <p>
+	 * createInput.
+	 * </p>
+	 * @param schemaNode a {@link com.fasterxml.jackson.databind.JsonNode} object
+	 * @param id a {@link java.lang.String} object
+	 * @return a {@link org.opengis.cite.ogcapiprocesses10.CommonFixture.Input} object
+	 */
 	protected Input createInput(JsonNode schemaNode, String id) {
 		Input input = new Input(id);
 		JsonNode typeNode = schemaNode.get("type");
@@ -376,6 +430,14 @@ public class CommonFixture {
 		return false;
 	}
 
+	/**
+	 * <p>
+	 * createOutput.
+	 * </p>
+	 * @param schemaNode a {@link com.fasterxml.jackson.databind.JsonNode} object
+	 * @param id a {@link java.lang.String} object
+	 * @return a {@link org.opengis.cite.ogcapiprocesses10.CommonFixture.Output} object
+	 */
 	protected Output createOutput(JsonNode schemaNode, String id) {
 		Output output = new Output(id);
 		JsonNode typeNode = schemaNode.get("type");
