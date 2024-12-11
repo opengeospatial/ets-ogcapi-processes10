@@ -24,6 +24,7 @@
         <exclude>org.opengis.cite.teamengine:teamengine-spi</exclude>
         <exclude>*:jersey-client</exclude>
         <exclude>*:jersey-server</exclude>
+        <exclude>*:jersey-common</exclude>
         <exclude>jakarta.ws.rs:jakarta.ws.rs-api</exclude>
         <exclude>com.beust:jcommander</exclude>
         <exclude>org.testng:testng</exclude>
