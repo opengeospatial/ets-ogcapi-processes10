@@ -16,7 +16,6 @@
         <exclude>*:jersey-client</exclude>
         <exclude>*:jersey-server</exclude>
         <exclude>*:jersey-common</exclude>
-        <exclude>*:jersey-hk2</exclude>
         <exclude>jakarta.ws.rs:jakarta.ws.rs-api</exclude>
       </excludes>
       <outputDirectory>/</outputDirectory>
