@@ -12,17 +12,17 @@
 
   <name>OGC API-Processes 1.0 Conformance Test Suite</name>
   <description>Describe purpose of test suite.</description>
-  <url>http://opengeospatial.github.io/ets-ogcapi-processes10/</url>
+  <url>https://opengeospatial.github.io/ets-ogcapi-processes10/</url>
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
-      <url>http://opensource.org/licenses/Apache-2.0</url>
+      <url>https://opensource.org/licenses/Apache-2.0</url>
     </license>
   </licenses>
 
   <organization>
     <name>Open Geospatial Consortium</name>
-    <url>http://www.opengeospatial.org/</url>
+    <url>https://www.ogc.org/</url>
   </organization>
   <scm>
     <connection>scm:git:https://github.com/opengeospatial/ets-ogcapi-processes10.git</connection>
@@ -48,7 +48,6 @@
   <properties>
     <ets-code>ogcapi-processes-1.0</ets-code>
     <spec-version>0.1</spec-version>
-    <docker.teamengine.version>6.0</docker.teamengine.version>
     <spec-version>1.0</spec-version>
   </properties>
 
@@ -128,6 +127,7 @@
         <artifactId>maven-scm-publish-plugin</artifactId>
       </plugin>
     </plugins>
+
     <pluginManagement>
       <plugins>
         <plugin>
@@ -136,30 +136,7 @@
           <configuration>
             <images>
               <image>
-                <name>ogccite/${project.artifactId}:latest</name>
-                <build>
-                  <dockerFileDir>${project.basedir}/src/docker</dockerFileDir>
-                  <tags>
-                    <tag>${project.version}-teamengine-${docker.teamengine.version}</tag>
-                  </tags>
-                  <assembly>
-                    <inline>
-                      <fileSets>
-                        <fileSet>
-                          <directory>${project.build.directory}</directory>
-                          <outputDirectory>.</outputDirectory>
-                          <includes>
-                            <include>dependency/*teamengine-*.war</include>
-                            <include>dependency/*teamengine-*.zip</include>
-                            <include>*ets-*.zip</include>
-                          </includes>
-                        </fileSet>
-                      </fileSets>
-                    </inline>
-                  </assembly>
-                </build>
                 <run>
-<!--                   <containerNamePattern>%a</containerNamePattern> -->
                   <ports>
                     <port>8081:8080</port>
                   </ports>
@@ -185,11 +162,6 @@
            <exclude>**/testdata/*.*</exclude>
         </excludes>
       </resource>
-      <resource>
-        <directory>src/main/javadoc</directory>
-        <filtering>true</filtering>
-        <targetPath>doc/${ets-code}/${project.version}</targetPath>
-      </resource>
     </resources>
   </build>
 
@@ -200,14 +172,6 @@
         <plugins>
           <plugin>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
           </plugin>
         </plugins>
       </build>
@@ -269,10 +233,6 @@
   </profiles>
 
   <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
     <site>
       <id>site</id>
       <url>scm:git:git@github.com:opengeospatial/ets-ogcapi-processes10.git</url>
