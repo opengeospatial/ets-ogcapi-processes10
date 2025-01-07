@@ -10,8 +10,13 @@ public class OgcApiProcesses10 {
 	private OgcApiProcesses10() {
 	}
 
+	/**
+	 * Constant
+	 * <code>OPEN_API_MIME_TYPE="application/vnd.oai.openapi+json;versio"{trunked}</code>
+	 */
 	public static final String OPEN_API_MIME_TYPE = "application/vnd.oai.openapi+json;version=3.0";
 
+	/** Constant <code>GEOJSON_MIME_TYPE="application/geo+json"</code> */
 	public static final String GEOJSON_MIME_TYPE = "application/geo+json";
 
 }

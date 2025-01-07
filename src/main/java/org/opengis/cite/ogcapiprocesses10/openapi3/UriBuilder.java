@@ -3,8 +3,9 @@ package org.opengis.cite.ogcapiprocesses10.openapi3;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.sun.jersey.api.uri.UriTemplate;
-import com.sun.jersey.api.uri.UriTemplateParser;
+import org.glassfish.jersey.uri.UriTemplate;
+import org.glassfish.jersey.uri.internal.UriPart;
+import org.glassfish.jersey.uri.internal.UriTemplateParser;
 
 /**
  * Builds a URL out of a TestPoint.
@@ -18,6 +19,9 @@ public class UriBuilder {
 	private final Map<String, String> templateReplacements = new HashMap<>();
 
 	/**
+	 * <p>
+	 * Constructor for UriBuilder.
+	 * </p>
 	 * @param testPoint never <code>null</code>
 	 */
 	public UriBuilder(TestPoint testPoint) {
@@ -48,6 +52,9 @@ public class UriBuilder {
 	}
 
 	/**
+	 * <p>
+	 * buildUrl.
+	 * </p>
 	 * @return this URI, never <code>null</code>
 	 */
 	public String buildUrl() {
@@ -63,9 +70,9 @@ public class UriBuilder {
 	private String retrieveCollectionNameTemplateName() {
 		String path = testPoint.getPath();
 		UriTemplateParser uriTemplateParser = new UriTemplateParser(path);
-		for (String templateName : uriTemplateParser.getNames()) {
+		for (UriPart templateName : uriTemplateParser.getNames()) {
 			if (path.startsWith("/collections/{" + templateName + "}"))
-				return templateName;
+				return templateName.getPart();
 		}
 		return null;
 	}
@@ -73,9 +80,9 @@ public class UriBuilder {
 	private String retrieveFeatureIdTemplateName() {
 		String path = testPoint.getPath();
 		UriTemplateParser uriTemplateParser = new UriTemplateParser(path);
-		for (String templateName : uriTemplateParser.getNames()) {
+		for (UriPart templateName : uriTemplateParser.getNames()) {
 			if (path.endsWith("items/{" + templateName + "}"))
-				return templateName;
+				return templateName.getPart();
 		}
 		return null;
 	}

@@ -4,8 +4,6 @@ import static org.opengis.cite.ogcapiprocesses10.openapi3.OpenApiUtils.PATH.COLL
 import static org.opengis.cite.ogcapiprocesses10.openapi3.OpenApiUtils.PATH.CONFORMANCE;
 
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,6 +15,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.glassfish.jersey.uri.UriTemplate;
+import org.glassfish.jersey.uri.internal.UriTemplateParser;
+
 import com.reprezen.kaizen.oasparser.model3.MediaType;
 import com.reprezen.kaizen.oasparser.model3.OpenApi3;
 import com.reprezen.kaizen.oasparser.model3.Operation;
@@ -25,10 +26,12 @@ import com.reprezen.kaizen.oasparser.model3.Path;
 import com.reprezen.kaizen.oasparser.model3.Response;
 import com.reprezen.kaizen.oasparser.model3.Schema;
 import com.reprezen.kaizen.oasparser.model3.Server;
-import com.sun.jersey.api.uri.UriTemplate;
-import com.sun.jersey.api.uri.UriTemplateParser;
 
 /**
+ * <p>
+ * OpenApiUtils class.
+ * </p>
+ *
  * @author <a href="mailto:goltz@lat-lon.de">Lyn Goltz </a>
  */
 public class OpenApiUtils {
@@ -216,6 +219,15 @@ public class OpenApiUtils {
 		return testPoints.stream().filter(new ExactMatchFilter(requestedPath.toString())).collect(Collectors.toList());
 	}
 
+	/**
+	 * <p>
+	 * retrieveParameterByName.
+	 * </p>
+	 * @param collectionItemPath a {@link java.lang.String} object
+	 * @param apiModel a {@link com.reprezen.kaizen.oasparser.model3.OpenApi3} object
+	 * @param name a {@link java.lang.String} object
+	 * @return a {@link com.reprezen.kaizen.oasparser.model3.Parameter} object
+	 */
 	public static Parameter retrieveParameterByName(String collectionItemPath, OpenApi3 apiModel, String name) {
 		Path path = apiModel.getPath(collectionItemPath);
 		if (path != null) {
@@ -230,6 +242,14 @@ public class OpenApiUtils {
 		return null;
 	}
 
+	/**
+	 * <p>
+	 * isFreeFormParameterSupportedForCollection.
+	 * </p>
+	 * @param apiModel a {@link com.reprezen.kaizen.oasparser.model3.OpenApi3} object
+	 * @param collectionName a {@link java.lang.String} object
+	 * @return a boolean
+	 */
 	public static boolean isFreeFormParameterSupportedForCollection(OpenApi3 apiModel, String collectionName) {
 		String requestedPath = createCollectionPath(collectionName);
 
@@ -245,6 +265,15 @@ public class OpenApiUtils {
 		return false;
 	}
 
+	/**
+	 * <p>
+	 * isParameterSupportedForCollection.
+	 * </p>
+	 * @param apiModel a {@link com.reprezen.kaizen.oasparser.model3.OpenApi3} object
+	 * @param collectionName a {@link java.lang.String} object
+	 * @param queryParam a {@link java.lang.String} object
+	 * @return a boolean
+	 */
 	public static boolean isParameterSupportedForCollection(OpenApi3 apiModel, String collectionName,
 			String queryParam) {
 		String requestedPath = createCollectionPath(collectionName);

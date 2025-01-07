@@ -50,6 +50,9 @@ public class TestPoint {
 	}
 
 	/**
+	 * <p>
+	 * Getter for the field <code>serverUrl</code>.
+	 * </p>
 	 * @return the serverUrl never <code>null</code>
 	 */
 	public String getServerUrl() {
@@ -57,6 +60,9 @@ public class TestPoint {
 	}
 
 	/**
+	 * <p>
+	 * Getter for the field <code>path</code>.
+	 * </p>
 	 * @return the path never, <code>null</code>
 	 */
 	public String getPath() {
@@ -64,6 +70,9 @@ public class TestPoint {
 	}
 
 	/**
+	 * <p>
+	 * Getter for the field <code>predefinedTemplateReplacement</code>.
+	 * </p>
 	 * @return an unmodifiable mao with predefined replacements, may be empty but never
 	 * <code>null</code>
 	 */
@@ -72,6 +81,9 @@ public class TestPoint {
 	}
 
 	/**
+	 * <p>
+	 * Getter for the field <code>contentMediaTypes</code>.
+	 * </p>
 	 * @return the content media types for the GET operation with response "200", may be
 	 * <code>null</code>
 	 */
@@ -79,11 +91,13 @@ public class TestPoint {
 		return contentMediaTypes;
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public String toString() {
 		return "Server URL: " + serverUrl + " , Path: " + path + ", Replacements: " + predefinedTemplateReplacement;
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)
@@ -97,6 +111,7 @@ public class TestPoint {
 				&& Objects.equals(contentMediaTypes, testPoint.contentMediaTypes);
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public int hashCode() {
 		return Objects.hash(serverUrl, path, predefinedTemplateReplacement, contentMediaTypes);

@@ -2,6 +2,8 @@ package org.opengis.cite.ogcapiprocesses10;
 
 /**
  * An enumerated type defining all recognized test run arguments.
+ *
+ * @author bpr
  */
 public enum TestRunArg {
 
@@ -39,6 +41,7 @@ public enum TestRunArg {
 	 */
 	TESTALLPROCESSES;
 
+	/** {@inheritDoc} */
 	@Override
 	public String toString() {
 		return name().toLowerCase();

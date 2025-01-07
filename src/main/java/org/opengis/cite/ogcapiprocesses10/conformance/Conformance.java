@@ -42,6 +42,13 @@ public class Conformance extends CommonFixture {
 
 	private static String urlSchema = "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/schemas/confClasses.yaml";
 
+	/**
+	 * <p>
+	 * conformanceUris.
+	 * </p>
+	 * @param testContext a {@link org.testng.ITestContext} object
+	 * @return an array of {@link java.lang.Object} objects
+	 */
 	@DataProvider(name = "conformance")
 	public Object[][] conformanceUris(ITestContext testContext) {
 		OpenApi3 apiModel = (OpenApi3) testContext.getSuite().getAttribute(API_MODEL.getName());
@@ -65,6 +72,12 @@ public class Conformance extends CommonFixture {
 		return testPointsData;
 	}
 
+	/**
+	 * <p>
+	 * storeRequirementClassesInTestContext.
+	 * </p>
+	 * @param testContext a {@link org.testng.ITestContext} object
+	 */
 	@AfterClass
 	public void storeRequirementClassesInTestContext(ITestContext testContext) {
 		testContext.getSuite().setAttribute(REQUIREMENTCLASSES.getName(), this.requirementClasses);

@@ -6,6 +6,8 @@ import java.util.ResourceBundle;
 /**
  * Utility class for retrieving and formatting localized error messages that describe
  * failed assertions.
+ *
+ * @author bpr
  */
 public class ErrorMessage {
 
