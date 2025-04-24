@@ -48,7 +48,7 @@
 #  1. build the teamengine
 #  2. build the Test Suite
 #
-FROM maven:3.8.3-jdk-8-slim AS build
+FROM maven:3.9.9-eclipse-temurin-17-focal AS build
 ARG BUILD_DEPS=" \
     git \
 "
@@ -66,7 +66,7 @@ RUN apt-get update && \
 #
 # Create the container to be run based on tomcat
 #
-FROM tomcat:7.0-jre8
+FROM tomcat:10.1-jre17-temurin-jammy
 ARG BUILD_DEPS=" \
     unzip \
 "
@@ -80,7 +80,6 @@ ENV JAVA_OPTS="-Xms1024m -Xmx2048m -DTE_BASE=/root/te_base"
 RUN cd /root && \
     mkdir te_base && \
     mkdir te_base/scripts && \
-    echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list && \
     apt-get update && \
     apt-get install -y $BUILD_DEPS && \
     unzip -q -o teamengine*.war -d /usr/local/tomcat/webapps/teamengine && \
