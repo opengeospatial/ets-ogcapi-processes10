@@ -9,7 +9,9 @@ package org.opengis.cite.ogcapiprocesses10.conformance;
  */
 public enum RequirementClass {
 
-	CORE("http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core");
+	CORE("http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core"),
+
+	JOB_LIST("http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list");
 
 	private final String conformanceClass;
 

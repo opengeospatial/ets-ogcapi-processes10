@@ -1,5 +1,6 @@
 package org.opengis.cite.ogcapiprocesses10.joblist;
 
+import static org.opengis.cite.ogcapiprocesses10.SuiteAttribute.REQUIREMENTCLASSES;
 import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -45,6 +46,7 @@ import org.openapi4j.schema.validator.ValidationData;
 import org.opengis.cite.ogcapiprocesses10.CommonFixture;
 import org.opengis.cite.ogcapiprocesses10.SuiteAttribute;
 import org.opengis.cite.ogcapiprocesses10.conformance.Conformance;
+import org.opengis.cite.ogcapiprocesses10.conformance.RequirementClass;
 import org.opengis.cite.ogcapiprocesses10.util.ExecutionMode;
 import org.opengis.cite.ogcapiprocesses10.util.PathSettingRequest;
 import org.opengis.cite.ogcapiprocesses10.util.TestSuiteLogger;
@@ -89,7 +91,15 @@ public class JobList extends CommonFixture {
 	 * </p>
 	 */
 	@BeforeClass
-	public void setup() {
+	public void setup(ITestContext testContext) {
+		Object requirementsClassesObject = testContext.getSuite().getAttribute(REQUIREMENTCLASSES.getName());
+		if (requirementsClassesObject instanceof List<?>) {
+			List<?> requirementsClassesList = (List<?>) requirementsClassesObject;
+			if (!requirementsClassesList.contains(RequirementClass.JOB_LIST)) {
+				throw new SkipException("Job list conformance class not implemented");
+			}
+		}
+
 		String jobListEndpointString = rootUri.toString() + getJobListPath;
 		try {
 			openApi3 = new OpenApi3Parser().parse(specURL, false);
